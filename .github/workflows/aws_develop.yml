@@ -1,9 +1,9 @@
-name: 'Deploy ECS'
+name: 'Deploy ECS Dev'
 
 on:
   push:
     branches: [develop]
-  workflow_digrejaadventista/pa-theme-institucionalispatch:
+  workflow_dispatch:
 
 jobs:
   sync:
