@@ -1,6 +1,6 @@
 # Configuração do Ambiente
 
-Este repositório contém instruções para configurar o ambiente de desenvolvimento para o projeto X. Siga as etapas abaixo para configurar o ambiente corretamente.
+Este repositório contém instruções para configurar o ambiente de desenvolvimento para o projeto institucional.adventistas.org. Siga as etapas abaixo para configurar o ambiente corretamente.
 
 ## Passo 1: Gerar Certificados SSL Autoassinados
 
@@ -31,14 +31,14 @@ WP_S3_BUCKET=nome_do_bucket_S3
 
 ## Passo 3: Clonar e Configurar o Tema pa-theme-sedes
 
-Clone o repositório pa-theme-sedes na pasta app/wp-content/themes e siga as etapas abaixo:
+Clone o repositório [pa-theme-sedes](https://github.com/igrejaadventista/pa-theme-sedes) na pasta app/wp-content/themes e siga as etapas abaixo:
 
 ### 3.1 Instale as Dependências JavaScript
 
 Execute o seguinte comando para instalar as dependências JavaScript:
 
 ```bash
-yarn build
+yarn
 ```
 
 ### 3.2 Compile os Arquivos JavaScript com Webpack
@@ -58,14 +58,14 @@ composer install
 
 ## Passo 4: Clonar e Configurar o Tema pa-theme-sedes
 
-Clone o repositório pa-theme-sedes na pasta app/wp-content/themes e siga as etapas abaixo:
+Clone o repositório [pa-theme-institucional](https://github.com/igrejaadventista/pa-theme-institucional) na pasta app/wp-content/themes e siga as etapas abaixo:
 
 ### 4.1 Instale as Dependências JavaScript
 
 Execute o seguinte comando para instalar as dependências JavaScript:
 
 ```bash
-yarn build
+yarn
 ```
 
 ### 4.2 Compile os Arquivos JavaScript com Webpack
