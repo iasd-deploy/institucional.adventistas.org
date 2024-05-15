@@ -1,0 +1,87 @@
+.pa-slider-principal {
+  background-color: black;
+  .glide__slide {
+    background-size: auto 100%;
+    background-position: center;
+    opacity: 0.5;
+    transition: opacity 0.5s;
+    background-color: black;
+
+    .container {
+      .row {
+        height: 600px;
+        color: white;
+
+        @media (max-width: 575px) {
+          height: 134.933vw;
+        }
+
+        h1 {
+          font-family: var(--pa-font-secondary);
+          font-weight: bold;
+          letter-spacing: 0.025em;
+        }
+
+        span,
+        small {
+          letter-spacing: 0.1em;
+        }
+      }
+    }
+  }
+
+  .glide__slide--active {
+    opacity: 1;
+  }
+
+  .pa-glide-principal {
+    position: relative;
+
+    .pa_slide_item {
+      a {
+        &.btn {
+          border: none;
+          filter: brightness(100%) grayscale(0%);
+          -webkit-filter: brightness(100%) grayscale(0%);
+          -moz-filter: brightness(100%) grayscale(0%);
+          -o-filter: brightness(100%) grayscale(0%);
+          -ms-filter: brightness(100%) grayscale(0%);
+          transition: all 0.15s ease-in-out;
+          -webkit-transition: all 0.15s ease-in-out;
+          -moz-transition: all 0.15s ease-in-out;
+
+          &:hover {
+            filter: brightness(130%) grayscale(30%);
+            -webkit-filter: brightness(130%) grayscale(30%);
+            -moz-filter: brightness(130%) grayscale(30%);
+            -o-filter: brightness(130%) grayscale(30%);
+            -ms-filter: brightness(130%) grayscale(30%);
+          }
+        }
+      }
+    }
+
+    .pa-slider-controle {
+      color: var(--pa-color-default-aux);
+      cursor: pointer;
+
+      position: absolute;
+      right: 52px;
+      bottom: 0;
+      left: 52px;
+
+      .icon {
+        color: var(--pa-color-default);
+      }
+
+      .pa-slider-bullet {
+        font-size: 0.5rem;
+      }
+
+      .glide__bullet--active {
+        color: white;
+        background-color: transparent;
+      }
+    }
+  }
+}
