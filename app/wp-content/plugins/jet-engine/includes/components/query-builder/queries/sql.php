@@ -6,6 +6,7 @@ use Jet_Engine\Query_Builder\Manager;
 class SQL_Query extends Base_Query {
 
 	public $current_query = null;
+	public $calc_columns = array();
 
 	/**
 	 * Returns queries items
@@ -414,6 +415,11 @@ class SQL_Query extends Base_Query {
 
 			if ( ! empty( $this->final_query['include_calc'] ) && ! empty( $this->final_query['calc_cols'] ) ) {
 				foreach ( $this->final_query['calc_cols'] as $col ) {
+
+					if ( empty( $col['function'] ) || empty( $col['column'] ) ) {
+						continue;
+					}
+
 					if ( 'custom' === $col['function'] ) {
 						$custom_col      = ! empty( $col['custom_col'] ) ? $col['custom_col'] : '%1$s';
 						$prepared_col    = str_replace( '%1$s', $col['column'], $custom_col );
@@ -423,8 +429,10 @@ class SQL_Query extends Base_Query {
 						$prepared_col    = sprintf( '%1$s(%2$s)', $col['function'], $col['column'] );
 						$prepared_col_as = $prepared_col;
 					}
-					
+
 					$implode[] = $prepared_col . " AS '" . $prepared_col_as . "'";
+
+					$this->calc_columns[] = $prepared_col_as;
 				}
 			}
 
@@ -502,6 +510,11 @@ class SQL_Query extends Base_Query {
 				$current_query .= " ";
 
 				foreach ( $this->final_query['orderby'] as $row ) {
+
+					if ( empty( $row['orderby'] ) ) {
+						continue;
+					}
+
 					$row['column'] = $row['orderby'];
 					$orderby[] = $row;
 				}
@@ -575,18 +588,30 @@ class SQL_Query extends Base_Query {
 	 */
 	public function add_order_args( $args = array() ) {
 
-		$query = "ORDER BY ";
-		$glue  = ' ';
+		$query = '';
+		$glue  = '';
 
 		foreach ( $args as $arg ) {
 
-			$column = $arg['column'];
-			$type   = $arg['type'];
-			$order  = $arg['order'];
+			if ( in_array( $arg['column'], $this->calc_columns ) ) {
+				$column = sprintf( '`%s`', $arg['column'] );
+			} else {
+				// Sanitize SQL `column name` string to prevent SQL injection.
+				// See: https://github.com/Crocoblock/issues-tracker/issues/5251
+				$column = \Jet_Engine_Tools::sanitize_sql_orderby( $arg['column'] );
+			}
+
+			$type   = ! empty( $arg['type'] ) ? $arg['type'] : 'CHAR';
+			$order  = ! empty( $arg['order'] ) ? strtoupper( $arg['order'] ) : 'DESC';
+			$order  = in_array( $order, array( 'ASC', 'DESC' ) ) ? $order : 'DESC';
+
+			if ( ! $column ) {
+				continue;
+			}
 
 			$query .= $glue;
 
-			switch ( $arg['type'] ) {
+			switch ( $type ) {
 				case 'NUMERIC':
 				case 'DECIMAL':
 					$query .= "CAST( $column as DECIMAL )";
@@ -605,6 +630,10 @@ class SQL_Query extends Base_Query {
 			$query .= $order;
 
 			$glue = ", ";
+		}
+
+		if ( $query ) {
+			$query  = "ORDER BY " . $query;
 		}
 
 		return $query;
@@ -901,6 +930,11 @@ class SQL_Query extends Base_Query {
 
 		if ( ! empty( $this->query['include_calc'] ) && ! empty( $this->query['calc_cols'] ) ) {
 			foreach ( $this->query['calc_cols'] as $col ) {
+
+				if ( empty( $col['function'] ) || empty( $col['column'] ) ) {
+					continue;
+				}
+
 				$cols[] = sprintf( '%1$s(%2$s)', $col['function'], $col['column'] );
 			}
 		}

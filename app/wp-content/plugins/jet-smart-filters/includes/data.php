@@ -172,16 +172,19 @@ if ( ! class_exists( 'Jet_Smart_Filters_Data' ) ) {
 		 */
 		public function get_choices_from_field_data( $args = array() ) {
 
+			$result = array();
+
 			$args = wp_parse_args( $args, array(
 				'field_key' => false,
 				'source'    => 'jet_engine',
 			) );
 
 			if ( empty( $args['field_key'] ) ) {
-				return array();
+				return $result;
 			}
 
-			$result = array();
+			// trimming accidentally entered spaces in the key field
+			$args['field_key'] = trim( $args['field_key'] );
 
 			switch ( $args['source'] ) {
 				case 'acf':
@@ -215,13 +218,20 @@ if ( ! class_exists( 'Jet_Smart_Filters_Data' ) ) {
 						}
 					}
 
-					if ( empty( $found_field['options'] ) ) {
-						return $result;
+					if ( ! empty( $found_field['options'] ) ) {
+						foreach ( $found_field['options'] as $option ) {
+							$label                  = apply_filters( 'jet-engine/compatibility/translate-string', $option['value'] );
+							$result[$option['key']] = $label;
+						}
 					}
 
-					foreach ( $found_field['options'] as $option ) {
-						$label                  = apply_filters( 'jet-engine/compatibility/translate-string', $option['value'] );
-						$result[$option['key']] = $label;
+					if ( isset( $found_field['options_source'] ) && $found_field['options_source'] === 'manual_bulk' && ! empty( $found_field['bulk_options'] ) ) {
+						$bulk_options = explode( PHP_EOL, $found_field['bulk_options'] );
+
+						foreach ( $bulk_options as $option ) {
+							$parsed_option             = explode( '::', trim( $option ) );
+							$result[$parsed_option[0]] = isset( $parsed_option[1] ) ? $parsed_option[1] : $parsed_option[0];
+						}
 					}
 
 					return $result;
@@ -354,7 +364,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Data' ) ) {
 		 */
 		public function maybe_parse_repeater_options( $options ) {
 
-			if ( empty( $options ) ) {
+			if ( ! is_array( $options ) || empty( $options ) ) {
 				return array();
 			}
 

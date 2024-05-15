@@ -19,8 +19,6 @@ if ( ! class_exists( 'Jet_Engine_Dynamic_Tags_Manager' ) ) {
 	 */
 	class Jet_Engine_Dynamic_Tags_Manager {
 
-		private $printed_css = array();
-
 		/**
 		 * Constructor for the class
 		 */
@@ -103,8 +101,6 @@ if ( ! class_exists( 'Jet_Engine_Dynamic_Tags_Manager' ) ) {
 				return $content;
 			}
 
-			$object  = jet_engine()->listings->data->get_current_object();
-			$class   = get_class( $object );
 			$post_id = jet_engine()->listings->data->get_current_object_id();
 
 			$post_ids_for_data = array( $listing_id );
@@ -115,19 +111,11 @@ if ( ! class_exists( 'Jet_Engine_Dynamic_Tags_Manager' ) ) {
 			}
 
 			foreach ( $post_ids_for_data as $post_id_for_data ) {
-
-				$handle = $class . '_' . $post_id . '_' . $post_id_for_data;
-
-				if ( in_array( $handle, $this->printed_css ) ) {
-					continue;
-				}
-
 				$css_file = $this->get_dynamic_css_file( $post_id, $post_id_for_data );
 				$post_css = $css_file->get_content();
 
 				if ( ! empty( $post_css ) ) {
 					$css .= $post_css;
-					$this->printed_css[] = $handle;
 				}
 			}
 
@@ -213,9 +201,15 @@ if ( ! class_exists( 'Jet_Engine_Dynamic_Tags_Manager' ) ) {
 				return;
 			}
 
-			$media_conditions_keys = array_map( function ( $key ) {
+			$media_conditions_url_keys = array_map( function ( $key ) {
 				return $key . '[url]!';
 			}, $media_dynamic_settings );
+
+			$media_conditions_id_keys = array_map( function ( $key ) {
+				return $key . '[id]!';
+			}, $media_dynamic_settings );
+
+			$media_conditions_keys = array_merge( $media_conditions_url_keys, $media_conditions_id_keys );
 
 			foreach ( $all_controls as $control_id => $control ) {
 				if ( empty( $control['selectors'] ) || empty( $control['condition'] ) ) {

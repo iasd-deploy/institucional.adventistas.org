@@ -4,7 +4,9 @@
  */
 namespace Jet_Smart_Filters\Bricks_Views;
 
+use Bricks\Api;
 use Bricks\Database;
+use Bricks\Helpers;
 
 if ( ! defined( 'WPINC' ) ) {
 	die;
@@ -39,10 +41,6 @@ class Manager {
 			$i18n['jetsmartfilters'] = esc_html__( 'JetSmartFilters', 'jet-smart-filters' );
 			return $i18n;
 		} );
-
-		add_filter( 'bricks/posts/query_vars', [ $this, 'merge_query_vars' ], 10, 3 );
-		add_filter( 'bricks/terms/query_vars', [ $this, 'merge_query_vars' ], 10, 3 );
-		add_filter( 'bricks/users/query_vars', [ $this, 'merge_query_vars' ], 10, 3 );
 
 		require jet_smart_filters()->plugin_path( 'includes/bricks/filters/manager.php' );
 		new Filters\Manager();
@@ -132,29 +130,6 @@ class Manager {
 				}
 			}
 		}
-	}
-
-	public function merge_query_vars( $query_vars, $settings, $element_id ) {
-
-		$post_id = Database::$page_data['preview_or_post_id'];
-		$bricks_data = get_post_meta( $post_id, BRICKS_DB_PAGE_CONTENT, true );
-		$isLoadMore = false;
-
-		if ( ! empty( $bricks_data ) ) {
-			foreach ( $bricks_data as $element ) {
-				$interactions = $element['settings']['_interactions'] ?? false;
-
-				if ( ! empty( $interactions ) && isset( $interactions[0]['loadMoreQuery'] ) && $interactions[0]['loadMoreQuery'] === $element_id ) {
-					$isLoadMore = true;
-				}
-			}
-		}
-
-		if ( isset( $settings['query']['infinite_scroll'] ) || $isLoadMore ) {
-			$query_vars = wp_parse_args( $query_vars, jet_smart_filters()->query->get_query_args() );
-		}
-
-		return $query_vars;
 	}
 
 	public function has_bricks() {

@@ -20,17 +20,7 @@
 
 		commonInit: function() {
 
-			$( document )
-				.on( 'click.JetEngine', '.jet-calendar-nav__link', JetEngine.switchCalendarMonth )
-				.on( 'click.JetEngine', '.jet-calendar-week__day-mobile-overlay', JetEngine.showCalendarEvent )
-				.on( 'click.JetEngine', '.jet-listing-dynamic-link__link[data-delete-link="1"]', JetEngine.showConfirmDeleteDialog )
-				.on( 'jet-filter-content-rendered', JetEngine.maybeReinitSlider )
-				.on( 'click.JetEngine', '.jet-add-to-store', JetEngine.addToStore )
-				.on( 'click.JetEngine', '.jet-remove-from-store', JetEngine.removeFromStore )
-				.on( 'click.JetEngine', '.jet-engine-listing-overlay-wrap:not([data-url*="event=hover"])', JetEngine.handleListingItemClick )
-				.on( 'jet-filter-content-rendered', JetEngine.filtersCompatibility )
-				.on( 'click.JetEngine', '.jet-container[data-url]', JetEngine.handleContainerURL )
-				.on( 'change.JetEngine', '.jet-listing-dynamic-link .qty', JetEngine.handleProductQuantityChange );
+			JetEngine.commonEvents();
 
 			$( window ).on( 'jet-popup/render-content/ajax/success', JetEngine.initStores );
 
@@ -54,6 +44,22 @@
 			JetEngine.initStores();
 			JetEngine.customUrlActions.init();
 
+		},
+
+		commonEvents: function( $scope ) {
+			$scope = $scope || $( document );
+
+			$scope
+				.on( 'click.JetEngine', '.jet-calendar-nav__link', JetEngine.switchCalendarMonth )
+				.on( 'click.JetEngine', '.jet-calendar-week__day-mobile-overlay', JetEngine.showCalendarEvent )
+				.on( 'click.JetEngine', '.jet-listing-dynamic-link__link[data-delete-link="1"]', JetEngine.showConfirmDeleteDialog )
+				.on( 'jet-filter-content-rendered', JetEngine.maybeReinitSlider )
+				.on( 'click.JetEngine', '.jet-add-to-store', JetEngine.addToStore )
+				.on( 'click.JetEngine', '.jet-remove-from-store', JetEngine.removeFromStore )
+				.on( 'click.JetEngine', '.jet-engine-listing-overlay-wrap:not([data-url*="event=hover"])', JetEngine.handleListingItemClick )
+				.on( 'jet-filter-content-rendered', JetEngine.filtersCompatibility )
+				.on( 'click.JetEngine', '.jet-container[data-url]', JetEngine.handleContainerURL )
+				.on( 'change.JetEngine', '.jet-listing-dynamic-link .qty', JetEngine.handleProductQuantityChange );
 		},
 
 		handleProductQuantityChange: function ( event ) {
@@ -112,8 +118,10 @@
 				( event, content ) => {
 					const $content = $( content );
 
-					JetEngine.maybeReinitSlider( event, $content );
-					JetEngine.widgetDynamicField( $content );
+					setTimeout( () => {
+						JetEngine.maybeReinitSlider( event, $content );
+						JetEngine.widgetDynamicField( $content );
+					} );
 				}
 			);
 
@@ -381,7 +389,12 @@
 
 			}
 
+			if ( $this.hasClass( 'jet-store-processing' ) ) {
+				return;
+			}
+
 			$this.css( 'opacity', 0.3 );
+			$this.addClass( 'jet-store-processing' );
 
 			$.ajax({
 				url: JetEngineSettings.ajaxurl,
@@ -395,6 +408,7 @@
 			}).done( function( response ) {
 
 				$this.css( 'opacity', 1 );
+				$this.removeClass( 'jet-store-processing' );
 
 				if ( response.success ) {
 
@@ -415,9 +429,15 @@
 							$elemContainer = $container.find( '> .elementor-widget-container' ),
 							$items         = $container.find( '.jet-listing-grid__items' ),
 							nav            = $items.data( 'nav' ),
-							query          = nav.query;
+							query          = nav.query,
+							postID         = window.elementorFrontend ? window.elementorFrontendConfig.post.id : 0;
 
 						nav = JetEngine.ensureJSON( nav );
+
+						// Context Bricks
+						if ( $container.hasClass( 'brxe-jet-engine-listing-grid' ) ) {
+							postID = window.bricksData.postId;
+						}
 
 						JetEngine.ajaxGetListing( {
 							handler: 'get_listing',
@@ -427,7 +447,7 @@
 							append: false,
 							query: query,
 							widgetSettings: nav.widget_settings,
-							postID: window.elementorFrontendConfig.post.id,
+							postID,
 							elementID: $container.data( 'id' ),
 						}, function( response ) {
 							JetEngine.widgetListingGrid( $container );
@@ -465,6 +485,7 @@
 
 			} ).fail( function( jqXHR, textStatus, errorThrown ) {
 				$this.css( 'opacity', 1 );
+				$this.removeClass( 'jet-store-processing' );
 				alert( errorThrown );
 			} );
 
@@ -577,7 +598,12 @@
 				return;
 			}
 
+			if ( $this.hasClass( 'jet-store-processing' ) ) {
+				return;
+			}
+
 			$this.css( 'opacity', 0.3 );
+			$this.addClass( 'jet-store-processing' );
 
 			$( document ).trigger( 'jet-engine-on-add-to-store', [ $this, args ] );
 
@@ -593,6 +619,7 @@
 			}).done( function( response ) {
 
 				$this.css( 'opacity', 1 );
+				$this.removeClass( 'jet-store-processing' );
 
 				if ( response.success ) {
 
@@ -611,9 +638,15 @@
 							$elemContainer = $container.find( '> .elementor-widget-container' ),
 							$items         = $container.find( '.jet-listing-grid__items' ),
 							nav            = $items.data( 'nav' ),
-							query          = nav.query;
+							query          = nav.query,
+							postID         = window.elementorFrontend ? window.elementorFrontendConfig.post.id : 0;
 
 						nav = JetEngine.ensureJSON( nav );
+
+						// Context Bricks
+						if ( $container.hasClass( 'brxe-jet-engine-listing-grid' ) ) {
+							postID = window.bricksData.postId;
+						}
 
 						JetEngine.ajaxGetListing( {
 							handler: 'get_listing',
@@ -623,7 +656,7 @@
 							append: false,
 							query: query,
 							widgetSettings: nav.widget_settings,
-							postID: window.elementorFrontendConfig.post.id,
+							postID,
 							elementID: $container.data( 'id' ),
 						}, function( response ) {
 							JetEngine.widgetListingGrid( $container );
@@ -651,6 +684,7 @@
 
 			} ).fail( function( jqXHR, textStatus, errorThrown ) {
 				$this.css( 'opacity', 1 );
+				$this.removeClass( 'jet-store-processing' );
 				alert( errorThrown );
 			} );
 
@@ -868,7 +902,9 @@
 				var $gridItems     = $scope.closest( '.jet-listing-grid__items' ),
 					$gridItem      = $scope.closest( '.jet-listing-grid__item' ),
 					$calendarItem  = $scope.closest( '.jet-calendar-week__day-event' ),
-					$itemObject    = $scope.closest( '[data-item-object]' )
+					$itemObject    = $scope.closest( '[data-item-object]' ),
+					filterProvider = false,
+					filterQueryId  = 'default';
 
 				if ( $gridItems.length ) {
 					popupData['listingSource'] = $gridItems.data( 'listing-source' );
@@ -890,8 +926,10 @@
 
 				if ( $gridItem.length ) {
 					popupData['postId'] = $gridItem.data( 'post-id' );
+					filterProvider = 'jet-engine';
 				} else if ( $calendarItem.length ) {
 					popupData['postId'] = $calendarItem.data( 'post-id' );
+					filterProvider = 'jet-engine-calendar';
 				} else if ( $itemObject ) {
 					popupData['postId'] = $itemObject.data( 'item-object' );
 				} else if ( window.elementorFrontendConfig && window.elementorFrontendConfig.post ) {
@@ -900,6 +938,37 @@
 
 				if ( window.JetEngineFormsEditor && window.JetEngineFormsEditor.hasEditor ) {
 					popupData['hasEditor'] = true;
+				}
+
+				// Add the filtered query to the popup data
+				if ( window.JetSmartFilters ) {
+
+					switch ( filterProvider ) {
+						case 'jet-engine':
+							var nav = $gridItems.data( 'nav' );
+
+							if ( nav.widget_settings?._element_id ) {
+								filterQueryId = nav.widget_settings._element_id;
+							}
+							break;
+
+						case 'jet-engine-calendar':
+							var settings = $calendarItem.closest( '.jet-listing-calendar' ).data( 'settings' );
+
+							if ( settings._element_id ) {
+								filterQueryId = settings._element_id;
+							}
+							break;
+					}
+
+					filterProvider = window.JetPlugins.hooks.applyFilters( 'jet-engine.prepareJetPopupData.filterProvider', filterProvider, $scope, widgetData );
+					filterQueryId  = window.JetPlugins.hooks.applyFilters( 'jet-engine.prepareJetPopupData.filterQueryId', filterQueryId, $scope, widgetData );
+
+					if ( popupData.queryId && filterProvider
+						&& window.JetSmartFilters?.filterGroups?.[ filterProvider + '/' + filterQueryId ]?.currentQuery
+					) {
+						popupData['filtered_query'] = window.JetSmartFilters.filterGroups[ filterProvider + '/' + filterQueryId ].currentQuery;
+					}
 				}
 
 			}
@@ -1031,16 +1100,24 @@
 
 		},
 
-		initMasonry: function( $masonry ) {
+		initMasonry: function( $masonry, masonrySettings ) {
 			imagesLoaded( $masonry, function() {
-				JetEngine.runMasonry( $masonry );
+				JetEngine.runMasonry( $masonry, masonrySettings );
 			} );
 		},
 
-		runMasonry: function( $masonry ) {
-			var $eWidget = $masonry.closest( '.elementor-widget' ),
-				$items  = $( '> .jet-listing-grid__item', $masonry ),
-				options = $masonry.data( 'masonry-grid-options' );
+		runMasonry: function( $masonry, masonrySettings ) {
+			var defaultSettings = {
+				itemSelector: '> .jet-listing-grid__item',
+				columnsKey:   'columns',
+			};
+
+			masonrySettings = masonrySettings || {};
+			masonrySettings = $.extend( {}, defaultSettings, masonrySettings );
+
+			var $eWidget     = $masonry.closest( '.elementor-widget' ),
+				$items       = $( masonrySettings.itemSelector, $masonry ),
+				options      = $masonry.data( 'masonry-grid-options' ) || {};
 
 			options = JetEngine.ensureJSON( options );
 
@@ -1068,17 +1145,18 @@
 			if ( $eWidget.length ) {
 				var settings     = JetEngine.getElementorElementSettings( $eWidget ),
 					breakpoints  = {},
-					eBreakpoints = window.elementorFrontend.config.responsive.activeBreakpoints;
+					eBreakpoints = window.elementorFrontend.config.responsive.activeBreakpoints,
+					columnsKey   = masonrySettings.columnsKey;
 
-				args.columns = settings.columns_widescreen ? +settings.columns_widescreen : +settings.columns;
+				args.columns = settings[columnsKey + '_widescreen'] ? +settings[columnsKey + '_widescreen'] : +settings[columnsKey];
 
 				Object.keys( eBreakpoints ).reverse().forEach( function( breakpointName ) {
 
-					if ( settings['columns_' + breakpointName] ) {
+					if ( settings[columnsKey + '_' + breakpointName] ) {
 						if ( 'widescreen' === breakpointName ) {
-							breakpoints[eBreakpoints[breakpointName].value - 1] = +settings['columns'];
+							breakpoints[eBreakpoints[breakpointName].value - 1] = +settings[columnsKey];
 						} else {
-							breakpoints[eBreakpoints[breakpointName].value] = +settings['columns_' + breakpointName];
+							breakpoints[eBreakpoints[breakpointName].value] = +settings[columnsKey + '_' + breakpointName];
 						}
 					}
 
@@ -1248,6 +1326,8 @@
 					}
 				}
 
+				$( document ).trigger( 'jet-engine/listing/ajax-get-listing/done', [ $html, options ] );
+
 			} ).done( doneCallback ).fail( function() {
 				container.removeAttr( 'style' );
 				if ( failCallback ) {
@@ -1270,9 +1350,10 @@
 
 					this.wrapper = this.container.closest( '.jet-listing-grid' );
 
-					this.type  = this.settings.type || 'click';
-					this.page  = parseInt( this.container.data( 'page' ), 10 ) || 0;
-					this.pages = parseInt( this.container.data( 'pages' ), 10 ) || 0;
+					this.type      = this.settings.type || 'click';
+					this.page      = parseInt( this.container.data( 'page' ), 10 ) || 0;
+					this.pages     = parseInt( this.container.data( 'pages' ), 10 ) || 0;
+					this.queriedID = this.container.data( 'queried-id' ) || false;
 				},
 
 				init: function() {
@@ -1424,6 +1505,7 @@
 							query:          this.settings.query,
 							widgetSettings: this.settings.widget_settings,
 							page:           this.page,
+							queriedID:      this.queriedID,
 							preventCSS:     !! this.wrapper.find( '.jet-listing-grid__loader' ).length, // Prevent CSS if listing has the loader.
 						}, function( response ) {
 
@@ -1497,7 +1579,7 @@
 								}
 
 								if ( $widget.length ) {
-									$widget.find( '.jet-listing-grid' ).removeClass( 'jet-listing-grid--lazy-load' );
+									$widget.find( '.jet-listing-grid' ).first().removeClass( 'jet-listing-grid--lazy-load' );
 								}
 
 								JetEngine.widgetListingGrid( $widget );
@@ -1511,14 +1593,22 @@
 
 									if ( response.data.filters_data ) {
 										$.each( response.data.filters_data, function( param, data ) {
-											if ( window.JetSmartFilterSettings[ param ]['jet-engine'] ) {
-												window.JetSmartFilterSettings[ param ]['jet-engine'] = $.extend(
+											if ( 'extra_props' === param ) {
+												window.JetSmartFilterSettings[ param ] = $.extend(
 													{},
-													window.JetSmartFilterSettings[ param ]['jet-engine'],
+													window.JetSmartFilterSettings[ param ],
 													data
 												);
 											} else {
-												window.JetSmartFilterSettings[ param ]['jet-engine'] = data;
+												if ( window.JetSmartFilterSettings[ param ]['jet-engine'] ) {
+													window.JetSmartFilterSettings[ param ]['jet-engine'] = $.extend(
+														{},
+														window.JetSmartFilterSettings[ param ]['jet-engine'],
+														data
+													);
+												} else {
+													window.JetSmartFilterSettings[ param ]['jet-engine'] = data;
+												}
 											}
 										});
 
@@ -1718,6 +1808,36 @@
 				} );
 			}
 
+			// Temporary solution issue with Lazy Load images + RTL on Chrome.
+			// Remove after fix in Chrome.
+			// See: https://github.com/Crocoblock/issues-tracker/issues/7552
+			if ( slickOptions.rtl ) {
+				$sliderItems.on( 'init', function() {
+					var $items      = $( this ),
+						$lazyImages = $( 'img[loading=lazy]', $items ),
+						lazyImageObserver = new IntersectionObserver(
+							function( entries, observer ) {
+								entries.forEach( function( entry ) {
+									if ( entry.isIntersecting ) {
+										// If an image does not load, need to remove the `loading` attribute.
+										if ( ! entry.target.complete ) {
+											entry.target.removeAttribute( 'loading' );
+										}
+
+										// Detach observer
+										observer.unobserve( entry.target );
+									}
+								} );
+							}
+						);
+
+					$lazyImages.each( function() {
+						const $img = $( this );
+						lazyImageObserver.observe( $img[0] );
+					} );
+				} );
+			}
+
 			if ( $sliderItems.hasClass( 'slick-initialized' ) ) {
 				$sliderItems.slick( 'refresh', true );
 				return;
@@ -1847,6 +1967,16 @@
 
 				lightbox.init();
 			});
+
+			// Masonry init
+			var $masonry = $scope.find( '.jet-engine-gallery-grid--masonry' );
+
+			if ( $masonry.length ) {
+				JetEngine.initMasonry( $masonry, {
+					columnsKey: 'img_columns',
+					itemSelector: '> .jet-engine-gallery-grid__item',
+				} );
+			}
 
 		},
 

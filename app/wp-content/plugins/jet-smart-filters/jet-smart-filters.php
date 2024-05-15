@@ -3,7 +3,7 @@
  * Plugin Name: JetSmartFilters
  * Plugin URI:  https://crocoblock.com/plugins/jetsmartfilters/
  * Description: Adds easy-to-use AJAX filters to the pages built with Elementor which contain the dynamic listings.
- * Version:     3.2.0
+ * Version:     3.4.5
  * Author:      Crocoblock
  * Author URI:  https://crocoblock.com/
  * Text Domain: jet-smart-filters
@@ -27,7 +27,7 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 		/**
 		 * Plugin version
 		 */
-		private $version = '3.2.0';
+		private $version = '3.4.5';
 
 		/**
 		 * Holder for base plugin URL
@@ -62,6 +62,7 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 		public $data;
 		public $filter_types;
 		public $providers;
+		public $provider_preloader;
 		public $widgets;
 		public $query;
 		public $render;
@@ -148,19 +149,20 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 
 			$this->load_files();
 
-			$this->services     = new Jet_Smart_Filters_Services();
-			$this->settings     = new Jet_Smart_Filters_Settings();
-			$this->post_type    = new Jet_Smart_Filters_Post_Type();
-			$this->query        = new Jet_Smart_Filters_Query_Manager();
-			$this->render       = new Jet_Smart_Filters_Render();
-			$this->data         = new Jet_Smart_Filters_Data();
-			$this->filter_types = new Jet_Smart_Filters_Filter_Manager();
-			$this->providers    = new Jet_Smart_Filters_Providers_Manager();
-			$this->blocks       = new Jet_Smart_Filters_Blocks_Manager();
-			$this->bricks       = new \Jet_Smart_Filters\Bricks_Views\Manager();
-			$this->indexer      = new Jet_Smart_Filters_Indexer_Manager();
-			$this->utils        = new Jet_Smart_Filters_Utils();
-			$this->admin_bar    = Jet_Admin_Bar::get_instance();
+			$this->services           = new Jet_Smart_Filters_Services();
+			$this->settings           = new Jet_Smart_Filters_Settings();
+			$this->post_type          = new Jet_Smart_Filters_Post_Type();
+			$this->query              = new Jet_Smart_Filters_Query_Manager();
+			$this->render             = new Jet_Smart_Filters_Render();
+			$this->data               = new Jet_Smart_Filters_Data();
+			$this->filter_types       = new Jet_Smart_Filters_Filter_Manager();
+			$this->providers          = new Jet_Smart_Filters_Providers_Manager();
+			$this->provider_preloader = new Jet_Smart_Filters_Provider_Preloader();
+			$this->blocks             = new Jet_Smart_Filters_Blocks_Manager();
+			$this->bricks             = new \Jet_Smart_Filters\Bricks_Views\Manager();
+			$this->indexer            = new Jet_Smart_Filters_Indexer_Manager();
+			$this->utils              = new Jet_Smart_Filters_Utils();
+			$this->admin_bar          = Jet_Admin_Bar::get_instance();
 
 			//Init Rest Api
 			$this->rest_api     = new \Jet_Smart_Filters\Rest_Api();
@@ -169,9 +171,10 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 
 			new Jet_Smart_Filters_Rewrite_Rules();
 			new Jet_Smart_Filters_URL_Aliases();
-			new Jet_Smart_Filters_Compatibility();
+			new Jet_Smart_Filters_Compatibility_Manager();
 			new Jet_Smart_Filters_Referrer_Manager();
 			new Jet_Smart_Filters_Tax_Query_Manager();
+			new Jet_Smart_Filters_Plain_Query_Manager();
 
 			$admin_mode             = $this->settings->get( 'admin_mode', '$mode' );
 			$this->is_classic_admin = $admin_mode === 'classic' ? true : false;
@@ -196,14 +199,16 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 			require $this->plugin_path( 'includes/referrer.php' );
 			require $this->plugin_path( 'includes/filters/manager.php' );
 			require $this->plugin_path( 'includes/providers/manager.php' );
+			require $this->plugin_path( 'includes/provider-preloader.php' );
 			require $this->plugin_path( 'includes/settings.php' );
 			require $this->plugin_path( 'includes/services/services.php' );
 			require $this->plugin_path( 'includes/rewrite.php' );
 			require $this->plugin_path( 'includes/url-aliases.php' );
-			require $this->plugin_path( 'includes/compatibility.php' );
+			require $this->plugin_path( 'includes/compatibility/manager.php' );
 			require $this->plugin_path( 'includes/indexer/manager.php' );
 			require $this->plugin_path( 'includes/utils.php' );
 			require $this->plugin_path( 'includes/tax-query/manager.php' );
+			require $this->plugin_path( 'includes/plain-query/manager.php' );
 		}
 
 		/**
@@ -257,6 +262,13 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 			$jet_dashboard_module_data = $this->framework->get_included_module_data( 'jet-dashboard.php' );
 			$jet_dashboard             = \Jet_Dashboard\Dashboard::get_instance();
 
+			$url_filters    = $this->is_classic_admin
+				? add_query_arg( array( 'post_type' => 'jet-smart-filters' ), admin_url( 'edit.php' ) )
+				: add_query_arg( array( 'page' => 'jet-smart-filters#/' ), admin_url( 'admin.php' ) );
+			$url_new_filter = $this->is_classic_admin
+				? add_query_arg( array( 'post_type' => 'jet-smart-filters' ), admin_url( 'post-new.php' ) )
+				: add_query_arg( array( 'page' => 'jet-smart-filters#/new' ), admin_url( 'admin.php' ) );
+
 			$jet_dashboard->init( array(
 				'path'           => $jet_dashboard_module_data['path'],
 				'url'            => $jet_dashboard_module_data['url'],
@@ -268,12 +280,12 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 					'plugin_links' => array(
 						array(
 							'label'  => esc_html__( 'Smart Filters', 'jet-smart-filters' ),
-							'url'    => add_query_arg( array( 'post_type' => 'jet-smart-filters' ), admin_url( 'edit.php' ) ),
+							'url'    => $url_filters,
 							'target' => '_self',
 						),
 						array(
 							'label'  => esc_html__( 'Add New Filter', 'jet-smart-filters' ),
-							'url'    => add_query_arg( array( 'post_type' => 'jet-smart-filters' ), admin_url( 'post-new.php' ) ),
+							'url'    => $url_new_filter,
 							'target' => '_self',
 						),
 						array(
