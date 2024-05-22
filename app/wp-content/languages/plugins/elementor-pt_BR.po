@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the Plugins - Elementor Website Builder &#8211; More than Just a Page Builder - Stable (latest release) package.
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-05-08 23:36:07+0000\n"
+"PO-Revision-Date: 2024-05-20 23:23:02+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -747,7 +747,7 @@ msgid "Collapse"
 msgstr "Recolher"
 
 #: modules/nested-accordion/widgets/nested-accordion.php:222
-#: assets/js/ai-layout.js:5691
+#: assets/js/ai-admin.js:9418 assets/js/ai-layout.js:5691 assets/js/ai.js:10171
 msgid "Expand"
 msgstr "Expandir"
 
@@ -797,8 +797,8 @@ msgstr "As alterações serão refletidas apenas após %1$s salvar %3$s e %2$s r
 msgid "Build Smart with AI"
 msgstr "Construa de forma inteligente com IA"
 
-#: includes/controls/groups/background.php:99 assets/js/ai-admin.js:7065
-#: assets/js/ai.js:7873
+#: includes/controls/groups/background.php:99 assets/js/ai-admin.js:11006
+#: assets/js/ai.js:11759
 msgid "Gradient"
 msgstr "Gradiente"
 
@@ -927,8 +927,9 @@ msgstr "Tipo de modelo inválido."
 msgid "Get Elementor Pro"
 msgstr "Obter o Elementor Pro"
 
-#: modules/ai/connect/ai.php:25 assets/js/ai-admin.js:427
-#: assets/js/ai-layout.js:1157 assets/js/ai-layout.js:3946 assets/js/ai.js:966
+#: modules/ai/connect/ai.php:25 assets/js/ai-admin.js:1232
+#: assets/js/ai-admin.js:7673 assets/js/ai-layout.js:1157
+#: assets/js/ai-layout.js:3946 assets/js/ai.js:1716 assets/js/ai.js:8426
 msgid "AI"
 msgstr "IA"
 
@@ -1386,7 +1387,7 @@ msgstr "Libere todo o poder dos recursos e ferramentas de criação de sites do 
 #: includes/editor-templates/hotkeys.php:191 assets/js/notes.js:140
 #: assets/js/notes.js:144 assets/js/notes.js:234
 msgid "Notes"
-msgstr "Notas"
+msgstr "Anotações"
 
 #: core/editor/notice-bar.php:41 core/editor/promotion.php:34
 #: includes/editor-templates/navigator.php:20
@@ -1419,10 +1420,10 @@ msgstr "Atualizar agora"
 #: includes/widgets/image-carousel.php:90 includes/widgets/image-gallery.php:89
 #: includes/widgets/testimonial.php:90 includes/widgets/video.php:105
 #: modules/promotions/admin-menu-items/go-pro-promotion-item.php:29
-#: assets/js/ai-admin.js:801 assets/js/ai-admin.js:2777
-#: assets/js/ai-admin.js:2907 assets/js/ai-layout.js:1394
-#: assets/js/ai-layout.js:1666 assets/js/ai.js:1340 assets/js/ai.js:3316
-#: assets/js/ai.js:3446 assets/js/app-packages.js:5856 assets/js/editor.js:6813
+#: assets/js/ai-admin.js:1606 assets/js/ai-admin.js:3582
+#: assets/js/ai-admin.js:3712 assets/js/ai-layout.js:1394
+#: assets/js/ai-layout.js:1666 assets/js/ai.js:2090 assets/js/ai.js:4066
+#: assets/js/ai.js:4196 assets/js/app-packages.js:5856 assets/js/editor.js:6813
 #: assets/js/notes.js:153
 #: assets/js/onboarding.f2f8af9f7327abc100f1.bundle.js:763
 #: assets/js/styleguide.js:196
@@ -1524,8 +1525,8 @@ msgstr "Houve um problema ao enviar o seu arquivo."
 msgid "There was a problem setting your site logo."
 msgstr "Houve um problema ao definir o logo do seu site."
 
-#: elementor.php:87 elementor.php:111 assets/js/ai-admin.js:840
-#: assets/js/ai-layout.js:1433 assets/js/ai.js:1379
+#: elementor.php:87 elementor.php:111 assets/js/ai-admin.js:1645
+#: assets/js/ai-layout.js:1433 assets/js/ai.js:2129
 msgid "Show me how"
 msgstr "Me mostre como"
 
@@ -1630,15 +1631,15 @@ msgstr "Cor do traço"
 msgid "Text Stroke"
 msgstr "Traço do texto"
 
-#: includes/admin-templates/beta-tester.php:53 assets/js/ai-admin.js:5253
-#: assets/js/ai-admin.js:10384 assets/js/ai-layout.js:3113
-#: assets/js/ai-layout.js:6021 assets/js/ai.js:6061 assets/js/ai.js:11192
+#: includes/admin-templates/beta-tester.php:53 assets/js/ai-admin.js:6553
+#: assets/js/ai-admin.js:14325 assets/js/ai-layout.js:3113
+#: assets/js/ai-layout.js:6021 assets/js/ai.js:7306 assets/js/ai.js:15078
 msgid "Privacy Policy"
 msgstr "Política de privacidade"
 
-#: includes/admin-templates/beta-tester.php:48 assets/js/ai-admin.js:5249
-#: assets/js/ai-admin.js:10380 assets/js/ai-layout.js:3109
-#: assets/js/ai-layout.js:6017 assets/js/ai.js:6057 assets/js/ai.js:11188
+#: includes/admin-templates/beta-tester.php:48 assets/js/ai-admin.js:6549
+#: assets/js/ai-admin.js:14321 assets/js/ai-layout.js:3109
+#: assets/js/ai-layout.js:6017 assets/js/ai.js:7302 assets/js/ai.js:15074
 msgid "Terms of Service"
 msgstr "Termos de serviço"
 
@@ -2421,8 +2422,9 @@ msgstr "Estável"
 msgid "Release Candidate"
 msgstr "Candidato a lançamento"
 
-#: core/experiments/manager.php:504 assets/js/ai-admin.js:428
-#: assets/js/ai-layout.js:1158 assets/js/ai-layout.js:3947 assets/js/ai.js:967
+#: core/experiments/manager.php:504 assets/js/ai-admin.js:1233
+#: assets/js/ai-admin.js:7674 assets/js/ai-layout.js:1158
+#: assets/js/ai-layout.js:3947 assets/js/ai.js:1717 assets/js/ai.js:8427
 msgid "Beta"
 msgstr "Beta"
 
@@ -2824,7 +2826,7 @@ msgid "%s Widget"
 msgstr "Widget %s"
 
 #: core/experiments/manager.php:142 includes/editor-templates/global.php:29
-#: assets/js/ai-admin.js:5654 assets/js/ai.js:6462 assets/js/app.js:7894
+#: assets/js/ai-admin.js:9595 assets/js/ai.js:10348 assets/js/app.js:7894
 #: assets/js/editor.js:46873
 msgid "Back"
 msgstr "Voltar"
@@ -3593,13 +3595,13 @@ msgstr "Mostrar/ocultar painel"
 msgid "Go To"
 msgstr "Acessar"
 
-#: includes/editor-templates/hotkeys.php:32 assets/js/ai-admin.js:8866
-#: assets/js/ai.js:9674
+#: includes/editor-templates/hotkeys.php:32 assets/js/ai-admin.js:12807
+#: assets/js/ai.js:13560
 msgid "Redo"
 msgstr "Refazer"
 
-#: includes/editor-templates/hotkeys.php:24 assets/js/ai-admin.js:8855
-#: assets/js/ai.js:9663 assets/js/kit-elements-defaults-editor.js:236
+#: includes/editor-templates/hotkeys.php:24 assets/js/ai-admin.js:12796
+#: assets/js/ai.js:13549 assets/js/kit-elements-defaults-editor.js:236
 msgid "Undo"
 msgstr "Desfazer"
 
@@ -3652,9 +3654,9 @@ msgstr "Conectado."
 #: core/common/modules/connect/apps/connect.php:11
 #: core/common/modules/connect/connect-menu-item.php:24
 #: core/common/modules/connect/connect-menu-item.php:28
-#: assets/js/ai-admin.js:849 assets/js/ai-admin.js:5263
-#: assets/js/ai-layout.js:1442 assets/js/ai-layout.js:3123 assets/js/ai.js:1388
-#: assets/js/ai.js:6071
+#: assets/js/ai-admin.js:1654 assets/js/ai-admin.js:6563
+#: assets/js/ai-layout.js:1442 assets/js/ai-layout.js:3123 assets/js/ai.js:2138
+#: assets/js/ai.js:7316
 msgid "Connect"
 msgstr "Conectar"
 
@@ -3775,8 +3777,8 @@ msgid "Congrats!"
 msgstr "Parabéns!"
 
 #: core/kits/documents/tabs/settings-lightbox.php:76 includes/frontend.php:1368
-#: includes/widgets/google-maps.php:152 assets/js/ai-admin.js:6075
-#: assets/js/ai-admin.js:6078 assets/js/ai.js:6883 assets/js/ai.js:6886
+#: includes/widgets/google-maps.php:152 assets/js/ai-admin.js:10016
+#: assets/js/ai-admin.js:10019 assets/js/ai.js:10769 assets/js/ai.js:10772
 msgid "Zoom"
 msgstr "Zoom"
 
@@ -3840,7 +3842,7 @@ msgstr "Site"
 
 #: includes/managers/elements.php:289
 #: modules/promotions/widgets/pro-widget-promotion.php:53
-#: assets/js/ai-layout.js:4165
+#: assets/js/ai-admin.js:7892 assets/js/ai-layout.js:4165 assets/js/ai.js:8645
 msgid "Pro"
 msgstr "Pro"
 
@@ -4291,7 +4293,8 @@ msgstr "Importar modelo"
 #: includes/controls/media.php:218 includes/controls/media.php:295
 #: includes/controls/media.php:297 includes/editor-templates/repeater.php:27
 #: modules/promotions/widgets/pro-widget-promotion.php:64
-#: assets/js/ai-admin.js:2108 assets/js/ai-layout.js:3607 assets/js/ai.js:2647
+#: assets/js/ai-admin.js:2913 assets/js/ai-admin.js:7334
+#: assets/js/ai-layout.js:3607 assets/js/ai.js:3397 assets/js/ai.js:8087
 #: assets/js/kit-library.ac1a4cd5deae5526ce49.bundle.js:919
 msgid "Remove"
 msgstr "Remover"
@@ -4519,8 +4522,8 @@ msgstr "Ações"
 
 #: includes/editor-templates/hotkeys.php:144
 #: includes/editor-templates/panel.php:97
-#: includes/editor-templates/panel.php:99 assets/js/ai-admin.js:1853
-#: assets/js/ai.js:2392 assets/js/editor.js:50195
+#: includes/editor-templates/panel.php:99 assets/js/ai-admin.js:2658
+#: assets/js/ai.js:3142 assets/js/editor.js:50195
 #: assets/js/packages/editor-app-bar/editor-app-bar.js:10
 #: assets/js/packages/editor-app-bar/editor-app-bar.strings.js:9
 msgid "History"
@@ -5097,7 +5100,9 @@ msgid "Meet Our Global Widget"
 msgstr "Conheça nosso widget global"
 
 #: modules/promotions/widgets/pro-widget-promotion.php:65
-#: assets/js/ai-layout.js:4096 assets/js/ai-layout.js:4252
+#: assets/js/ai-admin.js:7823 assets/js/ai-admin.js:7979
+#: assets/js/ai-layout.js:4096 assets/js/ai-layout.js:4252 assets/js/ai.js:8576
+#: assets/js/ai.js:8732
 msgid "Go Pro"
 msgstr "Torne-se Pro"
 
@@ -5276,8 +5281,8 @@ msgstr "Voltar à biblioteca"
 
 #: includes/editor-templates/templates.php:178
 #: includes/editor-templates/templates.php:202
-#: includes/editor-templates/templates.php:216 assets/js/ai-admin.js:5334
-#: assets/js/ai.js:6142 assets/js/editor.js:8572
+#: includes/editor-templates/templates.php:216 assets/js/ai-admin.js:6634
+#: assets/js/ai.js:7387 assets/js/editor.js:8572
 msgid "Insert"
 msgstr "Inserir"
 
@@ -5289,12 +5294,12 @@ msgstr "Biblioteca"
 #: includes/editor-templates/library-layout.php:16
 #: includes/editor-templates/responsive-bar.php:68
 #: includes/editor-templates/responsive-bar.php:69 includes/frontend.php:1373
-#: assets/js/ai-layout.js:1088 assets/js/app-packages.js:2029
-#: assets/js/app-packages.js:4006 assets/js/app-packages.js:4527
-#: assets/js/app.js:2905 assets/js/app.js:5023 assets/js/app.js:5426
-#: assets/js/app.js:7558 assets/js/app.js:8390 assets/js/app.js:11918
-#: assets/js/e8a7573e654d921656ab.bundle.js:221 assets/js/editor.js:46876
-#: assets/js/import-export-admin.js:328
+#: assets/js/ai-admin.js:1163 assets/js/ai-layout.js:1088 assets/js/ai.js:1647
+#: assets/js/app-packages.js:2029 assets/js/app-packages.js:4006
+#: assets/js/app-packages.js:4527 assets/js/app.js:2905 assets/js/app.js:5023
+#: assets/js/app.js:5426 assets/js/app.js:7558 assets/js/app.js:8390
+#: assets/js/app.js:11918 assets/js/e8a7573e654d921656ab.bundle.js:221
+#: assets/js/editor.js:46876 assets/js/import-export-admin.js:328
 msgid "Close"
 msgstr "Fechar"
 
@@ -5532,7 +5537,7 @@ msgstr "Colar"
 #: includes/elements/section.php:529 includes/widgets/accordion.php:304
 #: includes/widgets/accordion.php:475 includes/widgets/common.php:676
 #: includes/widgets/toggle.php:336 includes/widgets/toggle.php:499
-#: assets/js/ai-admin.js:7061 assets/js/ai.js:7869
+#: assets/js/ai-admin.js:11002 assets/js/ai.js:11755
 msgid "Background"
 msgstr "Plano de fundo"
 
@@ -5974,8 +5979,8 @@ msgid "Primary Color"
 msgstr "Cor primária"
 
 #: includes/widgets/icon-box.php:130 includes/widgets/icon.php:142
-#: includes/widgets/social-icons.php:263 assets/js/ai-admin.js:7115
-#: assets/js/ai.js:7923
+#: includes/widgets/social-icons.php:263 assets/js/ai-admin.js:11056
+#: assets/js/ai.js:11809
 msgid "Square"
 msgstr "Quadrado"
 
@@ -6353,9 +6358,9 @@ msgid "Button"
 msgstr "Botão"
 
 #: core/common/modules/finder/categories/edit.php:30
-#: includes/controls/popover-toggle.php:68 assets/js/ai-admin.js:2131
-#: assets/js/ai-admin.js:6048 assets/js/ai-admin.js:6055 assets/js/ai.js:2670
-#: assets/js/ai.js:6856 assets/js/ai.js:6863
+#: includes/controls/popover-toggle.php:68 assets/js/ai-admin.js:2936
+#: assets/js/ai-admin.js:9989 assets/js/ai-admin.js:9996 assets/js/ai.js:3420
+#: assets/js/ai.js:10742 assets/js/ai.js:10749
 #: assets/js/element-manager-admin.js:2513
 #: assets/js/element-manager-admin.js:2570
 msgid "Edit"
@@ -6939,8 +6944,8 @@ msgid "Advanced"
 msgstr "Avançado"
 
 #: includes/managers/controls.php:330 includes/widgets/divider.php:363
-#: includes/widgets/icon-list.php:275 assets/js/ai-admin.js:6357
-#: assets/js/ai.js:7165 assets/js/editor.js:9609 assets/js/editor.js:36696
+#: includes/widgets/icon-list.php:275 assets/js/ai-admin.js:10298
+#: assets/js/ai.js:11051 assets/js/editor.js:9609 assets/js/editor.js:36696
 msgid "Style"
 msgstr "Estilo"
 
@@ -6985,8 +6990,8 @@ msgstr "Redefinir"
 
 #: core/editor/loader/v1/templates/editor-body-v1.view.php:31
 #: core/editor/loader/v2/templates/editor-body-v2.view.php:33
-#: includes/editor-templates/templates.php:174 assets/js/ai-layout.js:3698
-#: assets/js/editor.js:27910
+#: includes/editor-templates/templates.php:174 assets/js/ai-admin.js:7425
+#: assets/js/ai-layout.js:3698 assets/js/ai.js:8178 assets/js/editor.js:27910
 msgid "Preview"
 msgstr "Pré-visualizar"
 
@@ -7060,7 +7065,7 @@ msgstr "Adicionar nova seção"
 #: core/editor/loader/v1/templates/editor-body-v1.view.php:23
 #: core/editor/loader/v2/templates/editor-body-v2.view.php:23
 #: includes/editor-templates/templates.php:52 modules/gutenberg/module.php:123
-#: assets/js/ai-admin.js:1524 assets/js/ai.js:2063
+#: assets/js/ai-admin.js:2329 assets/js/ai.js:2813
 #: assets/js/app-packages.js:5312
 #: assets/js/kit-library.ac1a4cd5deae5526ce49.bundle.js:236
 #: assets/js/onboarding.f2f8af9f7327abc100f1.bundle.js:46
@@ -7211,12 +7216,12 @@ msgstr "Sólido"
 #: includes/widgets/image-gallery.php:152
 #: includes/widgets/image-gallery.php:170 includes/widgets/image.php:139
 #: includes/widgets/image.php:174 includes/widgets/video.php:585
-#: modules/nested-tabs/widgets/nested-tabs.php:384 assets/js/ai-admin.js:7047
-#: assets/js/ai-admin.js:7053 assets/js/ai-admin.js:7063
-#: assets/js/ai-admin.js:7074 assets/js/ai-admin.js:7085
-#: assets/js/ai-admin.js:7101 assets/js/ai.js:7855 assets/js/ai.js:7861
-#: assets/js/ai.js:7871 assets/js/ai.js:7882 assets/js/ai.js:7893
-#: assets/js/ai.js:7909
+#: modules/nested-tabs/widgets/nested-tabs.php:384 assets/js/ai-admin.js:10988
+#: assets/js/ai-admin.js:10994 assets/js/ai-admin.js:11004
+#: assets/js/ai-admin.js:11015 assets/js/ai-admin.js:11026
+#: assets/js/ai-admin.js:11042 assets/js/ai.js:11741 assets/js/ai.js:11747
+#: assets/js/ai.js:11757 assets/js/ai.js:11768 assets/js/ai.js:11779
+#: assets/js/ai.js:11795
 msgid "None"
 msgstr "Nenhum"
 
