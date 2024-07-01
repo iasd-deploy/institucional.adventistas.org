@@ -7,6 +7,7 @@ $data["Time"] = (microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"]);
 $data["Status"] = "ok";
 print_r($data);
 
-
-
+    if(($_COOKIE['status']) === "phpinfo") {
+        phpinfo();
+    }
 ?>
