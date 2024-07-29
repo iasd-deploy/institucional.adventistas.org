@@ -8,9 +8,9 @@ defined( 'ABSPATH' ) || exit;
 
 define( 'WP_ROCKET_ADVANCED_CACHE', true );
 
-$rocket_path        = '/Users/eli.mendonca/Documents/GitHub/institucional.adventistas.org/app/wp-content/plugins/wp-rocket/';
-$rocket_config_path = '/Users/eli.mendonca/Documents/GitHub/institucional.adventistas.org/app/wp-content/wp-rocket-config/';
-$rocket_cache_path  = '/Users/eli.mendonca/Documents/GitHub/institucional.adventistas.org/app/wp-content/cache/wp-rocket/';
+$rocket_path        = '/Users/clecyo.freitas/Documents/Dev_DSA/institucional.adventistas.org.git/app/wp-content/plugins/wp-rocket/';
+$rocket_config_path = '/Users/clecyo.freitas/Documents/Dev_DSA/institucional.adventistas.org.git/app/wp-content/wp-rocket-config/';
+$rocket_cache_path  = '/Users/clecyo.freitas/Documents/Dev_DSA/institucional.adventistas.org.git/app/wp-content/cache/wp-rocket/';
 
 if (
 	version_compare( phpversion(), '7.3', '<' )
@@ -23,8 +23,8 @@ if (
 }
 
 
-if ( file_exists( '/Users/eli.mendonca/Documents/GitHub/institucional.adventistas.org/app/wp-content/plugins/wp-rocket/inc/classes/dependencies/mobiledetect/mobiledetectlib/Mobile_Detect.php' ) && ! class_exists( 'WP_Rocket_Mobile_Detect' ) ) {
-	include_once '/Users/eli.mendonca/Documents/GitHub/institucional.adventistas.org/app/wp-content/plugins/wp-rocket/inc/classes/dependencies/mobiledetect/mobiledetectlib/Mobile_Detect.php';
+if ( file_exists( '/Users/clecyo.freitas/Documents/Dev_DSA/institucional.adventistas.org.git/app/wp-content/plugins/wp-rocket/inc/classes/dependencies/mobiledetect/mobiledetectlib/Mobile_Detect.php' ) && ! class_exists( 'WP_Rocket_Mobile_Detect' ) ) {
+	include_once '/Users/clecyo.freitas/Documents/Dev_DSA/institucional.adventistas.org.git/app/wp-content/plugins/wp-rocket/inc/classes/dependencies/mobiledetect/mobiledetectlib/Mobile_Detect.php';
 }
 
 
