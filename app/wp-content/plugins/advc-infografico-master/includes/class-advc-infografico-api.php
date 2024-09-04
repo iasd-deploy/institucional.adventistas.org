@@ -30,8 +30,11 @@ class Advc_Infografico_Api {
 	 * @access   private
 	 */
     private function process_request(){
-        $url = "https://api.adventistas.dev/dados?fields%5B0%5D=slug&fields%5B1%5D=valor&pagination%5BpageSize%5D=250";
-        $response = wp_remote_get($url, array(
+    
+        $url = "https://api.adventistas.org/dados/v2";
+
+    
+              $response = wp_remote_get($url, array(
             'timeout' => 30,
             'httpversion' => '1.1'
         ));
@@ -105,11 +108,26 @@ class Advc_Infografico_Api {
 	 * @since    1.0.0
 	 * @access   public
 	 */
-    public function get_filtered_data($arg){
+    public function get_filtered_data($arg) {
         $current_data = json_decode($this->get_data(), true);
-
-        return array_values(array_filter($current_data['data'], function ($var) use ($arg) {
-            return ($var['attributes']['slug'] == $arg);
-        }));
-    }
+    
+        if (isset($current_data[0]['acf']['departamentos'])) {
+            return array_values(array_filter($current_data[0]['acf']['departamentos'], function ($departamento) use ($arg) {
+                // Filtrar o departamento para encontrar o slug correspondente
+                $filtered_departamento = array_filter($departamento['departamento'], function ($item) use ($arg) {
+ 
+                    return $item['slug'] == $arg;
+                });
+                // Se encontrar algum departamento com o slug correspondente, retorna true para incluí-lo no resultado final
+                if (!empty($filtered_departamento)) {
+                    // Atualiza o array com o departamento filtrado
+                    $departamento['departamento'] = array_values($filtered_departamento);
+                    return true;
+                }
+                return false; 
+            }));
+        }
+        // Retorna um array vazio se o JSON não estiver no formato esperado
+        return [];
+    }     
 }
