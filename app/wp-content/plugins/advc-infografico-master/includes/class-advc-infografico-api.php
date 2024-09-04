@@ -20,21 +20,22 @@
  * @subpackage Advc_Infografico/includes
  * @author     Studio Visual <dramos@studiovisual.com.br>
  */
-class Advc_Infografico_Api {
+class Advc_Infografico_Api
+{
     /**
-	 * Define the request function to endpoint API.
-	 *
-	 * Uses the Advc_Infografico_Api class in order to get and register the data from endpoint
-	 *
-	 * @since    1.0.0
-	 * @access   private
-	 */
-    private function process_request(){
-    
+     * Define the request function to endpoint API.
+     *
+     * Uses the Advc_Infografico_Api class in order to get and register the data from endpoint
+     *
+     * @since    1.0.0
+     * @access   private
+     */
+    private function process_request()
+    {
+
         $url = "https://api.adventistas.org/dados/v2";
 
-    
-              $response = wp_remote_get($url, array(
+        $response = wp_remote_get($url, array(
             'timeout' => 30,
             'httpversion' => '1.1'
         ));
@@ -47,55 +48,76 @@ class Advc_Infografico_Api {
     }
 
     /**
-	 * Define a persistent data if the transient fails
-	 * of the plugin.
-	 *
-	 * @since    1.0.0
-	 * @access   private
-	 */
-    private function set_persistence($data){
+     * Define a persistent data if the transient fails
+     * of the plugin.
+     *
+     * @since    1.0.0
+     * @access   private
+     */
+    private function set_persistence($data)
+    {
         update_option('advc_infografico_data_content_opt', $data);
     }
 
     /**
-	 * Return the persistent data
-	 * of the plugin.
-	 *
-	 * @since    1.0.0
-	 * @access   private
-	 */
-    private function get_persistence(){
+     * Return the persistent data
+     * of the plugin.
+     *
+     * @since    1.0.0
+     * @access   private
+     */
+    private function get_persistence()
+    {
         return get_option('advc_infografico_data_content_opt');
     }
 
+
     /**
-	 * Define a new data coming from API or failback to a persistent data
-	 *
-	 * @since    1.0.0
-	 * @access   public
-	 */
-    public function set_data(){
+     * Define a new data coming from API or failback to a persistent data
+     *
+     * @since    1.0.0
+     * @access   public
+     */
+    public function set_data()
+    {   
         $data = $this->process_request();
 
-        if($data) {
-            set_transient('advc_infografico_content_data', $data, 60*60*72 );
-            $this->set_persistence($data);
+        if ($data) {
+            // Decodifica os dados recebidos
+            $decoded_data = json_decode($data, true);
+     
+            if (isset($decoded_data[0]['acf']['departamentos'])) {
+                
+                $departamentos = $decoded_data[0]['acf']['departamentos'];
+
+                // Re-encode os dados de 'departamentos' em JSON
+                $filtered_data = json_encode($departamentos);
+
+                // Armazena o dado filtrado em um transiente para cache
+                set_transient('advc_infografico_content_data', $filtered_data, 60 * 60 * 24);
+               
+                $this->set_persistence($filtered_data);
+            }
         } else {
+          
             return $this->get_persistence();
         }
-
-        return $data;
+        
+        return $filtered_data;
     }
 
+
+
     /**
-	 * Return the API/Transient/Persistent data
+     * Return the API/Transient/Persistent data
      * 
-	 * @since    1.0.0
-	 * @access   public
-	 */
-    public function get_data(){
-        $value = get_transient( 'advc_infografico_content_data' );
-        if ( false === ( $value = get_transient( 'advc_infografico_content_data' ) ) ) {
+     * @since    1.0.0
+     * @access   public
+     */
+    public function get_data()
+    {
+        $value = get_transient('advc_infografico_content_data');
+        if (false === ($value = get_transient('advc_infografico_content_data'))) {
             return $this->set_data();
         } else {
             return $value;
@@ -103,19 +125,20 @@ class Advc_Infografico_Api {
     }
 
     /**
-	 * Return the API/Transient/Persistent data filtered
-	 * @todo Possible static ??
-	 * @since    1.0.0
-	 * @access   public
-	 */
-    public function get_filtered_data($arg) {
+     * Return the API/Transient/Persistent data filtered
+     * @todo Possible static ??
+     * @since    1.0.0
+     * @access   public
+     */
+    public function get_filtered_data($arg)
+    {
         $current_data = json_decode($this->get_data(), true);
-    
-        if (isset($current_data[0]['acf']['departamentos'])) {
-            return array_values(array_filter($current_data[0]['acf']['departamentos'], function ($departamento) use ($arg) {
-                // Filtrar o departamento para encontrar o slug correspondente
+
+        // Verifica se o campo 'departamentos' existe
+        if (isset($current_data)) {
+            return array_values(array_filter($current_data, function ($departamento) use ($arg) {
+                // Filtra o array 'departamento' para encontrar o slug correspondente
                 $filtered_departamento = array_filter($departamento['departamento'], function ($item) use ($arg) {
- 
                     return $item['slug'] == $arg;
                 });
                 // Se encontrar algum departamento com o slug correspondente, retorna true para incluí-lo no resultado final
@@ -124,10 +147,11 @@ class Advc_Infografico_Api {
                     $departamento['departamento'] = array_values($filtered_departamento);
                     return true;
                 }
-                return false; 
+                return false;
             }));
         }
-        // Retorna um array vazio se o JSON não estiver no formato esperado
+
+        // Retorna um array vazio se o campo 'departamentos' não existir
         return [];
-    }     
+    }
 }

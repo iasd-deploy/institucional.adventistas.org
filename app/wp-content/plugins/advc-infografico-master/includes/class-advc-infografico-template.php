@@ -76,27 +76,26 @@ class Advc_Infografico_Template
 	 * @access   public
 	 * @todo     better validation on attr?
 	 */
-
 	public function render($data)
 	{
-		// Obtendo os dados filtrados com base no slug fornecido
+
 		$filtered_data = $this->api->get_filtered_data($data['slug']);
 
-		// Verificando se os dados filtrados foram retornados e acessando o valor
 		if (!empty($filtered_data)) {
+
 			$raw_value = $filtered_data[0]['departamento'][0]['valor'];
-			// Formatando o valor para incluir pontos como separadores de milhares
+
 			$formatted_value = number_format($raw_value, 0, '', '.');
 			$content = $formatted_value;
 		} else {
 			$content = 'sem dados';
 		}
 
-		// Adicionando as classes e IDs, se existirem
+
 		$class = !empty($data['class']) ? ' class="' . esc_html($data['class']) . '"' : '';
 		$id = !empty($data['id']) ? ' id="' . esc_html($data['id']) . '"' : '';
 
-		// Exibindo o conteúdo na tag HTML especificada
+
 		echo '<' . esc_html($data['el']) . $class . $id . '>' . esc_html($content) . '</' . esc_html($data['el']) . '>';
 	}
 }
