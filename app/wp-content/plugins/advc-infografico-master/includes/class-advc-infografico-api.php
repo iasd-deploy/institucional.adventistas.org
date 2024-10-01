@@ -22,7 +22,7 @@
  */
 class Advc_Infografico_Api
 {
-    /**
+        /**
      * Define the request function to endpoint API.
      *
      * Uses the Advc_Infografico_Api class in order to get and register the data from endpoint
@@ -32,7 +32,6 @@ class Advc_Infografico_Api
      */
     private function process_request()
     {
-
         $url = "https://api.adventistas.org/dados/v2";
 
         $response = wp_remote_get($url, array(
@@ -47,7 +46,7 @@ class Advc_Infografico_Api
         }
     }
 
-    /**
+      /**
      * Define a persistent data if the transient fails
      * of the plugin.
      *
@@ -59,7 +58,7 @@ class Advc_Infografico_Api
         update_option('advc_infografico_data_content_opt', $data);
     }
 
-    /**
+      /**
      * Return the persistent data
      * of the plugin.
      *
@@ -72,22 +71,21 @@ class Advc_Infografico_Api
     }
 
 
-    /**
+     /**
      * Define a new data coming from API or failback to a persistent data
      *
      * @since    1.0.0
      * @access   public
      */
     public function set_data()
-    {   
+    {
         $data = $this->process_request();
 
         if ($data) {
-            // Decodifica os dados recebidos
             $decoded_data = json_decode($data, true);
-     
+
+            // Verifica se a estrutura esperada está presente
             if (isset($decoded_data[0]['acf']['departamentos'])) {
-                
                 $departamentos = $decoded_data[0]['acf']['departamentos'];
 
                 // Re-encode os dados de 'departamentos' em JSON
@@ -95,20 +93,19 @@ class Advc_Infografico_Api
 
                 // Armazena o dado filtrado em um transiente para cache
                 set_transient('advc_infografico_content_data', $filtered_data, 60 * 60 * 24);
-               
+
                 $this->set_persistence($filtered_data);
             }
         } else {
-          
             return $this->get_persistence();
         }
-        
-        return $filtered_data;
+
+        return isset($filtered_data) ? $filtered_data : null;
     }
 
 
 
-    /**
+        /**
      * Return the API/Transient/Persistent data
      * 
      * @since    1.0.0
@@ -117,12 +114,12 @@ class Advc_Infografico_Api
     public function get_data()
     {
         $value = get_transient('advc_infografico_content_data');
-        if (false === ($value = get_transient('advc_infografico_content_data'))) {
+        if (false === $value) {
             return $this->set_data();
-        } else {
-            return $value;
         }
+        return $value;
     }
+
 
     /**
      * Return the API/Transient/Persistent data filtered
@@ -134,24 +131,28 @@ class Advc_Infografico_Api
     {
         $current_data = json_decode($this->get_data(), true);
 
-        // Verifica se o campo 'departamentos' existe
-        if (isset($current_data)) {
+        // Verifica se $current_data é um array antes de tentar filtrá-lo
+        if (is_array($current_data)) {
             return array_values(array_filter($current_data, function ($departamento) use ($arg) {
-                // Filtra o array 'departamento' para encontrar o slug correspondente
-                $filtered_departamento = array_filter($departamento['departamento'], function ($item) use ($arg) {
-                    return $item['slug'] == $arg;
-                });
-                // Se encontrar algum departamento com o slug correspondente, retorna true para incluí-lo no resultado final
-                if (!empty($filtered_departamento)) {
-                    // Atualiza o array com o departamento filtrado
-                    $departamento['departamento'] = array_values($filtered_departamento);
-                    return true;
+                // Verifica se o campo 'departamento' existe e é um array
+                if (isset($departamento['departamento']) && is_array($departamento['departamento'])) {
+                    // Filtra o array 'departamento' para encontrar o slug correspondente
+                    $filtered_departamento = array_filter($departamento['departamento'], function ($item) use ($arg) {
+                        return isset($item['slug']) && $item['slug'] == $arg;
+                    });
+
+                    // Se encontrar algum departamento com o slug correspondente, retorna true para incluí-lo no resultado final
+                    if (!empty($filtered_departamento)) {
+                        $departamento['departamento'] = array_values($filtered_departamento);
+                        return true;
+                    }
                 }
                 return false;
             }));
         }
 
-        // Retorna um array vazio se o campo 'departamentos' não existir
+        // Retorna um array vazio se $current_data não for um array válido
         return [];
     }
 }
+
