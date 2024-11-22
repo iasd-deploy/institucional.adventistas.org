@@ -62,13 +62,12 @@ if ( ! class_exists( 'Jet_Smart_Filters_Hierarchy' ) ) {
 			if ( $this->hierarchy )
 				return $this->hierarchy;
 
+			$result    = array();
 			$hierarchy = get_post_meta( $this->filter_id, '_ih_source_map', true );
 
 			if ( empty( $hierarchy ) ) {
-				return false;
+				return $result;
 			}
-
-			$result = array();
 
 			foreach ( array_values( $hierarchy ) as $depth => $data ) {
 

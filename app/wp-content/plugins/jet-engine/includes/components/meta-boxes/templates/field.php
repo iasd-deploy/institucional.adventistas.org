@@ -619,6 +619,7 @@
 							'jet-engine-conditional-field': true,
 							'cx-vui-repeater-item__copy': true,
 							'jet-engine-conditional-field--active': hasConditions( rField ),
+							'jet-engine-conditional-field--invalid': repeaterFieldConditionsInvalid( rField, field ),
 						}"
 					>
 						<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd" stroke-linejoin="round" stroke-miterlimit="1.414">
@@ -1275,6 +1276,25 @@
 		], 'default_val' )"
 		@input="setFieldProp( 'default_val', $event )"
 	></cx-vui-input>
+	<cx-vui-switcher
+		label="<?php _e( 'On by default', 'jet-engine' ); ?>"
+		description="<?php _e( 'Make switcher On by default', 'jet-engine' ); ?>"
+		:wrapper-css="[ 'equalwidth' ]"
+		:value="field.on_by_default"
+		@input="setFieldProp( 'on_by_default', $event )"
+		:conditions="getFilteredFieldConditions( [
+			{
+				'input':    field.type,
+				'compare': 'equal',
+				'value':   'switcher',
+			},
+			{
+				'input':    field.object_type,
+				'compare': 'equal',
+				'value':   'field',
+			}
+		], 'on_by_default' )"
+	></cx-vui-switcher>
 	<cx-vui-switcher
 		label="<?php _e( 'Is required', 'jet-engine' ); ?>"
 		description="<?php _e( 'Toggle this option to make this field as required one', 'jet-engine' ); ?>"

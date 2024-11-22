@@ -52,6 +52,18 @@ class Block_Type {
 		
 		$attributes = [];
 
+		$attributes['component_context'] = [
+			'type'        => 'text',
+			'default'     => 'default_object',
+			'label'       => 'Component Context',
+			'controlType' => [
+				'label'		=> 'Component Context',
+				'type'		=> 'select',
+				'default'	=> 'default_object',
+				'options' 	=> jet_engine()->listings->allowed_context_list( 'blocks' ),
+			],
+		];
+
 		foreach ( $component->get_props() as $content_prop ) {
 
 			$type = 'text';

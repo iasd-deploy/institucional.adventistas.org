@@ -20,7 +20,7 @@ class Bricks_Query extends \Bricks\Query {
 	public function __construct( $element = [] ) {
 		$this->register_query();
 
-		$this->element_id   = ! empty( $element['id'] ) ? $element['id'] : '';
+		$this->element_id   = ! empty( $element['id'] ) ? $element['id'] : 'jet-listing';
 		$this->object_type  = 'jet-engine-query';
 		$this->settings     = ! empty( $element['settings'] ) ? $element['settings'] : [];
 		$this->query_result = [];

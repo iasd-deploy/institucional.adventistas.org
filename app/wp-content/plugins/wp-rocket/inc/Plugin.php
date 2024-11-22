@@ -51,6 +51,8 @@ use WP_Rocket\Engine\Admin\DomainChange\ServiceProvider as DomainChangeServicePr
 use WP_Rocket\ThirdParty\Themes\ThemeResolver;
 use WP_Rocket\Engine\Debug\Resolver as DebugResolver;
 use WP_Rocket\Engine\Debug\ServiceProvider as DebugServiceProvider;
+use WP_Rocket\Engine\Common\PerformanceHints\ServiceProvider as PerformanceHintsServiceProvider;
+use WP_Rocket\Engine\Optimization\LazyRenderContent\ServiceProvider as LRCServiceProvider;
 
 /**
  * Plugin Manager.
@@ -304,6 +306,8 @@ class Plugin {
 		$this->container->addServiceProvider( new ATFServiceProvider() );
 		$this->container->addServiceProvider( new JobManagerServiceProvider() );
 		$this->container->addServiceProvider( new SaasAdminServiceProvider() );
+		$this->container->addServiceProvider( new PerformanceHintsServiceProvider() );
+		$this->container->addServiceProvider( new LRCServiceProvider() );
 
 		$common_subscribers = [
 			'license_subscriber',
@@ -384,16 +388,19 @@ class Plugin {
 			'wpgeotargeting',
 			'lazyload_css_subscriber',
 			'weglot',
-			'atf_subscriber',
 			'cron_subscriber',
-			'atf_admin_subscriber',
-			'atf_ajax_subscriber',
 			'contactform7',
 			'debug_subscriber',
 			'rucss_cron_subscriber',
-			'atf_cron_subscriber',
 			'saas_admin_subscriber',
-			'warmup_subscriber',
+			'atf_subscriber',
+			'performance_hints_ajax_subscriber',
+			'performance_hints_frontend_subscriber',
+			'performance_hints_cron_subscriber',
+			'performance_hints_warmup_subscriber',
+			'performance_hints_admin_subscriber',
+			'lrc_frontend_subscriber',
+			'taxonomy_subscriber',
 		];
 
 		$host_type = HostResolver::get_host_service();

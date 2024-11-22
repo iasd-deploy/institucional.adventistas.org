@@ -82,6 +82,36 @@ class Jet_Smart_Filters_Apply_Button_Widget extends Widget_Base {
 		);
 
 		$this->add_control(
+			'active_state',
+			array(
+				'label'   => __( 'Active button state', 'jet-smart-filters' ),
+				'type'    => Controls_Manager::SELECT,
+				'default' => 'always',
+				'options' => array(
+					'always' => __( 'Always', 'jet-smart-filters' ),
+					'any'    => __( 'Any filter selected', 'jet-smart-filters' ),
+					'all'    => __( 'All filters selected', 'jet-smart-filters' )
+				),
+			)
+		);
+
+		$this->add_control(
+			'if_inactive',
+			array(
+				'label'   => __( 'If button inactive', 'jet-smart-filters' ),
+				'type'    => Controls_Manager::SELECT,
+				'default' => 'disable',
+				'options' => array(
+					'disable' => __( 'Disable', 'jet-smart-filters' ),
+					'hide'    => __( 'Hide', 'jet-smart-filters' )
+				),
+				'condition' => array(
+					'active_state!' => 'always',
+				)
+			)
+		);
+
+		$this->add_control(
 			'apply_redirect',
 			array(
 				'label'        => esc_html__( 'Apply Redirect', 'jet-smart-filters' ),
@@ -242,6 +272,75 @@ class Jet_Smart_Filters_Apply_Button_Widget extends Widget_Base {
 
 		$this->end_controls_tab();
 
+		$this->start_controls_tab(
+			'filter_apply_button_disabled_styles',
+			array(
+				'label' => esc_html__( 'Disabled', 'jet-smart-filters' ),
+			)
+		);
+
+		$this->add_control(
+			'filter_apply_button_disabled_opacity',
+			array(
+				'label'      => esc_html__( 'Opacity', 'jet-smart-filters' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => array(
+					'%',
+				),
+				'range'      => array(
+					'%' => array(
+						'min' => 0,
+						'max' => 100,
+					),
+				),
+				'default'    => array(
+					'size' => 50,
+					'unit' => '%',
+				),
+				'selectors'  => array(
+					'{{WRAPPER}} ' . $css_scheme['apply-filters-button'] . ':disabled' => 'opacity: {{SIZE}}{{UNIT}}'
+				),
+			)
+		);
+
+		$this->add_control(
+			'filter_apply_button_disabled_color',
+			array(
+				'label'     => esc_html__( 'Text Color', 'jet-smart-filters' ),
+				'type'      => Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} ' . $css_scheme['apply-filters-button'] . ':disabled' => 'color: {{VALUE}}',
+				),
+			)
+		);
+
+		$this->add_control(
+			'filter_apply_button_disabled_background_color',
+			array(
+				'label'     => esc_html__( 'Background Color', 'jet-smart-filters' ),
+				'type'      => Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} ' . $css_scheme['apply-filters-button'] . ':disabled' => 'background-color: {{VALUE}}',
+				),
+			)
+		);
+
+		$this->add_control(
+			'filter_apply_button_disabled_border_color',
+			array(
+				'label'     => esc_html__( 'Border Color', 'jet-smart-filters' ),
+				'type'      => Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} ' . $css_scheme['apply-filters-button'] . ':disabled' => 'border-color: {{VALUE}}',
+				),
+				'condition' => array(
+					'filter_apply_button_border_border!' => '',
+				)
+			)
+		);
+
+		$this->end_controls_tab();
+
 		$this->end_controls_tabs();
 
 		$this->add_group_control(
@@ -375,11 +474,17 @@ class Jet_Smart_Filters_Apply_Button_Widget extends Widget_Base {
 
 		jet_smart_filters()->set_filters_used();
 
-		$base_class           = $this->get_name();
-		$settings             = $this->get_settings();
-		$data_atts            = $this->container_data_atts();
+		$base_class = $this->get_name();
+		$settings   = $this->get_settings();
+		$data_atts  = $this->container_data_atts();
 
 		$settings['apply_button'] = 'yes';
+		$settings['apply_on']     = 'submit';
+
+		if ( is_admin() ) {
+			unset( $settings['active_state'] );
+			unset( $settings['if_inactive'] );
+		}
 
 		echo '<div class="' . $base_class . ' jet-filter">';
 		include jet_smart_filters()->get_template( 'common/apply-filters.php' );

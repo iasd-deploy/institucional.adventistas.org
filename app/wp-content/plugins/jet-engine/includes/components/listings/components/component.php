@@ -499,6 +499,8 @@ class Component {
 
 				if ( is_array( $value ) && isset( $value['hex'] ) ) {
 					$value = $value['hex'];
+				} elseif ( is_array( $value ) && isset( $value['raw'] ) ) {
+					$value = $value['raw'];
 				}
 
 				$css_vars[] = sprintf(  '%3$s%1$s:%2$s;', $control_name, $value, self::css_var_prefix() );

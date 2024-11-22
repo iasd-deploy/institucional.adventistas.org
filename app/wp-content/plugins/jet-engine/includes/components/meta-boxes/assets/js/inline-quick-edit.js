@@ -68,7 +68,10 @@
 						break;
 
 					case 'textarea':
-						$( '[data-control-name="' + name + '"] textarea', $edit_row ).val( val );
+						$( '[data-control-name="' + name + '"] textarea', $edit_row ).val( val ).on( 'keydown', function( e ) {
+							//to allow adding line breaks, added with https://github.com/Crocoblock/issues-tracker/issues/10492
+							e.stopImmediatePropagation();
+						} );
 						break;
 
 					case 'checkbox-raw':

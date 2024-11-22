@@ -347,7 +347,9 @@ if ( ! class_exists( 'Jet_Engine_CPT_Meta' ) ) {
 				if ( ! $this->hide_field_names ) {
 
 					if ( ! empty( $description ) ) {
-						$description = rtrim( $description, '.' ) . ' <br>';
+						//trim removed in https://github.com/Crocoblock/issues-tracker/issues/11919
+						//$description = rtrim( $description, '.' ) . ' <br>';
+						$description = $description . ' <br>';
 					}
 
 					$description .= sprintf(
@@ -633,7 +635,8 @@ if ( ! class_exists( 'Jet_Engine_CPT_Meta' ) ) {
 						);
 
 						// Set default value
-						$result[ $field['name'] ]['value'] = false;
+						//depends on on_by_default setting https://github.com/Crocoblock/issues-tracker/issues/11488
+						$result[ $field['name'] ]['value'] = ! empty( $field['on_by_default'] ) ? true : false;
 
 						break;
 
@@ -1396,6 +1399,10 @@ if ( ! class_exists( 'Jet_Engine_CPT_Meta' ) ) {
 				}
 
 				$condition_field = $this->get_field_args_by_name( $condition['field'], $all_fields );
+
+				if ( empty( $condition_field['type'] ) ) {
+					continue;
+				}
 
 				switch( $condition_field['type'] ) {
 					case 'switcher':

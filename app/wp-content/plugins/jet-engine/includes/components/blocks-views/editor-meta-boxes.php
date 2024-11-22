@@ -81,11 +81,20 @@ class Jet_Engine_Blocks_Views_Editor_Meta_Boxes {
 
 			'jet_engine_listing_link',
 			'jet_engine_listing_link_source',
+			'jet_engine_listing_link_object_prop',
+			'jet_engine_listing_link_custom_url',
+			'jet_engine_listing_link_add_query_args',
+			'jet_engine_listing_link_query_args',
+			'jet_engine_listing_link_url_anchor',
 			'jet_engine_listing_link_option',
 			'jet_engine_listing_link_open_in_new',
 			'jet_engine_listing_link_rel_attr',
 			'jet_engine_listing_link_aria_label',
 			'jet_engine_listing_link_prefix',
+		);
+
+		$keep_newlines = array(
+			'jet_engine_listing_link_query_args' => true,
 		);
 
 		$settings_to_store    = array();
@@ -103,7 +112,13 @@ class Jet_Engine_Blocks_Views_Editor_Meta_Boxes {
 					$el_settings_to_store[ $store_key ] = esc_attr( $_POST[ $key ] );
 				} else {
 					// link settings
-					$el_settings_to_store[ 'listing_' . $store_key ] = sanitize_text_field( $_POST[ $key ] );
+					if ( isset( $keep_newlines[ $key ] ) ) {
+						$store = sanitize_textarea_field( $_POST[ $key ] );
+					} else {
+						$store = sanitize_text_field( $_POST[ $key ] );
+					}
+					
+					$el_settings_to_store[ 'listing_' . $store_key ] = $store;
 				}
 			}
 		}
@@ -139,6 +154,10 @@ class Jet_Engine_Blocks_Views_Editor_Meta_Boxes {
 	public function add_css_meta_box() {
 
 		global $post;
+
+		if ( ! $post ) {
+			return;
+		}
 
 		if ( jet_engine()->listings->components->is_component( $post->ID ) ) {
 			$settings_label = __( 'Component Settings', 'jet-engine' );
@@ -290,6 +309,23 @@ class Jet_Engine_Blocks_Views_Editor_Meta_Boxes {
 					'jet_engine_listing_link' => 'yes',
 				),
 			),
+			'jet_engine_listing_link_object_prop' => array(
+				'label'     => __( 'Object property', 'jet-engine' ),
+				'value'     => ! empty( $page_settings['listing_link_object_prop'] ) ? $page_settings['listing_link_object_prop'] : '',
+				'groups'    => jet_engine()->listings->data->get_object_fields(),
+				'condition' => array(
+					'jet_engine_listing_link' => 'yes',
+					'jet_engine_listing_link_source' => 'object_prop',
+				),
+			),
+			'jet_engine_listing_link_custom_url' => array(
+				'label'       => __( 'Custom URL', 'jet-engine' ),
+				'value'       => ! empty( $page_settings['listing_link_custom_url'] ) ? $page_settings['listing_link_custom_url'] : '',
+				'description' => __( 'Shortcodes and JetEngine macros supported. Overrides Link source.', 'jet-engine' ),
+				'condition'   => array(
+					'jet_engine_listing_link' => 'yes',
+				),
+			),
 			'jet_engine_listing_link_open_in_new' => array(
 				'label'   => __( 'Open in new window', 'jet-engine' ),
 				'value'   => ! empty( $page_settings['listing_link_open_in_new'] ) ? $page_settings['listing_link_open_in_new'] : '',
@@ -321,6 +357,37 @@ class Jet_Engine_Blocks_Views_Editor_Meta_Boxes {
 				'label'     => __( 'Link prefix', 'jet-engine' ),
 				'value'     => ! empty( $page_settings['listing_link_prefix'] ) ? $page_settings['listing_link_prefix'] : '',
 				'condition' => array(
+					'jet_engine_listing_link' => 'yes',
+				),
+			),
+			'jet_engine_listing_link_add_query_args' => array(
+				'label'       => esc_html__( 'Add Query Arguments', 'jet-engine' ),
+				'options' => array(
+					''    => __( 'No', 'jet-engine' ),
+					'yes' => __( 'Yes', 'jet-engine' ),
+				),
+				'value'       => ! empty( $page_settings['listing_link_add_query_args'] ) ? $page_settings['listing_link_add_query_args'] : '',
+				'condition'   => array(
+					'jet_engine_listing_link' => 'yes',
+				),
+			),
+			'jet_engine_listing_link_query_args' => array(
+				'label'       => __( 'Query Arguments', 'jet-engine' ),
+				'label_block' => true,
+				'input_type'  => 'textarea',
+				'value'       => ! empty( $page_settings['listing_link_query_args'] ) ? $page_settings['listing_link_query_args'] : '_post_id=%current_id%',
+				'description' => __( 'One argument per line. Separate key and value with "="', 'jet-engine' ),
+				'condition'   => array(
+					'jet_engine_listing_link'                => 'yes',
+					'jet_engine_listing_link_add_query_args' => 'yes',
+				),
+			),
+			'jet_engine_listing_link_url_anchor' => array(
+				'label'       => __( 'URL Anchor', 'jet-engine' ),
+				'label_block' => true,
+				'value'       => ! empty( $page_settings['listing_link_url_anchor'] ) ? $page_settings['listing_link_url_anchor'] : '',
+				'description' => __( 'Add anchor to the URL. Without #.', 'jet-engine' ),
+				'condition'   => array(
 					'jet_engine_listing_link' => 'yes',
 				),
 			),
@@ -486,11 +553,19 @@ class Jet_Engine_Blocks_Views_Editor_Meta_Boxes {
 						echo '</select>';
 					} else {
 						$input_type = ! empty( $control_args['input_type'] ) ? $control_args['input_type'] : 'text';
-						printf( '<input type="%1$s" id="%2$s" name="%2$s" class="components-text-control__input" value="%3$s">',
-							esc_attr( $input_type ),
-							$control_name,
-							esc_attr( $control_args['value'] )
-						);
+						if ( $input_type === 'textarea' ) {
+							printf( '<textarea id="%1$s" name="%1$s" rows="5" class="components-textarea-control__input">%2$s</textarea>',
+								$control_name,
+								esc_attr( $control_args['value'] )
+							);
+						} else {
+							printf( '<input type="%1$s" id="%2$s" name="%2$s" class="components-text-control__input" value="%3$s">',
+								esc_attr( $input_type ),
+								$control_name,
+								esc_attr( $control_args['value'] )
+							);
+						}
+						
 					}
 
 					if ( ! empty( $control_args['description'] ) ) {

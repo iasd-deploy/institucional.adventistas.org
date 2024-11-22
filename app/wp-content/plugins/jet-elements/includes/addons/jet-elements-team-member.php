@@ -41,6 +41,14 @@ class Jet_Elements_Team_Member extends Jet_Elements_Base {
 		return array( 'cherry' );
 	}
 
+	protected function is_dynamic_content(): bool {
+		return false;
+	}
+
+	public function get_style_depends() { 
+		return array( 'jet-team-member', 'jet-team-member-skin' ); 
+	}
+
 	protected function register_controls() {
 		$css_scheme = apply_filters(
 			'jet-elements/team-member/css-scheme',

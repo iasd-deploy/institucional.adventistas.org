@@ -139,21 +139,15 @@ class Base_Element extends \Jet_Engine\Bricks_Views\Elements\Base {
 
 	}
 
-	public function set_looping_attr_in_component( $attributes, $key, $element ) {
-		$attributes[ $key ]['data-query-loop-index'] = $this->jet_engine_component->get_id();
-		return $attributes;
-	}
-
-	public function force_loop_index() {
-		return $this->jet_engine_component->get_id();
-	}
-
 	// Render element HTML
 	public function render() {
 
 		parent::render();
 
-		$settings = $this->get_jet_settings();
+		$settings = $this->parse_jet_render_attributes( $this->get_jet_settings() );
+
+		$this->set_attribute( '_root', 'class', 'brxe-' . $this->id );
+		$this->set_attribute( '_root', 'class', 'jet-listing-grid--' . $this->jet_engine_component->get_id() );
 
 		$this->jet_engine_component->set_component_context( $this->get_jet_settings( 'component_context' ) );
 
@@ -162,35 +156,37 @@ class Base_Element extends \Jet_Engine\Bricks_Views\Elements\Base {
 			$settings
 		);
 
-		jet_engine()->bricks_views->listing->render->set_bricks_query( 
-			$this->jet_engine_component->get_id(), 
-			$settings 
+		jet_engine()->bricks_views->listing->render->set_bricks_query(
+			$this->jet_engine_component->get_id(),
+			$settings
 		);
 
-		$current_query = jet_engine()->bricks_views->listing->render->get_current_query( 
-			$this->jet_engine_component->get_id() 
+		$current_query = jet_engine()->bricks_views->listing->render->get_current_query(
+			$this->jet_engine_component->get_id()
 		);
 
-		if ( $current_query ) {
+		if ( $current_query && $current_query->element_id === $this->id ) {
 			$current_query->loop_index = $this->jet_engine_component->get_id();
 			$current_query->is_component_listing = true;
 		}
 
-		add_filter( 'bricks/element/render_attributes', [ $this, 'set_looping_attr_in_component' ], 0, 3 );
-		add_filter( 'bricks/query/force_loop_index', [ $this, 'force_loop_index' ], 999 );
+		if ( $current_query && ! $current_query->loop_object ) {
+			$current_query->loop_object = jet_engine()->listings->data->get_current_object();
+		}
 
 		$content  = $this->jet_engine_component->get_content( $settings, false );
 		$css_vars = $this->jet_engine_component->css_variables_string( $settings );
 
-		remove_filter( 'bricks/element/render_attributes', [ $this, 'set_looping_attr_in_component' ], 0, 3 );
-		remove_filter( 'bricks/query/force_loop_index', [ $this, 'force_loop_index' ], 999 );
-
 		$this->enqueue_scripts();
 
-		$this->attributes['_root']['class'][] = 'brxe-jet-listing-el';
-		$this->attributes['_root']['class'][] = 'jet-listing-base';
-
 		echo '<div ' . $this->render_attributes( '_root' ) . ' style="' . $css_vars . '">';
+
+		/**
+		 * TMP fix: selectors when content rendered on Bricks popup AJAX call
+		 * https://github.com/Crocoblock/issues-tracker/issues/10451
+		 */
+		$content = str_replace( [ '.brx-popup.', '.brx-popup#' ], [ '.brx-popup .', '.brx-popup #' ], $content );
+
 		echo $content;
 		echo "</div>";
 
@@ -200,4 +196,9 @@ class Base_Element extends \Jet_Engine\Bricks_Views\Elements\Base {
 
 	}
 
+	public function parse_jet_render_attributes( $attrs = [] ) {
+		$attrs['_id'] = $this->id;
+
+		return $attrs;
+	}
 }

@@ -31,7 +31,7 @@ if ( '' !== $args['button_icon'] ) {
 		>
 		<?php if ( 'ajax-ontyping' === $args['apply_type'] ) : ?>
 			<div class="jet-search-filter__input-clear">
-				<?php include jet_smart_filters()->get_template( 'svg/close.svg' ); ?>
+				<?php echo jet_smart_filters()->print_template( 'svg/close.svg' ); ?>
 			</div>
 			<div class="jet-search-filter__input-loading"></div>
 		<?php endif; ?>

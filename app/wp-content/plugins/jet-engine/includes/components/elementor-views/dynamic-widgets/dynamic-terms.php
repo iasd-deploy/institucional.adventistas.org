@@ -279,7 +279,7 @@ class Jet_Listing_Dynamic_Terms_Widget extends Widget_Base {
 			array(
 				'label'      => __( 'Size', 'jet-engine' ),
 				'type'       => Controls_Manager::SLIDER,
-				'size_units' => array( 'px' ),
+				'size_units' => array( 'px', '%', 'em', 'custom' ),
 				'range'      => array(
 					'px' => array(
 						'min' => 10,
@@ -297,7 +297,7 @@ class Jet_Listing_Dynamic_Terms_Widget extends Widget_Base {
 			array(
 				'label'      => __( 'Gap', 'jet-engine' ),
 				'type'       => Controls_Manager::SLIDER,
-				'size_units' => array( 'px' ),
+				'size_units' => array( 'px', '%', 'em', 'custom' ),
 				'range'      => array(
 					'px' => array(
 						'min' => 0,
@@ -409,7 +409,7 @@ class Jet_Listing_Dynamic_Terms_Widget extends Widget_Base {
 			array(
 				'label'      => __( 'Padding', 'jet-engine' ),
 				'type'       => Controls_Manager::DIMENSIONS,
-				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( array( 'px', '%', 'em' ) ),
+				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( array( 'px', '%', 'em', 'custom' ) ),
 				'selectors'  => array(
 					$this->css_selector( '__link' ) => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				),
@@ -421,7 +421,7 @@ class Jet_Listing_Dynamic_Terms_Widget extends Widget_Base {
 			array(
 				'label'      => __( 'Margin', 'jet-engine' ),
 				'type'       => Controls_Manager::DIMENSIONS,
-				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( array( 'px', '%', 'em' ) ),
+				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( array( 'px', '%', 'em', 'custom' ) ),
 				'selectors'  => array(
 					$this->css_selector( '__link' ) => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				),
@@ -443,7 +443,7 @@ class Jet_Listing_Dynamic_Terms_Widget extends Widget_Base {
 			array(
 				'label'      => __( 'Border Radius', 'jet-engine' ),
 				'type'       => Controls_Manager::DIMENSIONS,
-				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( array( 'px', '%' ) ),
+				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( array( 'px', '%', 'custom' ) ),
 				'selectors'  => array(
 					$this->css_selector( '__link' ) => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				),
@@ -485,7 +485,7 @@ class Jet_Listing_Dynamic_Terms_Widget extends Widget_Base {
 			array(
 				'label'      => __( 'Size', 'jet-engine' ),
 				'type'       => Controls_Manager::SLIDER,
-				'size_units' => array( 'px' ),
+				'size_units' => array( 'px', '%', 'em', 'custom' ),
 				'range'      => array(
 					'px' => array(
 						'min' => 10,
@@ -503,7 +503,7 @@ class Jet_Listing_Dynamic_Terms_Widget extends Widget_Base {
 			array(
 				'label'      => __( 'Left Gap', 'jet-engine' ),
 				'type'       => Controls_Manager::SLIDER,
-				'size_units' => array( 'px' ),
+				'size_units' => array( 'px', '%', 'em', 'custom' ),
 				'range'      => array(
 					'px' => array(
 						'min' => 0,
@@ -521,7 +521,7 @@ class Jet_Listing_Dynamic_Terms_Widget extends Widget_Base {
 			array(
 				'label'      => __( 'Right Gap', 'jet-engine' ),
 				'type'       => Controls_Manager::SLIDER,
-				'size_units' => array( 'px' ),
+				'size_units' => array( 'px', '%', 'em', 'custom' ),
 				'range'      => array(
 					'px' => array(
 						'min' => 0,
@@ -569,7 +569,7 @@ class Jet_Listing_Dynamic_Terms_Widget extends Widget_Base {
 			array(
 				'label'      => __( 'Gap', 'jet-engine' ),
 				'type'       => Controls_Manager::SLIDER,
-				'size_units' => array( 'px' ),
+				'size_units' => array( 'px', '%', 'em', 'custom' ),
 				'range'      => array(
 					'px' => array(
 						'min' => 0,
@@ -618,7 +618,7 @@ class Jet_Listing_Dynamic_Terms_Widget extends Widget_Base {
 			array(
 				'label'      => __( 'Gap', 'jet-engine' ),
 				'type'       => Controls_Manager::SLIDER,
-				'size_units' => array( 'px' ),
+				'size_units' => array( 'px', '%', 'em', 'custom' ),
 				'range'      => array(
 					'px' => array(
 						'min' => 0,

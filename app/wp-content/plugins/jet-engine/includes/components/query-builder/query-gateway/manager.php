@@ -10,15 +10,17 @@ class Manager {
 
 	private $_controls_map = array();
 
-	private $initial_object = null;
-
 	private $processing_item = null;
+
+	//$depth and $object_stack added to fix https://github.com/Crocoblock/issues-tracker/issues/10536
+	private $depth = 0;
+
+	private $object_stack = array();
 
 	public function __construct() {
 
 		add_action( 'jet-engine-query-gateway/control', array( $this, 'register_controls' ), 10, 2 );
 		add_action( 'jet-engine-query-gateway/do-item', array( $this, 'set_item_object' ) );
-		add_action( 'jet-engine-query-gateway/reset-item', array( $this, 'reset_item_object' ) );
 		add_filter( 'jet-engine-query-gateway/query', array( $this, 'query_items' ), 10, 3 );
 
 		// Native Jet-plugins compatibility
@@ -28,17 +30,38 @@ class Manager {
 
 	}
 
+	public function increase_stack_depth() {
+		$this->depth++;
+	}
+
+	public function decrease_stack_depth() {
+		$this->depth--;
+	}
+
+	public function get_from_stack() {
+		return $this->object_stack[ $this->depth ] ?? false;
+	}
+
+	public function add_to_stack( $object ) {
+		$this->object_stack[ $this->depth ] = $object;
+	}
+
+	public function remove_from_stack() {
+		unset( $this->object_stack[ $this->depth ] );
+	}
+
 	public function set_item_object( $item ) {
+		
 		if ( ! empty( $item['_jet_engine_queried_object'] ) ) {
 
-			// Store initial object
-			if ( ! $this->initial_object ) {
-				$this->initial_object = jet_engine()->listings->data->get_current_object();
+			// Add object to stack if it is not set previously for the current depth
+			if ( ! $this->get_from_stack() ) {
+				$this->add_to_stack( jet_engine()->listings->data->get_current_object() );
 			} else {
-				// Remove prevent item from stack.
+				// Remove previous item from JetEngine stack.
 				$prev_item = jet_engine()->listings->data->get_current_object();
 
-				if ( $prev_item !== $this->initial_object ) {
+				if ( $prev_item !== $this->get_from_stack() ) {
 					do_action( 'jet-engine/object-stack/decrease', $prev_item );
 				}
 			}
@@ -60,16 +83,17 @@ class Manager {
 	}
 
 	public function reset_item_object() {
-
+		
 		$this->processing_item = null;
+
 		remove_action( 'jet-engine/listings/frontend/object-done', array( $this, 'add_processing_item_to_stack' ), 20 );
 
-		if ( ! $this->initial_object ) {
+		if ( ! $this->get_from_stack() ) {
 			return;
 		}
 
-		if ( $this->initial_object === jet_engine()->listings->data->get_current_object() ) {
-			$this->initial_object = null;
+		if ( $this->get_from_stack() === jet_engine()->listings->data->get_current_object() ) {
+			$this->remove_from_stack();
 			return;
 		}
 
@@ -77,9 +101,10 @@ class Manager {
 		$last_item = jet_engine()->listings->data->get_current_object();
 		do_action( 'jet-engine/object-stack/decrease', $last_item );
 
-		jet_engine()->listings->data->set_current_object( $this->initial_object );
+		//Set JetEngine current object to object from the stack
+		jet_engine()->listings->data->set_current_object( $this->get_from_stack() );
 
-		$this->initial_object = null;
+		$this->remove_from_stack();
 	}
 
 	public function query_items( $items, $control_name, $widget ) {
@@ -133,8 +158,6 @@ class Manager {
 
 		$fields_map = $fields_map[0];
 
-		$this->initial_object = jet_engine()->listings->data->get_current_object();
-
 		foreach ( $query_items as $index => $item ) {
 			jet_engine()->listings->data->set_current_object( $item );
 			$control = $widget->get_controls( $control_name );
@@ -158,7 +181,27 @@ class Manager {
 	}
 
 	public function jet_plugins_compatibility( $items, $control_name, $widget ) {
-		return apply_filters( 'jet-engine-query-gateway/query', $items, $control_name, $widget );
+		$current_object = jet_engine()->listings->data->get_current_object();
+		
+		$items = apply_filters( 'jet-engine-query-gateway/query', $items, $control_name, $widget );
+		
+		if ( ! empty( $items ) && $this->query_enbaled( $control_name, $widget ) ) {
+			$this->add_to_stack( $current_object );
+			$this->increase_stack_depth();
+
+			//add action to decrease stack depth only if some items in widget loop
+			//this is because a widget may have condition to stop rendering if no items present
+			//also, add action to reset object
+			add_action( 'jet-engine-query-gateway/reset-item', array( $this, 'decrease_stack_depth' ), 0 );
+			add_action( 'jet-engine-query-gateway/reset-item', array( $this, 'reset_item_object' ) );
+		} else {
+			//if items empty we should ensure that stack depth is unchanged, otherwise stack depth will be wrong
+			//also, no reset is needed in that case
+			remove_action( 'jet-engine-query-gateway/reset-item', array( $this, 'decrease_stack_depth' ), 0 );
+			remove_action( 'jet-engine-query-gateway/reset-item', array( $this, 'reset_item_object' ) );
+		}
+		
+		return $items;
 	}
 
 	public function store_widget_data( $widget_name, $control_name ) {

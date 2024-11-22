@@ -110,9 +110,6 @@ class Jet_Smart_Filters_Color_Image_Widget extends Jet_Smart_Filters_Base_Widget
 					'value'  => __( 'Value change', 'jet-smart-filters' ),
 					'submit' => __( 'Click on apply button', 'jet-smart-filters' ),
 				),
-				'condition' => array(
-					'apply_type' => array( 'ajax', 'mixed' ),
-				),
 			)
 		);
 
@@ -125,7 +122,11 @@ class Jet_Smart_Filters_Color_Image_Widget extends Jet_Smart_Filters_Base_Widget
 				'label_on'     => esc_html__( 'Yes', 'jet-smart-filters' ),
 				'label_off'    => esc_html__( 'No', 'jet-smart-filters' ),
 				'return_value' => 'yes',
-				'default'      => '',
+				'default'      => 'yes',
+				'condition' => array(
+					'apply_on'     => 'submit',
+					'apply_button' => 'yes'
+				)
 			)
 		);
 
@@ -136,8 +137,9 @@ class Jet_Smart_Filters_Color_Image_Widget extends Jet_Smart_Filters_Base_Widget
 				'type'      => Controls_Manager::TEXT,
 				'default'   => __( 'Apply filter', 'jet-smart-filters' ),
 				'condition' => array(
+					'apply_on'     => 'submit',
 					'apply_button' => 'yes'
-				),
+				)
 			)
 		);
 

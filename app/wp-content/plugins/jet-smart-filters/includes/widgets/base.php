@@ -106,10 +106,7 @@ class Jet_Smart_Filters_Base_Widget extends Widget_Base {
 				'options'   => array(
 					'value'  => __( 'Value change', 'jet-smart-filters' ),
 					'submit' => __( 'Click on apply button', 'jet-smart-filters' ),
-				),
-				'condition' => array(
-					'apply_type' => array( 'ajax', 'mixed' ),
-				),
+				)
 			)
 		);
 
@@ -122,7 +119,10 @@ class Jet_Smart_Filters_Base_Widget extends Widget_Base {
 				'label_on'     => esc_html__( 'Yes', 'jet-smart-filters' ),
 				'label_off'    => esc_html__( 'No', 'jet-smart-filters' ),
 				'return_value' => 'yes',
-				'default'      => '',
+				'default'      => 'yes',
+				'condition'    => array(
+					'apply_on' => 'submit'
+				)
 			)
 		);
 
@@ -133,8 +133,9 @@ class Jet_Smart_Filters_Base_Widget extends Widget_Base {
 				'type'      => Controls_Manager::TEXT,
 				'default'   => __( 'Apply filter', 'jet-smart-filters' ),
 				'condition' => array(
+					'apply_on'     => 'submit',
 					'apply_button' => 'yes'
-				),
+				)
 			)
 		);
 
@@ -147,7 +148,7 @@ class Jet_Smart_Filters_Base_Widget extends Widget_Base {
 				'label_on'     => esc_html__( 'Yes', 'jet-smart-filters' ),
 				'label_off'    => esc_html__( 'No', 'jet-smart-filters' ),
 				'return_value' => 'yes',
-				'default'      => '',
+				'default'      => ''
 			)
 		);
 
@@ -667,16 +668,10 @@ class Jet_Smart_Filters_Base_Widget extends Widget_Base {
 
 	protected function render() {
 
-		jet_smart_filters()->set_filters_used();
+		$settings   = $this->get_settings();
+		$filter_ids = jet_smart_filters()->utils->select_published_filters( $settings['filter_id'] );
 
-		$base_class        = $this->get_name();
-		$settings          = $this->get_settings();
-		$indexer_class     = '';
-		$show_counter      = false;
-		$show_items_rule   = 'show';
-		$group             = false;
-
-		if ( empty( $settings['filter_id'] ) ) {
+		if ( empty( $filter_ids ) ) {
 			/* if ( Plugin::instance()->editor->is_edit_mode() ) {
 				echo '<div></div>';
 			} */
@@ -684,33 +679,28 @@ class Jet_Smart_Filters_Base_Widget extends Widget_Base {
 			return;
 		}
 
-		$filter_ids = $settings['filter_id'];
+		jet_smart_filters()->set_filters_used();
 
-		if ( ! is_array( $filter_ids ) ) {
-			$filter_ids = array( $filter_ids );
-		}
+		$base_class        = $this->get_name();
+		$provider          = ! empty( $settings['content_provider'] ) ? $settings['content_provider'] : '';
+		$query_id          = ! empty( $settings['query_id'] ) ? $settings['query_id'] : 'default';
+		$apply_type        = ! empty( $settings['apply_type'] ) ? $settings['apply_type'] : 'ajax';
+		$apply_on          = ! empty( $settings['apply_on'] ) ? $settings['apply_on'] : 'value';
+		$show_label        = ! empty( $settings['show_label'] ) ? filter_var( $settings['show_label'], FILTER_VALIDATE_BOOLEAN ) : false;
+		$show_items_label  = ! empty( $settings['show_items_label'] ) ? $settings['show_items_label'] : false;
+		$show_decorator    = ! empty( $settings['show_decorator'] ) ? $settings['show_decorator'] : false;
+		$filter_image_size = ! empty( $settings['filter_image_size'] ) ? $settings['filter_image_size'] : 'full';
+		$change_items_rule = ! empty( $settings['change_items_rule'] ) ? $settings['change_items_rule'] : 'always';
+		$group             = false;
 
 		if ( 1 < count( $filter_ids ) ) {
 			$group = true;
 		}
 
-		if ( 'submit' === $settings['apply_on'] && in_array( $settings['apply_type'], ['ajax', 'mixed'] ) ) {
-			$apply_type = $settings['apply_type'] . '-reload';
-		} else {
-			$apply_type = $settings['apply_type'];
-		}
-
-		$query_id          = ! empty( $settings['query_id'] ) ? $settings['query_id'] : 'default';
-		$show_label        = ! empty( $settings['show_label'] ) ? filter_var( $settings['show_label'], FILTER_VALIDATE_BOOLEAN ) : false;
-		$show_items_label  = ! empty( $settings['show_items_label'] ) ? $settings['show_items_label'] : false;
-		$show_decorator    = ! empty( $settings['show_decorator'] ) ? $settings['show_decorator'] : false;
-		$apply_indexer     = ! empty( $settings['apply_indexer'] ) ? filter_var( $settings['apply_indexer'], FILTER_VALIDATE_BOOLEAN ) : false;
-		$filter_image_size = ! empty( $settings['filter_image_size'] ) ? $settings['filter_image_size'] : 'full';
-		$change_items_rule = ! empty( $settings['change_items_rule'] ) ? $settings['change_items_rule'] : 'always';
-
 		/**
 		 * Additional settings
 		 */
+		$additional_providers = jet_smart_filters()->utils->get_additional_providers( $settings );
 		// search
 		$search_enabled   = ! empty( $settings['search_enabled'] ) ? filter_var( $settings['search_enabled'], FILTER_VALIDATE_BOOLEAN ) : false;
 		// more/less
@@ -719,6 +709,14 @@ class Jet_Smart_Filters_Base_Widget extends Widget_Base {
 		$dropdown_enabled = ! empty( $settings['dropdown_enabled'] ) ? $settings['dropdown_enabled'] : false;
 		// scroll
 		$scroll_height    = ! empty( $settings['scroll_enabled'] ) && ! empty( $settings['scroll_height'] ) ? (int)$settings['scroll_height'] : false;
+
+		/**
+		 * Indexer settings
+		 */
+		$apply_indexer   = ! empty( $settings['apply_indexer'] ) ? filter_var( $settings['apply_indexer'], FILTER_VALIDATE_BOOLEAN ) : false;
+		$indexer_class   = '';
+		$show_counter    = false;
+		$show_items_rule = 'show';
 
 		if ( $apply_indexer ){
 			$indexer_class   = 'jet-filter-indexed';
@@ -750,16 +748,14 @@ class Jet_Smart_Filters_Base_Widget extends Widget_Base {
 				$change_items_rule
 			);
 
-			$provider             = ! empty( $settings['content_provider'] ) ? $settings['content_provider'] : '';
-			$additional_providers = jet_smart_filters()->utils->get_additional_providers( $settings );
-
 			$filter_template_args =  array(
 				'filter_id'            => $filter_id,
 				'content_provider'     => $provider,
-				'additional_providers' => $additional_providers,
-				'apply_type'           => $apply_type,
 				'query_id'             => $query_id,
+				'apply_type'           => $apply_type,
+				'apply_on'             => $apply_on,
 				'show_label'           => $show_label,
+				'additional_providers' => $additional_providers,
 				'display_options'      => array(
 					'show_items_label'  => $show_items_label,
 					'show_decorator'    => $show_decorator,

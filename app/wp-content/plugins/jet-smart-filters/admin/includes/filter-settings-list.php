@@ -104,19 +104,6 @@ return array(
 				'_data_source' => 'taxonomies',
 			),
 		),
-		'_terms_relational_operator' => array(
-			'type'    => 'select',
-			'title'   => __( 'Relational Operator', 'jet-smart-filters' ),
-			'value'   => 'OR',
-			'options' => array(
-				'OR'  => __( 'Union', 'jet-smart-filters' ),
-				'AND' => __( 'Intersection', 'jet-smart-filters' ),
-			),
-			'conditions' => array(
-				'_filter_type' => 'checkboxes',
-				'_data_source' => 'taxonomies',
-			),
-		),
 
 		// Select filter
 		'_placeholder' => array(
@@ -716,6 +703,21 @@ return array(
 			),
 			'conditions' => array(
 				'_source_get_from_field_data' => true,
+			),
+		),
+
+		// Checkboxes Relational Operator
+		'_terms_relational_operator' => array(
+			'type'    => 'select',
+			'title'   => __( 'Relational Operator', 'jet-smart-filters' ),
+			'value'   => 'OR',
+			'options' => array(
+				'OR'  => __( 'Union', 'jet-smart-filters' ),
+				'AND' => __( 'Intersection', 'jet-smart-filters' ),
+			),
+			'conditions' => array(
+				'_filter_type' => 'checkboxes',
+				//'_data_source' => 'taxonomies',
 			),
 		),
 

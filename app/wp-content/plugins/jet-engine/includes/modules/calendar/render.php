@@ -46,6 +46,9 @@ if ( ! class_exists( 'Jet_Listing_Render_Calendar' ) ) {
 				'custom_query'             => false,
 				'custom_query_id'          => null,
 				'_element_id'              => '',
+				'cache_enabled'            => false,
+				'cache_timeout'            => 60,
+				'max_cache'                => 12,
 			));
 		}
 
@@ -435,7 +438,18 @@ if ( ! class_exists( 'Jet_Listing_Render_Calendar' ) ) {
 				'custom_query'             => isset( $settings['custom_query'] ) ? $settings['custom_query'] : false,
 				'custom_query_id'          => isset( $settings['custom_query_id'] ) ? $settings['custom_query_id'] : false,
 				'_element_id'              => isset( $settings['_element_id'] ) ? $settings['_element_id'] : '',
+				'cache_enabled'            => isset( $settings['cache_enabled'] ) ? $settings['cache_enabled'] : false,
+				'cache_timeout'            => isset( $settings['cache_timeout'] ) ? $settings['cache_timeout'] : 60,
+				'max_cache'                => isset( $settings['max_cache'] ) ? $settings['max_cache'] : 12,
 			), $settings );
+
+			$cache_enabled = filter_var( $settings['cache_enabled'], FILTER_VALIDATE_BOOLEAN );
+
+			if ( $cache_enabled ) {
+				$data_settings['cache_id'] = $_REQUEST['settings']['cache_id'] ?? round( microtime( true ) * 10000 );
+				$data_settings['prev_month'] = $human_read_month;
+				$cache_id = sprintf( ' data-cache-id="%1$s"', $data_settings['cache_id'] );
+			}
 
 			$data_settings = htmlspecialchars( json_encode( $data_settings ) );
 
@@ -446,12 +460,13 @@ if ( ! class_exists( 'Jet_Listing_Render_Calendar' ) ) {
 			];
 
 			printf(
-				'<div class="%1$s" data-settings="%2$s" data-post="%3$d" data-listing-source="%4$s" data-query-id="%5$s">',
+				'<div class="%1$s" data-settings="%2$s" data-post="%3$d" data-listing-source="%4$s" data-query-id="%5$s"%6$s>',
 				implode( ' ', $container_classes ),
 				$data_settings,
 				get_the_ID(),
 				jet_engine()->listings->data->get_listing_source(),
-				$this->listing_query_id
+				$this->listing_query_id,
+				$cache_id ?? ''
 			);
 
 			do_action( 'jet-engine/listing/grid/before', $this );

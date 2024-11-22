@@ -182,8 +182,33 @@ class Map_Field {
 		?>
 		<script type="text/html" id="tmpl-jet-engine-map-field">
 			<div class="jet-engine-map-field__preview">
-				<address class="jet-engine-map-field__position"></address>
-				<div class="jet-engine-map-field__reset" role="button">× <?php _e( 'Reset location', 'jet-engine' ); ?></div>
+				<div class="jet-engine-map-field__address-wrapper show">
+					<address class="jet-engine-map-field__position"></address>
+					<# if ( data.valueFormat === 'location_address' ) { #>
+						<div class="jet-engine-map-field__edit_address" role="button">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -1 20 20" height="1em">
+							<script xmlns=""/>
+								<rect x="0" fill="none" width="20" height="20"/>
+									<g>
+										<path d="M13.89 3.39l2.71 2.72c.46.46.42 1.24.03 1.64l-8.01 8.02-5.56 1.16 1.16-5.58s7.6-7.63 7.99-8.03c.39-.39 1.22-.39 1.68.07zm-2.73 2.79l-5.59 5.61 1.11 1.11 5.54-5.65zm-2.97 8.23l5.58-5.6-1.07-1.08-5.59 5.6z"/>
+									</g>
+							<script xmlns=""/>
+						</svg> <?php _e( 'Edit address', 'jet-engine' ); ?></div>
+					<# } #>
+				</div>
+				<# if ( data.valueFormat === 'location_address' ) { #>
+					<div class="jet-engine-map-field__address-edit-wrapper">
+						<div class="jet-engine-map-field__address-edit-form-wrapper">
+							<input type="text" class="cx-ui-text jet-engine-map-field__new_address" placeholder="<?php _e( 'Enter address...', 'jet-engine' ); ?>"/>
+							<div class="jet-engine-map-field__confirm_edit" role="button">✓ <?php _e( 'Confirm', 'jet-engine' ); ?></div>
+							<div class="jet-engine-map-field__cancel_edit" role="button">× <?php _e( 'Cancel', 'jet-engine' ); ?></div>
+						</div>
+						<div class="jet-engine-map-field__edit-notice">
+							<strong>Note:</strong> updating the address does not lead to updating the coordinates. Use if automatically obtained address does not match your request.
+						</div>
+					</div>
+				<# } #>
+				<div class="jet-engine-map-field__reset show" role="button">× <?php _e( 'Reset location', 'jet-engine' ); ?></div>
 			</div>
 			<div class="jet-engine-map-field__search">
 				<input type="text" class="widefat cx-ui-text" placeholder="<?php _e( 'Search...', 'jet-engine' ); ?>">

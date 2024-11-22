@@ -8,7 +8,15 @@
 		<h3 class="cx-vui-subtitle"><?php _e( 'Merged Query', 'jet-engine' ); ?></h3>
 	</div>
 	<div class="cx-vui-panel">
-		<div style="padding: 20px;"><?php _e( 'With this query type, you can merge the results of several <b>different queries</b> of the <b>same type</b> into a single query. It can be useful when, for example, you want to combine posts based on different criteria into a single listing grid.', 'jet-engine' ); ?></div>
+		<div style="padding: 20px;">
+			<div style="padding-bottom: 10px;">
+				<?php _e( 'With this query type, you can merge the results of several <b>different queries</b> of the <b>same type</b> into a single query. It can be useful when, for example, you want to combine posts based on different criteria into a single listing grid.', 'jet-engine' ); ?>
+			</div>
+			<div style="font-size: 1.1em;">
+				<?php _e( '<b>Please, note!</b> Merged query may produce unexpected results in complicated cases with load more, pagination, filtering etc.', 'jet-engine' ); ?>
+			</div>
+		</div>
+		
 		<cx-vui-select
 			label="<?php _e( 'Query Type', 'jet-engine' ); ?>"
 			description="<?php _e( 'Merge queries of type', 'jet-engine' ); ?>"

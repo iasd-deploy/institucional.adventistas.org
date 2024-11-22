@@ -50,6 +50,7 @@
 			$scope = $scope || $( document );
 
 			$scope
+				.on( 'jet-filter-content-rendered', JetEngine.calendarCache.clear )
 				.on( 'click.JetEngine', '.jet-calendar-nav__link', JetEngine.switchCalendarMonth )
 				.on( 'click.JetEngine', '.jet-calendar-week__day-mobile-overlay', JetEngine.showCalendarEvent )
 				.on( 'click.JetEngine', '.jet-listing-dynamic-link__link[data-delete-link="1"]', JetEngine.showConfirmDeleteDialog )
@@ -265,7 +266,7 @@
 				var $this   = $( this ),
 					nav     = $this.data( 'nav' ),
 					isStore = $this.data( 'is-store-listing' ),
-					query   = nav.query;
+					query   = nav.query || {};
 
 				nav = JetEngine.ensureJSON( nav );
 
@@ -277,12 +278,18 @@
 						posts      = [],
 						$container = $this.closest( '.elementor-widget-container' );
 
+					if ( ! store ) {
+						return;
+					}
+
+					//Context Gutenberg
 					if ( ! $container.length ) {
 						$container = $this.closest( '.jet-listing-grid--blocks' );
 					}
 
-					if ( ! store ) {
-						return;
+					// Context Bricks
+					if ( ! $container.length ) {
+						$container = $this.closest( '.brxe-jet-engine-listing-grid' )
 					}
 
 					posts = store.getStore( storeSlug );
@@ -354,39 +361,7 @@
 					$this.closest( '.jet-listing-dynamic-post-' + args.post_id ).remove();
 				}
 
-				if ( args.synch_id ) {
-					var $container     = $( '#' + args.synch_id ),
-						$elemContainer = $container.find( '> .elementor-widget-container' ),
-						$items         = $container.find( '.jet-listing-grid__items' ),
-						posts          = [],
-						nav            = $items.data( 'nav' ) || {},
-						query          = nav.query || {};
-
-					nav = JetEngine.ensureJSON( nav );
-
-					posts = store.getStore( args.store.slug );
-
-					if ( ! posts.length ) {
-						posts = [ 'is-front', args.store.type, args.store.slug ];
-					}
-
-					query.post__in = posts;
-					query.is_front_store = true;
-
-					JetEngine.ajaxGetListing( {
-						handler: 'get_listing',
-						container: $elemContainer.length ? $elemContainer : $container,
-						masonry: false,
-						slider: false,
-						append: false,
-						query: query,
-						widgetSettings: nav.widget_settings,
-						postID: window.elementorFrontendConfig.post.id,
-						elementID: $container.data( 'id' ),
-					}, function( response ) {
-						JetEngine.widgetListingGrid( $container );
-					} );
-				}
+				JetEngine.dataStoreSyncListings( args );
 
 				$( document ).trigger( 'jet-engine-data-stores-on-remove', args );
 
@@ -429,36 +404,7 @@
 						JetEngine.switchDataStoreStatus( $( this ), true );
 					} );
 
-					if ( args.synch_id ) {
-						var $container     = $( '#' + args.synch_id ),
-							$elemContainer = $container.find( '> .elementor-widget-container' ),
-							$items         = $container.find( '.jet-listing-grid__items' ),
-							nav            = $items.data( 'nav' ),
-							query          = nav.query,
-							postID         = window.elementorFrontend ? window.elementorFrontendConfig.post.id : 0;
-
-						nav = JetEngine.ensureJSON( nav );
-
-						// Context Bricks
-						if ( $container.hasClass( 'brxe-jet-engine-listing-grid' ) ) {
-							postID = window.bricksData.postId;
-						}
-
-						JetEngine.ajaxGetListing( {
-							handler: 'get_listing',
-							container: $elemContainer.length ? $elemContainer : $container,
-							masonry: false,
-							slider: false,
-							append: false,
-							query: query,
-							widgetSettings: nav.widget_settings,
-							postID,
-							elementID: $container.data( 'id' ),
-						}, function( response ) {
-							JetEngine.widgetListingGrid( $container );
-						} );
-
-					}
+					JetEngine.dataStoreSyncListings( args );
 
 					if ( args.remove_from_listing ) {
 						$this.closest( '.jet-listing-grid__item[data-post="' + args.post_id + '"]' ).remove();
@@ -518,6 +464,65 @@
 
 		},
 
+		dataStoreSyncListings: function( args ) {
+			if ( ! args.synch_id || typeof args.synch_id !== 'string' ) {
+				return;
+			}
+
+			const ids = args.synch_id.split( /[\s,]+/ ).map( ( id ) => id.replace( /\s/, '' ) ).filter( ( id ) => !! id );
+
+			ids.forEach( function ( id ) {
+				let $container     = $( '#' + id ),
+				    $elemContainer = $container.find( '> .elementor-widget-container' ),
+				    $items         = $container.find( '.jet-listing-grid__items' ),
+				    posts          = [],
+				    nav            = $items.data( 'nav' ) || {},
+				    query          = nav.query || {},
+					postID         = window.elementorFrontendConfig?.post?.id || 0;
+
+				nav = JetEngine.ensureJSON( nav );
+
+				// Context Bricks
+				if ( $container.hasClass( 'brxe-jet-engine-listing-grid' ) ) {
+					postID = window.bricksData.postId;
+				}
+				
+				// Context Gutenberg
+				if ( $container.hasClass( 'jet-listing-grid--blocks' )) {
+					postID = JetEngineSettings.post_id;
+				}
+
+				if ( args?.store?.is_front && Object.keys( query ).length ) {
+					let store = JetEngineStores[ args.store.type ];
+
+					posts = store.getStore( args.store.slug );
+
+					if ( ! posts.length ) {
+						posts = [ 'is-front', args.store.type, args.store.slug ];
+					}
+
+					query.post__in = posts;
+					query.is_front_store = true;
+				}
+
+				let options = {
+					handler: 'get_listing',
+					container: $elemContainer.length ? $elemContainer : $container,
+					masonry: false,
+					slider: false,
+					append: false,
+					query: query,
+					widgetSettings: nav.widget_settings,
+					postID: postID,
+					elementID: $container.data( 'id' ),
+				};
+
+				JetEngine.ajaxGetListing( options, function( response ) {
+					JetEngine.widgetListingGrid( $container );
+				} );
+			} );
+		},
+
 		addToStore: function( event ) {
 
 			event.preventDefault();
@@ -569,34 +574,7 @@
 				$( 'span.jet-engine-data-store-count[data-store="' + args.store.slug + '"]' ).text( count );
 				$( '.jet-remove-from-store[data-store="' + args.store.slug + '"][data-post="' + args.post_id + '"]' ).removeClass( 'is-hidden' );
 
-				if ( args.synch_id ) {
-					var $container     = $( '#' + args.synch_id ),
-						$elemContainer = $container.find( '> .elementor-widget-container' ),
-						$items         = $container.find( '.jet-listing-grid__items' ),
-						posts          = [],
-						nav            = $items.data( 'nav' ) || {},
-						query          = nav.query || {};
-
-					nav = JetEngine.ensureJSON( nav );
-					posts = store.getStore( args.store.slug );
-
-					query.post__in = posts;
-					query.is_front_store = true;
-
-					JetEngine.ajaxGetListing( {
-						handler: 'get_listing',
-						container: $elemContainer.length ? $elemContainer : $container,
-						masonry: false,
-						slider: false,
-						append: false,
-						query: query,
-						widgetSettings: nav.widget_settings,
-						postID: window.elementorFrontendConfig.post.id,
-						elementID: $container.data( 'id' ),
-					}, function( response ) {
-						JetEngine.widgetListingGrid( $container );
-					} );
-				}
+				JetEngine.dataStoreSyncListings( args );
 
 				$( document ).trigger( 'jet-engine-data-stores-on-add', args );
 
@@ -637,37 +615,7 @@
 						} );
 					}
 
-					if ( args.synch_id ) {
-
-						var $container     = $( '#' + args.synch_id ),
-							$elemContainer = $container.find( '> .elementor-widget-container' ),
-							$items         = $container.find( '.jet-listing-grid__items' ),
-							nav            = $items.data( 'nav' ),
-							query          = nav.query,
-							postID         = window.elementorFrontend ? window.elementorFrontendConfig.post.id : 0;
-
-						nav = JetEngine.ensureJSON( nav );
-
-						// Context Bricks
-						if ( $container.hasClass( 'brxe-jet-engine-listing-grid' ) ) {
-							postID = window.bricksData.postId;
-						}
-
-						JetEngine.ajaxGetListing( {
-							handler: 'get_listing',
-							container: $elemContainer.length ? $elemContainer : $container,
-							masonry: false,
-							slider: false,
-							append: false,
-							query: query,
-							widgetSettings: nav.widget_settings,
-							postID,
-							elementID: $container.data( 'id' ),
-						}, function( response ) {
-							JetEngine.widgetListingGrid( $container );
-						} );
-
-					}
+					JetEngine.dataStoreSyncListings( args );
 
 					if ( args.popup ) {
 						JetEngine.triggerPopup( args.popup, args.isJetEngine, args.post_id );
@@ -1316,11 +1264,7 @@
 					}
 
 					// Re-init Bricks scripts
-					if ( window.bricksIsFrontend ) {
-						document.dispatchEvent(
-							new CustomEvent("bricks/ajax/query_result/displayed")
-						);
-					}
+					JetEngine.reinitBricksScripts();
 
 					Promise.all( JetEngine.assetsPromises ).then( function() {
 						JetEngine.initElementsHandlers( $html );
@@ -1996,6 +1940,188 @@
 
 		},
 
+		calendarCache: {
+
+			entries: {},
+
+			//introduced because Firefox does not have forEach method for iterators
+			iterate: function( iterator, callback ) {
+				if ( typeof iterator?.forEach === 'function' ) {
+					iterator.forEach( callback );
+				} else if ( typeof iterator?.next === 'function' ) {
+					let next;
+					while ( next = iterator.next(), ! next.done ) {
+						callback.call( this, next.value );
+					}
+				}
+			},
+
+			get: function ( cacheId, month ) {
+				return JetEngine.calendarCache.entries[ cacheId ]?.get( month ) || false;
+			},
+	
+			set: function ( cacheId, month, content, settings = {}, timestamp = false ) {
+				if ( ! JetEngine.calendarCache.entries[ cacheId ] ) {
+					JetEngine.calendarCache.entries[ cacheId ] = new Map();
+				}
+	
+				if ( ! JetEngine.calendarCache.entries[ cacheId ].has( month )
+					&& JetEngine.calendarCache.entries[ cacheId ].size > ( settings['max_cache'] ?? 12 ) - 1
+				) {
+					let deletedKey;
+	
+					const mapKeys = JetEngine.calendarCache.entries[ cacheId ].keys();
+	
+					if ( settings['__switch_direction'] < 0 ) {
+						let maxDate = false;
+	
+						JetEngine.calendarCache.iterate(
+							mapKeys,
+							function ( key ) {
+								const parsedDate = Date.parse( key );
+		
+								if ( ! maxDate || parsedDate > maxDate ) {
+									maxDate = parsedDate;
+									deletedKey = key;
+								}
+							}
+						);
+					} else {
+						let minDate = false;
+	
+						JetEngine.calendarCache.iterate(
+							mapKeys,
+							function ( key ) {
+								const parsedDate = Date.parse( key );
+		
+								if ( ! minDate || parsedDate < minDate ) {
+									minDate = parsedDate;
+									deletedKey = key;
+								}
+							}
+						);
+					}
+	
+					JetEngine.calendarCache.entries[ cacheId ].delete( deletedKey );
+				}
+	
+				if ( ! timestamp ) {
+					timestamp = Date.now();
+				}
+	
+				JetEngine.calendarCache.entries[ cacheId ].set( month, [ content, timestamp ] );
+			},
+	
+			update: function ( cacheId, month, content, settings = {} ) {
+				let cached = JetEngine.calendarCache.get( cacheId, month );
+				JetEngine.calendarCache.set( cacheId, month, content, settings, cached[1] ?? false );
+			},
+	
+			deleteExpiredEntries: function ( cacheId, cacheTimeout ) {
+				//delete possible orphaned caches
+				for ( const cacheId in JetEngine.calendarCache.entries ) {
+					if ( ! document.querySelector( `.jet-calendar[data-cache-id="${cacheId}"]` ) ) {
+						delete JetEngine.calendarCache.entries[ cacheId ];
+					}
+				}
+	
+				if ( ! JetEngine.calendarCache.entries[ cacheId ] ) {
+					return;
+				}
+	
+				JetEngine.calendarCache.iterate(
+					JetEngine.calendarCache.entries[ cacheId ].keys(),
+					function ( month ) {
+						if ( JetEngine.calendarCache.isExpired( cacheId, month, cacheTimeout ) ) {
+							JetEngine.calendarCache.entries[ cacheId ].delete( month );
+						}
+					}
+				);
+			},
+	
+			isExpired: function ( cacheId, month, cacheTimeout ) {
+				if ( cacheTimeout < 0 ) {
+					return false;
+				}
+	
+				const cached = JetEngine.calendarCache.get( cacheId, month );
+	
+				if ( ! cached || ! Array.isArray( cached ) ) {
+					return true;
+				}
+	
+				return ! cached[1] || cached[1] < Date.now() - cacheTimeout;
+			},
+	
+			clear: function( e, $calendar ) {
+				const cacheId = $calendar.data( 'cache-id' ) || false;
+	
+				if ( ! cacheId ) {
+					return;
+				}
+	
+				JetEngine.calendarCache.entries[ cacheId ] = new Map();
+			},
+
+			modifyJetSmartFiltersSetiings: function( $widget, widgetType, monthData ) {
+				if ( ! window.JetSmartFilterSettings || ! window.JetSmartFilterSettings.settings ) {
+					return;
+				}
+
+				monthData = monthData.split( ' ' );
+
+				const month = monthData[0],
+				      year = monthData[1];
+
+				let widgetId;
+
+				switch ( widgetType ) {
+					case 'block':
+						widgetId = $widget.closest( '.jet-listing-calendar-block' )[0].id;
+
+						if ( ! widgetId ) {
+							widgetId = 'default';
+						}
+
+						if ( window.JetSmartFilterSettings.settings['jet-engine-calendar'][ widgetId ] ) {
+							window.JetSmartFilterSettings.settings['jet-engine-calendar'][ widgetId ]['start_from_month'] = month;
+							window.JetSmartFilterSettings.settings['jet-engine-calendar'][ widgetId ]['start_from_year'] = year;
+						}
+						
+						break;
+					case 'bricks':
+						widgetId = $widget.data( 'element-id' );
+
+						if ( ! widgetId ) {
+							break;
+						}
+
+						for ( const id in window.JetSmartFilterSettings.settings['jet-engine-calendar'] ) {
+							if ( window.JetSmartFilterSettings.settings['jet-engine-calendar'][ id ]._id === widgetId ) {
+								window.JetSmartFilterSettings.settings['jet-engine-calendar'][ id ]['start_from_month'] = month;
+								window.JetSmartFilterSettings.settings['jet-engine-calendar'][ id ]['start_from_year'] = year;
+								break;
+							}
+						}
+
+						break;
+					case 'elementor':
+						widgetId = $widget.closest( '.elementor-widget-jet-listing-calendar' )[0].id;
+
+						if ( ! widgetId ) {
+							widgetId = 'default';
+						}
+
+						if ( window.JetSmartFilterSettings.settings['jet-engine-calendar'][ widgetId ] ) {
+							window.JetSmartFilterSettings.settings['jet-engine-calendar'][ widgetId ]['start_from_month'] = month;
+							window.JetSmartFilterSettings.settings['jet-engine-calendar'][ widgetId ]['start_from_year'] = year;
+						}
+
+						break;
+				}
+			},
+		},
+
 		switchCalendarMonth: function( $event ) {
 
 			var $this     = $( this ),
@@ -2007,14 +2133,59 @@
 
 			settings = JetEngine.ensureJSON( settings );
 
+			if ( this.classList.contains( 'nav-link-prev' ) ) {
+				settings['__switch_direction'] = -1;
+			} else if ( this.classList.contains( 'nav-link-next' ) ) {
+				settings['__switch_direction'] = 1;
+			} else {
+				settings['__switch_direction'] = 0;
+			}
+
+			let widgetType = 'elementor';
+
 			// Context Gutenberg
 			if ( ! $widget.length ) {
-				$widget = $calendar.closest( '.jet-listing-calendar-block' )
+				$widget = $calendar.closest( '.jet-listing-calendar-block' );
+				widgetType = 'block';
 			}
 
 			// Context Bricks
 			if ( ! $widget.length ) {
 				$widget = $calendar.closest( '.brxe-jet-listing-calendar' )
+				widgetType = 'bricks';
+			}
+
+			JetEngine.calendarCache.modifyJetSmartFiltersSetiings( $widget, widgetType, month );
+
+			const cacheId = $calendar.data( 'cache-id' ) || false,
+			      cacheTimeout = ( settings['cache_timeout'] ?? 0 ) * 1000;
+
+			if ( cacheId && cacheTimeout ) {
+				
+				JetEngine.calendarCache.deleteExpiredEntries( cacheId, cacheTimeout );
+
+				// Remove the 'listening' and 'brx-open' classes from all matched elements to prevent
+				// reinitialization issues in the accordion.
+				if ( window.bricksIsFrontend ) {
+					$calendar.find('.accordion-item.listening, .brxe-accordion-nested > .listening')
+						.removeClass('listening brx-open');
+				}
+
+				JetEngine.calendarCache.update( cacheId, settings['prev_month'], $calendar.prop('outerHTML'), settings );
+
+				const cached = JetEngine.calendarCache.get( cacheId, month );
+
+				if ( cached?.length && cached[0] && ! JetEngine.calendarCache.isExpired( cacheId, month, cacheTimeout ) ) {
+					let replacement = $( cached[0] );
+					replacement.removeClass( 'jet-calendar-loading' );
+					$calendar.replaceWith( replacement[0] );
+					JetEngine.initElementsHandlers( $widget );
+
+					// Re-init Bricks scripts
+					JetEngine.reinitBricksScripts();
+
+					return;
+				}
 			}
 
 			$calendar.addClass( 'jet-calendar-loading' );
@@ -2036,7 +2207,15 @@
 			}).done( function( response ) {
 				if ( response.success ) {
 					$calendar.replaceWith( response.data.content );
+
+					if ( cacheId && cacheTimeout ) {
+						JetEngine.calendarCache.set( cacheId, month, response.data.content, settings );
+					}
+
 					JetEngine.initElementsHandlers( $widget );
+
+					// Re-init Bricks scripts
+					JetEngine.reinitBricksScripts();
 				}
 				$calendar.removeClass( 'jet-calendar-loading' );
 			} );
@@ -2273,6 +2452,14 @@
 			return true;
 		},
 
+		reinitBricksScripts: function() {
+			if ( window.bricksIsFrontend ) {
+				document.dispatchEvent(
+					new CustomEvent("bricks/ajax/query_result/displayed")
+				);
+			}
+		},
+
 		filters: ( function() {
 
 			var callbacks = {};
@@ -2324,7 +2511,7 @@
 	JetEngine.commonInit();
 
 	window.addEventListener( 'DOMContentLoaded', function() {
-		JetEngine.initBlocks();
+		setTimeout( () => JetEngine.initBlocks() );
 		JetEngine.initDone = true;
 	} );
 

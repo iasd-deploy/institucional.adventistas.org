@@ -122,6 +122,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Query_Manager' ) ) {
 				'meta_query',
 				'date_query',
 				'_s',
+				'_sm',
 				'sort',
 				'alphabet'
 			) );
@@ -426,15 +427,21 @@ if ( ! class_exists( 'Jet_Smart_Filters_Query_Manager' ) ) {
 					$search_key   = '__s_query|search';
 					$search_value = $query_var_value;
 
-					if ( strpos( $search_value, '!' ) ) {
-						$search_data = explode( '!', $search_value, 2 );
-						$search_meta = explode( '=', $search_data[1], 2 );
+					$_REQUEST[ $search_key ] = $search_value;
 
-						if ($search_meta[0] === 'meta' && $search_meta[1]) {
-							$search_key   = '_meta_query_' . $search_meta[1] . '|search';
-							$search_value = $search_data[0];
-						}
+					break;
+
+				case '_sm':
+				case 'search-by-meta':
+					$search_data = explode( '!', $query_var_value, 2 );
+
+					if ( count( $search_data ) !== 2 ) {
+						break;
 					}
+
+					$meta_key     = $search_data[0];
+					$search_key   = '_meta_query_' . $meta_key . '|search';
+					$search_value = $search_data[1];
 
 					$_REQUEST[ $search_key ] = $search_value;
 
@@ -693,7 +700,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Query_Manager' ) ) {
 		}
 
 		/**
-		 * Get taxonomy operator from value
+		 * Get operator from value
 		 */
 		public function get_operator( &$data ) {
 
@@ -704,10 +711,12 @@ if ( ! class_exists( 'Jet_Smart_Filters_Query_Manager' ) ) {
 			}
 
 			foreach ( $data as $key => $value ) {
-				if ( false !== strpos( $value, 'operator_' ) ) {
-					$operator = str_replace( 'operator_', '', $value );
-					unset( $data[ $key ] );
+				if ( ! is_string($value) || strpos( $value, 'operator_' ) === false ) {
+					continue;
 				}
+
+				$operator = str_replace( 'operator_', '', $value );
+				unset( $data[ $key ] );
 			}
 
 			return $operator;
@@ -885,6 +894,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Query_Manager' ) ) {
 			$filter_type        = isset( $additional_options['filter_type'] ) ? $additional_options['filter_type'] : false;
 			$is_custom_checkbox = isset( $additional_options['is_custom_checkbox'] ) ? true : false;
 			$keys               = explode( ',', $key );
+			$operator           = $this->get_operator( $value );
 
 			if ( count( $keys ) > 1 ) {
 				$meta_query['relation'] = 'OR';
@@ -895,7 +905,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Query_Manager' ) ) {
 				
 				if ( 'check-range' === $filter_type || ( $is_custom_checkbox && is_array( $value ) ) ) {
 					$nested_query = array(
-						'relation' => 'OR',
+						'relation' => $operator ? $operator : 'OR',
 					);
 	
 					foreach ( $value as $value_row ) {
