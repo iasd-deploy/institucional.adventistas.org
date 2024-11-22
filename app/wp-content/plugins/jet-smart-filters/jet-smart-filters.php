@@ -3,7 +3,7 @@
  * Plugin Name: JetSmartFilters
  * Plugin URI:  https://crocoblock.com/plugins/jetsmartfilters/
  * Description: Adds easy-to-use AJAX filters to the pages built with Elementor which contain the dynamic listings.
- * Version:     3.5.7.1
+ * Version:     3.5.3
  * Author:      Crocoblock
  * Author URI:  https://crocoblock.com/
  * Text Domain: jet-smart-filters
@@ -27,7 +27,7 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 		/**
 		 * Plugin version
 		 */
-		private $version = '3.5.7.1';
+		private $version = '3.5.3';
 
 		/**
 		 * Holder for base plugin URL
@@ -232,7 +232,7 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 				'jet-plugins',
 				jet_smart_filters()->plugin_url( 'assets/lib/jet-plugins/jet-plugins.js' ),
 				array( 'jquery' ),
-				$this->get_version(),
+				'1.1.0',
 				true
 			);
 
@@ -250,46 +250,13 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 				array(),
 				'2.2.3'
 			);
-
-			/**
-			 * Enqueue filter styles
-			 */
-			wp_register_style(
-				'jet-smart-filters',
-				jet_smart_filters()->plugin_url( 'assets/css/public.css' ),
-				array(),
-				$this->get_version()
-			);
-
-			// Filter inline styles
-			$tabindex_color = jet_smart_filters()->settings->get( 'tabindex_color', '#0085f2' );
-
-			$filter_inline_styles = "
-				.jet-filter {
-					--tabindex-color: $tabindex_color;
-					--tabindex-shadow-color: " . jet_smart_filters()->utils->hex2rgba( $tabindex_color, 0.4 ) . ";
-				}
-			";
-
-			if ( jet_smart_filters()->provider_preloader->is_enabled ) {
-				$filter_inline_styles .= jet_smart_filters()->provider_preloader->css;
-			}
-
-			wp_add_inline_style( 'jet-smart-filters', $filter_inline_styles );
 		}
 
 		/**
 		 * Set that filters are used
 		 */
 		public function set_filters_used() {
-
-			if ( ! $this->filters_not_used ) {
-				return;
-			}
-
 			$this->filters_not_used = false;
-
-			$this->print_registered_style( 'jet-smart-filters' );
 		}
 
 		/**
@@ -439,24 +406,6 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 		}
 
 		/**
-		 * Print template.
-		 */
-		public function print_template( $name = null ) {
-
-			$template_path = $this->get_template( $name );
-
-			if ( ! $template_path ) {
-				return '';
-			}
-
-			ob_start();
-			include $template_path;
-			$template = ob_get_clean();
-
-			return $template;
-		}
-
-		/**
 		 * Print component x-template
 		 */
 		public function print_x_templates( $id, $path ) {
@@ -476,19 +425,6 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 				$template,
 				$id
 			);
-		}
-
-		/**
-		 * Print a registered style at a specific location in the HTML code
-		 */
-		public function print_registered_style( $handle ) {
-
-			if ( ! wp_style_is( $handle, 'registered' ) ) {
-				return;
-			}
-
-			wp_enqueue_style( $handle );
-			wp_print_styles( $handle );
 		}
 
 		/**

@@ -27,14 +27,32 @@ class Subscriber implements Subscriber_Interface {
 	private $filesystem;
 
 	/**
+	 * Options Data instance
+	 *
+	 * @var Options_Data
+	 */
+	private $options;
+
+	/**
+	 * Script enqueued status.
+	 *
+	 * @since 3.7
+	 *
+	 * @var bool
+	 */
+	private $is_enqueued = false;
+
+	/**
 	 * Subscriber constructor.
 	 *
 	 * @param HTML                  $html HTML Instance.
 	 * @param \WP_Filesystem_Direct $filesystem The Filesystem object.
+	 * @param Options_Data          $options Options data instance.
 	 */
-	public function __construct( HTML $html, $filesystem ) {
+	public function __construct( HTML $html, $filesystem, Options_Data $options ) {
 		$this->html       = $html;
 		$this->filesystem = $filesystem;
+		$this->options    = $options;
 	}
 
 	/**

@@ -98,8 +98,6 @@ class CCT_Query extends \Jet_Engine\Query_Builder\Queries\Base_Query {
 			return $cached;
 		}
 
-		$this->setup_query();
-
 		$result = 0;
 		$type = ! empty( $this->final_query['content_type'] ) ? $this->final_query['content_type'] : false;
 

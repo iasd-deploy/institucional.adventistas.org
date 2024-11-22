@@ -60,20 +60,6 @@
 				:size="'fullwidth'"
 				v-model="generalSettings.cache_query"
 			></cx-vui-switcher>
-			<cx-vui-input
-				:label="'<?php _e( 'Cache Expires', 'jet-engine' ); ?>'"
-				:description="'<?php _e( 'Object cache expiration time in seconds. Default 0 (no expiration). Please note: this option makes sence when external Object cache used (Redis, Memcached, etc.). In other case cache is actual during single request.', 'jet-engine' ); ?>'"
-				:wrapper-css="[ 'equalwidth' ]"
-				size="fullwidth"
-				v-model="generalSettings.cache_expires"
-				:conditions="[
-					{
-						'input':   generalSettings.cache_query,
-						'compare': 'equal',
-						'value':   true,
-					}
-				]"
-			></cx-vui-input>
 			<cx-vui-switcher
 				:label="'<?php _e( 'Register Rest API Endpoint', 'jet-engine' ); ?>'"
 				:description="'<?php _e( 'Register WordPress Rest API endpoint to make query results publicly accessible and allow to get current query data remotely.', 'jet-engine' ); ?>'"

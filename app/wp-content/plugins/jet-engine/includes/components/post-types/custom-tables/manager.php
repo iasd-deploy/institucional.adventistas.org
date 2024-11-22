@@ -108,11 +108,6 @@ class Manager {
 			}
 		}
 
-		$schema = apply_filters(
-			'jet-engine/custom-meta-tables/object-schema/' . $object_slug,
-			$schema
-		);
-
 		return new DB( $this->get_table_name( $object_slug ), $schema );
 
 	}

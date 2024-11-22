@@ -95,7 +95,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Block_Base' ) ) {
 				),
 				'apply_button' => array(
 					'type'    => 'boolean',
-					'default' => true,
+					'default' => false,
 				),
 				'hide_apply_button' => array(
 					'type'    => 'boolean',
@@ -112,14 +112,6 @@ if ( ! class_exists( 'Jet_Smart_Filters_Block_Base' ) ) {
 				'redirect_path' => array(
 					'type'    => 'string',
 					'default' => '',
-				),
-				'active_state' => array(
-					'type'    => 'string',
-					'default' => 'always',
-				),
-				'if_inactive' => array(
-					'type'    => 'string',
-					'default' => 'disable',
 				),
 				'remove_filters_text' => array(
 					'type'    => 'string',
@@ -151,7 +143,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Block_Base' ) ) {
 				),
 				'rating_icon' => array(
 					'type'    => 'string',
-					'default' => 'star',
+					'default' => 'fa fa-star',
 				),
 				'sorting_label' => array(
 					'type'    => 'string',
@@ -385,14 +377,6 @@ if ( ! class_exists( 'Jet_Smart_Filters_Block_Base' ) ) {
 		 */
 		public function render_callback( $settings = array() ) {
 
-			if ( ! jet_smart_filters()->utils->is_filter_published( $settings['filter_id'] ) ) {
-				return $this->is_editor() ? __( 'Please select a filter', 'jet-smart-filters' ) : false;
-			}
-
-			if ( empty( $settings['content_provider'] ) || $settings['content_provider'] === 'not-selected' ) {
-				return $this->is_editor() ? __( 'Please select a provider', 'jet-smart-filters' ) : false;
-			}
-
 			jet_smart_filters()->set_filters_used();
 
 			// Enqueue assets for Date Period block
@@ -401,12 +385,24 @@ if ( ! class_exists( 'Jet_Smart_Filters_Block_Base' ) ) {
 				wp_enqueue_style( 'air-datepicker' );
 			}
 
+			if ( empty( $settings['filter_id'] ) ) {
+				return $this->is_editor() ? __( 'Please select a filter', 'jet-smart-filters' ) : false;
+			}
+
+			if ( empty( $settings['content_provider'] ) || $settings['content_provider'] === 'not-selected' ) {
+				return $this->is_editor() ? __( 'Please select a provider', 'jet-smart-filters' ) : false;
+			}
+
+			if ( 'submit' === $settings['apply_on'] && in_array( $settings['apply_type'], ['ajax', 'mixed'] ) ) {
+				$apply_type = $settings['apply_type'] . '-reload';
+			} else {
+				$apply_type = $settings['apply_type'];
+			}
+
 			$filter_id         = apply_filters( 'jet-smart-filters/render_filter_template/filter_id', $settings['filter_id'] );
 			$base_class        = 'jet-smart-filters-' . $this->get_name();
 			$provider          = $settings['content_provider'];
 			$query_id          = ! empty( $settings['query_id'] ) ? $settings['query_id'] : 'default';
-			$apply_type        = ! empty( $settings['apply_type'] ) ? $settings['apply_type'] : 'ajax';
-			$apply_on          = ! empty( $settings['apply_on'] ) ? $settings['apply_on'] : 'value';
 			$show_label        = $settings['show_label'];
 			$show_items_label  = $settings['show_items_label'];
 			$show_decorator    = true;
@@ -463,12 +459,11 @@ if ( ! class_exists( 'Jet_Smart_Filters_Block_Base' ) ) {
 			$filter_template_args =  array(
 				'filter_id'            => $filter_id,
 				'content_provider'     => $provider,
-				'query_id'             => $query_id,
+				'additional_providers' => $additional_providers,
 				'apply_type'           => $apply_type,
-				'apply_on'             => $apply_on,
+				'query_id'             => $query_id,
 				'show_label'           => $show_label,
 				'rating_icon'          => $rating_icon,
-				'additional_providers' => $additional_providers,
 				'display_options'      => array(
 					'show_items_label'  => $show_items_label,
 					'show_decorator'    => $show_decorator,

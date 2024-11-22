@@ -32,7 +32,7 @@ if ( 'lightbox' === $link_type ) {
 	$this->add_render_attribute( 
 		$link_instance,
 		'href',
-		esc_url( $this->_loop_item( array( 'item_image', 'url' ), '%s' ) )
+		esc_url( $this->__loop_item( array( 'item_image', 'url' ), '%s' ) )
 	);
 	$this->add_render_attribute( $link_instance, 'data-elementor-open-lightbox', 'yes' );
 	$this->add_render_attribute( $link_instance, 'data-elementor-lightbox-slideshow', $this->get_id()  );
@@ -55,7 +55,7 @@ if ( 'lightbox' === $link_type ) {
 	$this->add_render_attribute(
 		$link_instance,
 		'href',
-		esc_url( $this->_loop_item( array( 'item_url' ), '%s' ) )
+		esc_url( $this->__loop_item( array( 'item_url' ), '%s' ) )
 	);
 	$this->add_render_attribute( $link_instance, 'target', $target );
 	$this->add_render_attribute( $link_instance, 'rel', $rel );

@@ -132,10 +132,8 @@ class Extractor {
 				$block = trim( $block_matches[ $default_index ][ $block_index ] );
 			}
 
-			if ( ! empty( $this->comments_mapping ) ) {
-				foreach ( $this->comments_mapping as $id => $comment ) {
-					$block = str_replace( $id, $comment, $block );
-				}
+			foreach ( $this->comments_mapping as $id => $comment ) {
+				$block = str_replace( $id, $comment, $block );
 			}
 
 			foreach ( $urls as $url ) {
@@ -176,13 +174,7 @@ class Extractor {
 		 *
 		 * @param string[] $urls Ignored URLs.
 		 */
-		$ignored_urls = (array) apply_filters(
-			'rocket_lazyload_css_ignored_urls',
-			[
-				'trustindex-google-widget.css',
-				'cdn.trustindex.io',
-			]
-		);
+		$ignored_urls = (array) apply_filters( 'rocket_lazyload_css_ignored_urls', [] );
 
 		foreach ( $matches as $match ) {
 

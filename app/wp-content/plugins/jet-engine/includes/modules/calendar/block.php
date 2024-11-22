@@ -132,18 +132,6 @@ class Jet_Listing_Calendar_Block_Type extends \Jet_Engine_Blocks_Views_Type_Base
 				'type'    => 'string',
 				'default' => '',
 			),
-			'cache_enabled' => array(
-				'type'    => 'boolean',
-				'default' => false,
-			),
-			'max_cache' => array(
-				'type'    => 'string',
-				'default' => '12',
-			),
-			'cache_timeout' => array(
-				'type'    => 'string',
-				'default' => '60',
-			),
 		) );
 	}
 

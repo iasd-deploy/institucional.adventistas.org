@@ -10,19 +10,6 @@ import { store as blockEditorStore } from '@wordpress/block-editor'
 import { __unstableStripHTML as stripHTML } from '@wordpress/dom'
 import { useSelect, useDispatch } from '@wordpress/data'
 
-// Conditionally generate anchor from heading text.
-const generateAnchor = ( anchor, headingText, isGeneratedLink, settings ) => {
-	if ( ! isEmpty( anchor ) ) {
-		return anchor
-	}
-
-	if ( ! isUndefined( settings.generateAnchors ) && settings.generateAnchors === true ) {
-		return anchor
-	}
-
-	return isGeneratedLink ? kebabCase( stripHTML( headingText ) ) : anchor
-}
-
 /**
  * Get the headings from the content.
  *
@@ -36,7 +23,6 @@ export function GetLatestHeadings( headings, excludeHeadings ) {
 				getBlockAttributes,
 				getBlockName,
 				getClientIdsWithDescendants,
-				getSettings,
 			} = select( blockEditorStore )
 			const { __experimentalConvertBlockToStatic: convertBlockToStatic } = useDispatch( 'core/reusable-blocks' )
 
@@ -123,9 +109,11 @@ export function GetLatestHeadings( headings, excludeHeadings ) {
 
 					const isGeneratedLink = ! isUndefined( currentHeading.isGeneratedLink ) && currentHeading.isGeneratedLink
 
-					const settings = getSettings()
+					let anchor = headingAttributes.anchor
 					const headingText = ! isEmpty( headingAttributes.content.text ) ? headingAttributes.content.text : headingAttributes.content
-					let anchor = generateAnchor( headingAttributes.anchor, headingText, isGeneratedLink, settings )
+					if ( isEmpty( headingAttributes.anchor ) || isGeneratedLink ) {
+						anchor = kebabCase( stripHTML( headingText ) )
+					}
 
 					if ( includes( anchors, anchor ) ) {
 						i += 1

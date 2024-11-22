@@ -55,7 +55,9 @@ class Elementor_Post_Query {
 			add_action( 'pre_get_posts', [ $this, 'pre_get_posts_query_filter' ] );
 		}
 
-		if ( ! $this->is_manual_selection() && 0 < $offset_control ) {
+		$post_type = $this->get_widget_settings( 'post_type' );
+
+		if ( 'by_id' !== $post_type && 0 < $offset_control ) {
 			/**
 			 * @see https://codex.wordpress.org/Making_Custom_Queries_using_Offset_and_Pagination
 			 */
@@ -131,7 +133,7 @@ class Elementor_Post_Query {
 		$this->set_pagination_args();
 		$this->set_post_include_args();
 
-		if ( ! $this->is_manual_selection() ) {
+		if ( 'by_id' !== $post_type ) {
 
 			$this->set_post_exclude_args();
 			$this->set_avoid_duplicates();
@@ -163,17 +165,18 @@ class Elementor_Post_Query {
 	protected function set_common_args() {
 		$this->query_args['post_status'] = 'publish'; // Hide drafts/private posts for admins
 
-		if ( $this->is_manual_selection() ) {
+		$post_type = $this->get_widget_settings( 'post_type' );
+		if ( 'by_id' === $post_type ) {
 			$post_types = Utils::get_public_post_types();
 			$this->query_args['post_type'] = array_keys( $post_types );
 		} else {
-			$this->query_args['post_type'] = $this->get_widget_settings( 'post_type' );
+			$this->query_args['post_type'] = $post_type;
 		}
 	}
 
 	protected function set_post_include_args() {
 
-		if ( $this->is_manual_selection() ) {
+		if ( 'by_id' === $this->get_widget_settings( 'post_type' ) ) {
 
 			$this->set_query_arg( 'post__in', $this->get_widget_settings( 'posts_ids' ) );
 
@@ -181,13 +184,7 @@ class Elementor_Post_Query {
 				// If no selection - return an empty query
 				$this->query_args['post__in'] = [ 0 ];
 			}
-
-			$this->set_query_arg( 'ignore_sticky_posts', true, true );
 		}
-	}
-
-	private function is_manual_selection(): bool {
-		return 'by_id' === $this->get_widget_settings( 'post_type' );
 	}
 
 	protected function set_post_exclude_args() {
@@ -223,10 +220,12 @@ class Elementor_Post_Query {
 	}
 
 	protected function set_terms_args() {
-		if ( $this->is_manual_selection() ) {
+
+		$post_type = $this->get_widget_settings( 'post_type' );
+
+		if ( 'by_id' === $post_type ) {
 			return;
 		}
-
 		$this->build_terms_query_include( 'include_term_ids' );
 		$this->build_terms_query_exclude( 'exclude_term_ids' );
 	}

@@ -327,7 +327,6 @@
 					:wrapper-css="[ 'equalwidth' ]"
 					v-model="generalSettings.hide_field_names"
 				></cx-vui-switcher>
-				<?php do_action( 'jet-engine/custom-content-types/edit-type/custom-settings' ); ?>
 			</div>
 		</cx-vui-collapse>
 		<cx-vui-popup

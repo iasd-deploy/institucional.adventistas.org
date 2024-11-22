@@ -27,9 +27,7 @@ class JetPlugins {
 		return this.getBlockName( block?.dataset?.isBlock || '' );
 	}
 
-	init( $scope, blocks, namespace ) {
-
-		namespace = namespace || false;
+	init( $scope, blocks ) {
 
 		// Attach blocks callback early if used. Its optional, maybe used to
 		// make sure handlers attached before hooks called
@@ -41,17 +39,13 @@ class JetPlugins {
 		$scope = $scope || jQuery( 'body' );
 
 		if ( $scope && $scope.length ) {
-
-			let blockSelector = '[data-is-block*="/"]';
-			if ( namespace ) {
-				blockSelector = '[data-is-block*="' + namespace + '/"]';
-			}
-			let $blocksList = $scope.find( blockSelector );
+			let $blocksList = $scope.find( '[data-is-block*="/"]' );
 			$blocksList && $blocksList.length &&
 			$blocksList.each( ( index, el ) => {
 				this.initBlock( el );
 			} );
 		}
+
 	}
 
 	/**

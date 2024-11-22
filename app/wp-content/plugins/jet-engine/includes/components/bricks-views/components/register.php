@@ -1,8 +1,6 @@
 <?php
 namespace Jet_Engine\Bricks_Views\Components;
 
-use \Jet_Engine\Bricks_Views\Listing\Assets as Listing_Assets;
-
 class Register {
 
 	private $_component_elements = [];
@@ -19,76 +17,6 @@ class Register {
 		add_action( 'wp_enqueue_scripts', [ $this, 'print_preview_vars' ], 10 );
 		add_action( 'wp', [ $this, 'load_component_el' ], 11 );
 		add_action( 'rest_api_init', [ $this, 'rest_load_component_el' ] );
-
-		add_filter( 'bricks/dynamic_data/format_value', [ $this, 'process_dynamic_tag' ], 10, 3 );
-
-		/**
-		 * Fix Ajax popups rendering, when popup trggered from component
-		 * https://github.com/Crocoblock/issues-tracker/issues/11661 (1)
-		 */
-		add_filter( 'bricks/frontend/render_data', [ $this, 'fix_ajax_popups_render' ], 0, 3 );
-		add_action( 'jet-engine/component/after-content', [ $this, 'fix_ajax_popup_css' ] );
-
-	}
-
-	/**
-	 * Fix CSS generation on Bricks AJAX popup loading
-	 * https://github.com/Crocoblock/issues-tracker/issues/11661 (1)
-	 */
-	public function fix_ajax_popup_css() {
-
-		if ( ! \Bricks\Api::is_current_endpoint( 'load_popup_content' ) ) {
-			return;
-		}
-
-		if ( isset( Listing_Assets::$unique_inline_css )
-			&& ! empty( Listing_Assets::$unique_inline_css )
-		) {
-			printf(
-				'<style type="text/css">%s</style>',
-				str_replace( '.brx-popup', '', implode( '', Listing_Assets::$unique_inline_css ) )
-			);
-		}
-	}
-
-
-	/**
-	 * Fix Ajax popups rendering, when popup trggered from component
-	 * https://github.com/Crocoblock/issues-tracker/issues/11661 (1)
-	 */
-	public function fix_ajax_popups_render( $content, $post, $area ) {
-
-		if ( ! \Bricks\Api::is_current_endpoint( 'load_popup_content' ) ) {
-			return $content;
-		}
-
-		$payload = $this->get_payload();
-
-		if ( ! $payload ) {
-			return $content;
-		}
-
-		$payload = json_decode( $payload, true );
-
-		if ( ! $payload || ! isset( $payload['popupLoopId'] ) ) {
-			return $content;
-		}
-
-		$loop_id = $payload['popupLoopId'];
-
-		if ( isset( \Bricks\Popups::$ajax_popup_contents[ $loop_id ] ) ) {
-
-			$new_loop_id = explode( ':', $loop_id );
-			$new_loop_id[1] = 0;
-			$new_loop_id = implode( ':', $new_loop_id );
-
-			if ( ! isset( \Bricks\Popups::$ajax_popup_contents[ $new_loop_id ] ) ) {
-				\Bricks\Popups::$ajax_popup_contents[ $new_loop_id ] = \Bricks\Popups::$ajax_popup_contents[ $loop_id ];
-			}
-
-		}
-
-		return $content;
 
 	}
 
@@ -345,56 +273,6 @@ class Register {
 			$component->get_default_state( false, [ 'media_format' => 'id' ] ) 
 		);
 
-	}
-
-	/**
-	 * Processes the given value based on the provided tag, post ID, filters, and context.
-	 *
-	 * @param mixed  $value     The initial value to be processed.
-	 * @param string $tag       The tag associated with the value.
-	 * @param int    $post_id   The ID of the post used for rendering.
-	 *
-	 * @return mixed The processed value, which may be modified based on the dynamic tag.
-	 */
-	public function process_dynamic_tag( $value, $tag, $post_id ) {
-		if ( ! str_contains( $tag, 'jet_component__' ) ) {
-			return $value;
-		}
-
-		if ( ! $this->contains_dynamic_tag( $value ) ) {
-			return $value;
-		}
-
-		$tag = str_replace( [ '{', '}' ], '', $value[0] );
-
-		return apply_filters(
-			'bricks/dynamic_data/render_tag',
-			$tag,
-			get_post( $post_id ),
-			'image'
-		);
-	}
-
-	/**
-	 * Checks if an array contains any dynamic tags.
-	 *
-	 * @param array $array The array to check for dynamic tags.
-	 *
-	 * @return bool Returns true if at least one element contains a dynamic tag, otherwise, returns false.
-	 */
-	public function contains_dynamic_tag( $array ) {
-		if ( ! is_array( $array ) ) {
-			return false; // Якщо не масив, просто повертаємо false
-		}
-
-		foreach ( $array as $value ) {
-			// Перевірка, чи містить елемент тег у фігурних дужках
-			if ( preg_match( '/\{[^\}]+\}/', $value ) ) {
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 }

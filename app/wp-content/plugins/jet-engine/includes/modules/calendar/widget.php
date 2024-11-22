@@ -249,51 +249,6 @@ if ( ! class_exists( 'Elementor\Jet_Listing_Calendar_Widget' ) ) {
 			);
 
 			$this->add_control(
-				'cache_enabled',
-				array(
-					'label'        => __( 'Cache Calendar', 'jet-engine' ),
-					'type'         => Controls_Manager::SWITCHER,
-					'label_on'     => __( 'Yes', 'jet-engine' ),
-					'label_off'    => __( 'No', 'jet-engine' ),
-					'separator'    => 'before',
-					'return_value' => 'yes',
-					'default'      => '',
-				)
-			);
-
-			$this->add_control(
-				'cache_timeout',
-				array(
-					'label'       => esc_html__( 'Cache Timeout', 'jet-engine' ),
-					'description' => __( 'Cache timeout in seconds. Set -1 for unlimited.', 'jet-engine' ),
-					'type'        => Controls_Manager::NUMBER,
-					'min'         => -1,
-					'max'         => 86400,
-					'step'        => 1,
-					'default'     => 60,
-					'condition'   => array(
-						'cache_enabled' => 'yes',
-					),
-				)
-			);
-
-			$this->add_control(
-				'max_cache',
-				array(
-					'label'       => esc_html__( 'Maximum Cache Size', 'jet-engine' ),
-					'description' => __( 'Maximum cache size (months). If number of cached month exceeds this number - the oldest month will be deleted from cache.', 'jet-engine' ),
-					'type'        => Controls_Manager::NUMBER,
-					'min'         => 1,
-					'max'         => 120,
-					'step'        => 1,
-					'default'     => 12,
-					'condition'   => array(
-						'cache_enabled' => 'yes',
-					),
-				)
-			);
-
-			$this->add_control(
 				'legacy_notice',
 				array(
 					'type' => Controls_Manager::RAW_HTML,

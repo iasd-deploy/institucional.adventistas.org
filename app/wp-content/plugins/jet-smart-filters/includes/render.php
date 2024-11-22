@@ -23,8 +23,6 @@ if ( ! class_exists( 'Jet_Smart_Filters_Render' ) ) {
 			'alphabet',
 			'_s',
 			'search',
-			'_sm',
-			'search-by-meta',
 			'pagenum',
 			'plain_query',
 		);
@@ -221,13 +219,12 @@ if ( ! class_exists( 'Jet_Smart_Filters_Render' ) ) {
 				$result = ( $check_signature === $request_signature ) ? true : false;
 
 			} elseif ( empty( $_REQUEST['settings'] ) ) {
-
 				// if settings completely empty - they're cannot be hacked
 				$result = true;
-
 			}
 
 			return apply_filters( 'jet-smart-filters/render/ajax/verify-signature', $result );
+
 		}
 
 		/**

@@ -990,12 +990,6 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 		 */
 		public function get_meta( $key = null, $object = null, $source = null ) {
 
-			//moved before trying to get value from user to fix issue with Dynamic Image
-			//https://github.com/Crocoblock/issues-tracker/issues/11251
-			if ( ! $object ) {
-				$object = $this->get_current_object();
-			}
-
 			if ( in_array( $key, $this->user_fields ) ) {
 
 				if ( $object && 'WP_User' === get_class( $object ) ) {
@@ -1015,6 +1009,10 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 					);
 				}
 
+			}
+
+			if ( ! $object ) {
+				$object = $this->get_current_object();
 			}
 
 			if ( ! $object ) {

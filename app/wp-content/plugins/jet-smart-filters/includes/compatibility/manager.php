@@ -20,7 +20,7 @@ class Jet_Smart_Filters_Compatibility_Manager {
 
 		if ( defined( 'WPML_ST_VERSION' ) ) {
 			require jet_smart_filters()->plugin_path( 'includes/compatibility/wpml.php' );
-			new Jet_Smart_Filters_Compatibility_WPML();
+			new Jet_Smart_Filters_Compatibility_WMPL();
 		}
 
 		if ( class_exists( 'WooCommerce' ) ) {

@@ -36,6 +36,7 @@ class ServiceProvider extends AbstractServiceProvider {
 		$this->getContainer()->addShared( 'beacon', Beacon::class )
 			->addArgument( $this->getContainer()->get( 'options' ) )
 			->addArgument( $this->getContainer()->get( 'template_path' ) . '/settings' )
-			->addArgument( $this->getContainer()->get( 'support_data' ) );
+			->addArgument( $this->getContainer()->get( 'support_data' ) )
+			->addTag( 'admin_subscriber' );
 	}
 }

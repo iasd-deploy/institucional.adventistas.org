@@ -27,20 +27,6 @@ class Taxonomy_Screen implements IScreen {
 	 * Class construct
 	 */
 	public function __construct() {
-		add_action( 'init', [ $this, 'allow_tags' ], 15 );
-	}
-
-	/**
-	 * Allow tags in term description.
-	 */
-	public function allow_tags() {
-		$taxonomies = Helper::get_allowed_taxonomies();
-		if ( is_array( $taxonomies ) && ! empty( $taxonomies ) ) {
-			remove_filter( 'pre_term_description', 'wp_filter_kses' );
-			remove_filter( 'term_description', 'wp_kses_data' );
-			add_filter( 'pre_term_description', 'wp_kses_post' );
-			add_filter( 'term_description', 'wp_kses_post' );
-		}
 	}
 
 	/**
@@ -73,6 +59,10 @@ class Taxonomy_Screen implements IScreen {
 		if ( is_array( $taxonomies ) && ! empty( $taxonomies ) ) {
 			$object_types[] = 'term';
 			$this->description_field_editor();
+			remove_filter( 'pre_term_description', 'wp_filter_kses' );
+			remove_filter( 'term_description', 'wp_kses_data' );
+			add_filter( 'pre_term_description', 'wp_kses_post' );
+			add_filter( 'term_description', 'wp_kses_post' );
 		}
 
 		return $object_types;

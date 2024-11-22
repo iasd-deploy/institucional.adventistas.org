@@ -1,5 +1,4 @@
 <?php
-declare(strict_types=1);
 
 namespace WP_Rocket\Engine\Support;
 
@@ -14,21 +13,12 @@ class Subscriber implements Subscriber_Interface {
 	private $rest;
 
 	/**
-	 * Meta instance
-	 *
-	 * @var Meta
-	 */
-	private $meta;
-
-	/**
 	 * Instantiate the class
 	 *
 	 * @param Rest $rest Rest instance.
-	 * @param Meta $meta Meta instance.
 	 */
-	public function __construct( Rest $rest, Meta $meta ) {
+	public function __construct( Rest $rest ) {
 		$this->rest = $rest;
-		$this->meta = $meta;
 	}
 
 	/**
@@ -39,7 +29,6 @@ class Subscriber implements Subscriber_Interface {
 	public static function get_subscribed_events() {
 		return [
 			'rest_api_init' => 'register_support_route',
-			'rocket_buffer' => [ 'add_meta_generator', PHP_INT_MAX ],
 		];
 	}
 
@@ -52,15 +41,5 @@ class Subscriber implements Subscriber_Interface {
 	 */
 	public function register_support_route() {
 		$this->rest->register_route();
-	}
-
-	/**
-	 * Add the WP Rocket meta generator tag to the HTML
-	 *
-	 * @param string $html The HTML content.
-	 * @return string
-	 */
-	public function add_meta_generator( $html ): string {
-		return $this->meta->add_meta_generator( $html );
 	}
 }

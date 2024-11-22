@@ -24,7 +24,8 @@ class Manager {
 	 */
 	function __construct() {
 		add_action( 'jet-engine/bricks-views/init', array( $this, 'init' ), 10 );
-		add_action( 'jet-smart-filters/render/ajax/before', array( $this, 'initialize_map_filter_settings' ), 10, 2 );
+		add_action( 'jet-engine/bricks-views/listing/before-css-generation', array( $this, 'set_wp_doing_ajax' ), 10 );
+		add_action( 'jet-engine/bricks-views/listing/after-css-generation', array( $this, 'reset_wp_doing_ajax' ), 10 );
 	}
 
 	public function init() {
@@ -56,15 +57,15 @@ class Manager {
 		jet_engine()->bricks_views->listing->render->set_bricks_query( $listing_id, $settings );
 	}
 
-	public function initialize_map_filter_settings( $instance, $provider_id ) {
-		if ( $provider_id !== 'jet-engine-maps' ) {
-			return;
+	public function set_wp_doing_ajax() {
+		if ( defined( 'REST_REQUEST' ) ) {
+			add_filter( 'wp_doing_ajax', '__return_true');
 		}
-
-		add_filter( 'jet-engine/maps-listings/marker-data', array( $this, 'sanitize_marker_data' ), 10 );
 	}
 
-	public function sanitize_marker_data( $marker ) {
-		return wp_unslash( $marker );
+	public function reset_wp_doing_ajax() {
+		if ( defined( 'REST_REQUEST' ) ) {
+			remove_filter( 'wp_doing_ajax', '__return_true');
+		}
 	}
 }

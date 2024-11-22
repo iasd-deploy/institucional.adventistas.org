@@ -27,7 +27,6 @@ class ServiceProvider extends AbstractServiceProvider {
 		'expired_cache_purge_subscriber',
 		'preload_caches_query',
 		'cache_config',
-		'taxonomy_subscriber',
 	];
 
 	/**
@@ -63,19 +62,22 @@ class ServiceProvider extends AbstractServiceProvider {
 			->addArgument( $cache_query );
 		$this->getContainer()->addShared( 'purge_actions_subscriber', PurgeActionsSubscriber::class )
 			->addArgument( $this->getContainer()->get( 'options' ) )
-			->addArgument( $this->getContainer()->get( 'purge' ) );
+			->addArgument( $this->getContainer()->get( 'purge' ) )
+			->addTag( 'common_subscriber' );
 		$this->getContainer()->addShared( 'admin_cache_subscriber', AdminSubscriber::class )
 			->addArgument( $this->getContainer()->get( 'advanced_cache' ) )
-			->addArgument( $this->getContainer()->get( 'wp_cache' ) );
+			->addArgument( $this->getContainer()->get( 'wp_cache' ) )
+			->addTag( 'admin_subscriber' );
 
 		$this->getContainer()->add( 'expired_cache_purge', PurgeExpiredCache::class )
 			->addArgument( rocket_get_constant( 'WP_ROCKET_CACHE_PATH' ) );
 		$this->getContainer()->addShared( 'expired_cache_purge_subscriber', Subscriber::class )
 			->addArgument( $this->getContainer()->get( 'options' ) )
-			->addArgument( $this->getContainer()->get( 'expired_cache_purge' ) );
+			->addArgument( $this->getContainer()->get( 'expired_cache_purge' ) )
+			->addTag( 'common_subscriber' );
 		$this->getContainer()->add( 'cache_config', ConfigSubscriber::class )
 			->addArgument( $this->getContainer()->get( 'options' ) )
-			->addArgument( $this->getContainer()->get( 'options_api' ) );
-		$this->getContainer()->addShared( 'taxonomy_subscriber', TaxonomySubscriber::class );
+			->addArgument( $this->getContainer()->get( 'options_api' ) )
+			->addTag( 'common_subscriber' );
 	}
 }

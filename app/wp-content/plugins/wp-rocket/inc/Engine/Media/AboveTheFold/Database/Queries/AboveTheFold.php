@@ -3,13 +3,11 @@ declare(strict_types=1);
 
 namespace WP_Rocket\Engine\Media\AboveTheFold\Database\Queries;
 
-use WP_Rocket\Engine\Common\PerformanceHints\Database\Queries\AbstractQueries;
-use WP_Rocket\Engine\Common\PerformanceHints\Database\Queries\QueriesInterface;
-
+use WP_Rocket\Engine\Common\Database\Queries\AbstractQuery;
 use WP_Rocket\Engine\Media\AboveTheFold\Database\Schemas\AboveTheFold as AboveTheFoldSchema;
 use WP_Rocket\Engine\Media\AboveTheFold\Database\Rows\AboveTheFold as AboveTheFoldRow;
 
-class AboveTheFold extends AbstractQueries implements QueriesInterface {
+class AboveTheFold extends AbstractQuery {
 
 	/**
 	 * Name of the database table to query.
@@ -78,6 +76,34 @@ class AboveTheFold extends AbstractQueries implements QueriesInterface {
 	 *
 	 * @return boolean|int
 	 */
+	public function make_job_completed( string $url, bool $is_mobile, array $data ) {
+		if ( ! self::$table_exists && ! $this->table_exists() ) {
+			return false;
+		}
+
+		// Get the database interface.
+		$db = $this->get_db();
+
+		// Bail if no database interface is available.
+		if ( ! $db ) {
+			return false;
+		}
+
+		$prefixed_table_name = $db->prefix . $this->table_name;
+
+		$data = [
+			'status'   => 'completed',
+			'lcp'      => $data['lcp'],
+			'viewport' => $data['viewport'],
+		];
+
+		$where = [
+			'url'       => untrailingslashit( $url ),
+			'is_mobile' => $is_mobile,
+		];
+
+		return $db->update( $prefixed_table_name, $data, $where );
+	}
 
 	/**
 	 * Delete all rows which were not accessed in the last month.

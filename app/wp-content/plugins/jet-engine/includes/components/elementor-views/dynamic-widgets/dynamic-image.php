@@ -125,7 +125,7 @@ class Jet_Listing_Dynamic_Image_Widget extends \Jet_Listing_Dynamic_Widget {
 				'default'    => [
 					'size' => 50,
 				],
-				'size_units' => [ 'px', '%', 'em', 'rem', 'custom' ],
+				'size_units' => [ 'px' ],
 				'range'      => [
 					'px' => [
 						'min' => 10,
@@ -374,7 +374,7 @@ class Jet_Listing_Dynamic_Image_Widget extends \Jet_Listing_Dynamic_Widget {
 				'mobile_default' => [
 					'unit' => '%',
 				],
-				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( [ 'px', '%', 'em', 'rem', 'custom' ] ),
+				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( [ '%', 'px', 'vw' ] ),
 				'range' => [
 					'%' => [
 						'min' => 1,
@@ -410,7 +410,7 @@ class Jet_Listing_Dynamic_Image_Widget extends \Jet_Listing_Dynamic_Widget {
 				'mobile_default' => [
 					'unit' => '%',
 				],
-				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( [ 'px', '%', 'em', 'rem', 'custom' ] ),
+				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( [ '%', 'px', 'vw' ] ),
 				'range' => [
 					'%' => [
 						'min' => 1,
@@ -446,7 +446,7 @@ class Jet_Listing_Dynamic_Image_Widget extends \Jet_Listing_Dynamic_Widget {
 				'mobile_default' => [
 					'unit' => 'px',
 				],
-				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( [ 'px', '%', 'em', 'rem', 'vh', 'custom' ] ),
+				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( [ 'px', 'vh' ] ),
 				'range' => [
 					'px' => [
 						'min' => 1,
@@ -499,7 +499,7 @@ class Jet_Listing_Dynamic_Image_Widget extends \Jet_Listing_Dynamic_Widget {
 			[
 				'label'      => __( 'Border Radius', 'jet-engine' ),
 				'type'       => Controls_Manager::DIMENSIONS,
-				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( [ 'px', '%', 'custom' ] ),
+				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( [ 'px', '%' ] ),
 				'selectors'  => [
 					$this->css_selector( ' img' ) => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				],

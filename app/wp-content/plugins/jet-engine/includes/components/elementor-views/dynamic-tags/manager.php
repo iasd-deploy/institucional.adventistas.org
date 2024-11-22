@@ -77,10 +77,10 @@ if ( ! class_exists( 'Jet_Engine_Dynamic_Tags_Manager' ) ) {
 		 *
 		 * @return \Elementor\Core\DynamicTags\Dynamic_CSS|Jet_Engine_Elementor_Dynamic_CSS
 		 */
-		public function get_dynamic_css_file( $post_id, $post_id_for_data, $unique_id = null ) {
+		public function get_dynamic_css_file( $post_id, $post_id_for_data ) {
 
 			if ( defined( 'ELEMENTOR_VERSION' ) && version_compare( ELEMENTOR_VERSION, '3.0.0-beta4', '>=' ) ) {
-				return Jet_Engine_Elementor_Dynamic_CSS::create( $post_id, $post_id_for_data, $unique_id );
+				return Jet_Engine_Elementor_Dynamic_CSS::create( $post_id, $post_id_for_data );
 			}
 
 			return Elementor\Core\DynamicTags\Dynamic_CSS::create( $post_id, $post_id_for_data );
@@ -110,21 +110,8 @@ if ( ! class_exists( 'Jet_Engine_Dynamic_Tags_Manager' ) ) {
 				$post_ids_for_data = array_merge( $post_ids_for_data, $inner_templates );
 			}
 
-			/**
-			 * Unique ID required to allow refreshing dynamic CSS file with same ID.
-			 * Could be any unique string or number.
-			 * Out of the box used for the components.
-			 *
-			 * https://github.com/Crocoblock/issues-tracker/issues/10893
-			 *
-			 * @var mixed
-			 */
-			$unique_id = apply_filters( 'jet-engine/elementor-views/dynamic-tags/dynamic-css-unique-id', null );
-
 			foreach ( $post_ids_for_data as $post_id_for_data ) {
-
-				$css_file = $this->get_dynamic_css_file( $post_id, $post_id_for_data, $unique_id );
-				$css_file->set_listing_unique_selector( '.jet-listing-dynamic-post-' . $post_id );
+				$css_file = $this->get_dynamic_css_file( $post_id, $post_id_for_data );
 				$post_css = $css_file->get_content();
 
 				if ( ! empty( $post_css ) ) {
@@ -134,6 +121,18 @@ if ( ! class_exists( 'Jet_Engine_Dynamic_Tags_Manager' ) ) {
 
 			if ( empty( $css ) ) {
 				return $content;
+			}
+
+			// Allow components to prevent selectors replacing or set it's own replacement scheme
+			$replace_selectors = apply_filters( 
+				'jet-engine/elementor-views/dynamic-tags/replace-dynamic-css-selector',
+				[ '.elementor-' . $post_id => '.jet-listing-dynamic-post-' . $post_id ], 
+				$listing_id,
+				$post_id
+			);
+
+			if ( false !== $replace_selectors ) {
+				$css = str_replace( array_keys( $replace_selectors ), array_values( $replace_selectors ), $css );
 			}
 
 			$css = sprintf( '<style type="text/css">%s</style>', $css );

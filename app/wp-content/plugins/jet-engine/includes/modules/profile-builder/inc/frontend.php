@@ -10,8 +10,6 @@ class Frontend {
 	public $current_user_obj = false;
 	public $user_page_title = null;
 	public $user_page_desc = null;
-	public $account_page_title = null;
-	public $account_page_desc = null;
 
 	/**
 	 * Constructor for the class
@@ -41,7 +39,6 @@ class Frontend {
 
 		// SEO hooks.
 		add_filter( 'pre_get_document_title', array( $this, 'set_document_title_on_single_user_page' ), 99 );
-		add_filter( 'pre_get_document_title', array( $this, 'set_document_title_on_account_page' ), 99 );
 		add_filter( 'get_canonical_url',      array( $this, 'modify_canonical_url' ) );
 
 		// SEO description
@@ -328,7 +325,7 @@ class Frontend {
 			return $title;
 		}
 
-		$user_page_title = $this->apply_profile_builder_macros( $user_page_title );
+		$user_page_title = $this->apply_user_page_macros( $user_page_title );
 		$user_page_title = wp_strip_all_tags( stripslashes( $user_page_title ), true );
 		$user_page_title = esc_html( $user_page_title );
 
@@ -337,38 +334,13 @@ class Frontend {
 		return $this->user_page_title;
 	}
 
-	public function set_document_title_on_account_page( $title ) {
-
-		if ( ! Module::instance()->query->is_account_page() ) {
-			return $title;
-		}
-
-		if ( null !== $this->account_page_title ) {
-			return $this->account_page_title;
-		}
-
-		$account_page_title = Module::instance()->settings->get( 'account_page_seo_title' );
-
-		if ( empty( $account_page_title ) ) {
-			return $title;
-		}
-
-		$account_page_title = $this->apply_profile_builder_macros( $account_page_title );
-		$account_page_title = wp_strip_all_tags( stripslashes( $account_page_title ), true );
-		$account_page_title = esc_html( $account_page_title );
-
-		$this->account_page_title = $account_page_title;
-
-		return $this->account_page_title;
-	}
-
-	public function apply_profile_builder_macros( $string = '' ) {
+	public function apply_user_page_macros( $string = '' ) {
 
 		if ( empty( $string ) ) {
 			return $string;
 		}
 
-		$title_macros = $this->get_profile_builder_macros();
+		$title_macros = $this->get_user_page_title_macros();
 
 		return preg_replace_callback(
 			'/%([a-z0-9_-]+)(\([a-zA-Z0-9_-]+\))?%/',
@@ -403,7 +375,7 @@ class Frontend {
 		);
 	}
 
-	public function get_profile_builder_macros() {
+	public function get_user_page_title_macros() {
 		return apply_filters( 'jet-engine/profile-builder/user-page-title/macros', array(
 			'username' => array(
 				'label' => esc_html__( 'User Display Name', 'jet-engine' ),
@@ -411,14 +383,12 @@ class Frontend {
 					$user = Module::instance()->query->get_queried_user();
 					return $user ? $user->display_name : null;
 				},
-				'allowed_tabs' => array( 'user_page' ),
 			),
 			'pagetitle' => array(
 				'label' => esc_html__( 'Page Title', 'jet-engine' ),
 				'cb'    => function() {
 					return single_post_title( '', false );
 				},
-				'allowed_tabs' => array( 'account_page', 'user_page' ),
 			),
 			'subpagetitle' => array(
 				'label' => esc_html__( 'Subpage Title', 'jet-engine' ),
@@ -426,21 +396,18 @@ class Frontend {
 					$subpage_data = Module::instance()->query->get_subpage_data();
 					return ! empty( $subpage_data['title'] ) ? $subpage_data['title'] : '';
 				},
-				'allowed_tabs' => array( 'account_page', 'user_page' ),
 			),
 			'sep' => array(
 				'label' => esc_html__( 'Separator', 'jet-engine' ),
 				'cb'    => function() {
 					return apply_filters( 'document_title_separator', '-' );
 				},
-				'allowed_tabs' => array( 'account_page', 'user_page' ),
 			),
 			'sitename' => array(
 				'label' => esc_html__( 'Site Name', 'jet-engine' ),
 				'cb'    => function() {
 					return get_bloginfo( 'name', 'display' );
 				},
-				'allowed_tabs' => array( 'account_page', 'user_page' ),
 			),
 			'user_field' => array(
 				'label'    => esc_html__( 'User Field', 'jet-engine' ) . ' (<i>first_name, last_name, nickname, ...</i>)',
@@ -454,7 +421,6 @@ class Frontend {
 					$user = Module::instance()->query->get_queried_user();
 					return $user ? get_user_meta( $user->ID, $user_field, true ) : null;
 				},
-				'allowed_tabs' => array( 'user_page' ),
 			),
 		) );
 	}
@@ -501,7 +467,7 @@ class Frontend {
 			return null;
 		}
 
-		$user_page_desc = $this->apply_profile_builder_macros( $user_page_desc );
+		$user_page_desc = $this->apply_user_page_macros( $user_page_desc );
 		$user_page_desc = wp_strip_all_tags( stripslashes( $user_page_desc ), true );
 		$user_page_desc = esc_html( $user_page_desc );
 
@@ -510,50 +476,15 @@ class Frontend {
 		return $this->user_page_desc;
 	}
 
-	public function get_account_page_seo_description( $default = null ) {
-
-		if ( ! Module::instance()->query->is_account_page() ) {
-			return $default;
-		}
-
-		if ( null !== $this->account_page_desc ) {
-			return $this->account_page_desc;
-		}
-
-		$account_page_desc = Module::instance()->settings->get( 'account_page_seo_desc' );
-
-		if ( empty( $account_page_desc ) ) {
-			return null;
-		}
-
-		$account_page_desc = $this->apply_profile_builder_macros( $account_page_desc );
-		$account_page_desc = wp_strip_all_tags( stripslashes( $account_page_desc ), true );
-		$account_page_desc = esc_html( $account_page_desc );
-
-		$this->account_page_desc = $account_page_desc;
-
-		return $this->account_page_desc;
-	}
-
-	public function get_page_description( $page_desc = '' ) {
-		
-		if ( Module::instance()->query->is_single_user_page() ) {
-			$page_desc = $this->get_user_page_seo_description();
-		} elseif ( Module::instance()->query->is_account_page() ) {
-			$page_desc = $this->get_account_page_seo_description();
-		}
-
-		return $page_desc;
-	}
-
 	public function print_description_meta_tag() {
-		$page_desc = $this->get_page_description();
 
-		if ( empty( $page_desc ) ) {
+		$user_page_desc = $this->get_user_page_seo_description();
+
+		if ( empty( $user_page_desc ) ) {
 			return;
 		}
 
-		printf( '<meta name="description" content="%s" />', $page_desc );
+		printf( '<meta name="description" content="%s" />', $user_page_desc );
 	}
 
 }

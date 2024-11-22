@@ -82,12 +82,7 @@ class Rest_Helper {
 	 * @return true|WP_Error True if the request has read access, WP_Error object otherwise.
 	 */
 	public static function get_post_permissions_check( $request ) {
-		$object_id = $request->get_param( 'objectID' );
-		if ( $object_id === 0 ) {
-			return true;
-		}
-
-		$post = self::get_post( $object_id );
+		$post = self::get_post( $request->get_param( 'objectID' ) );
 		if ( is_wp_error( $post ) ) {
 			return $post;
 		}
@@ -154,16 +149,12 @@ class Rest_Helper {
 	 * @return true|WP_Error True if the request has read access, WP_Error object otherwise.
 	 */
 	public static function get_term_permissions_check( $request ) {
-		$term_id = $request->get_param( 'objectID' );
-		$term    = self::get_term( $term_id );
+		$term = self::get_term( $request->get_param( 'objectID' ) );
 		if ( is_wp_error( $term ) ) {
 			return $term;
 		}
 
-		if (
-			! in_array( $term->taxonomy, array_keys( Helper::get_accessible_taxonomies() ), true ) ||
-			! current_user_can( get_taxonomy( $term->taxonomy )->cap->edit_terms, $term_id )
-		) {
+		if ( ! in_array( $term->taxonomy, array_keys( Helper::get_accessible_taxonomies() ), true ) ) {
 			return new WP_Error(
 				'rest_cannot_edit',
 				__( 'Sorry, you are not allowed to edit this term.', 'rank-math' ),
@@ -209,8 +200,7 @@ class Rest_Helper {
 	 * @return true|WP_Error True if the request has read access, WP_Error object otherwise.
 	 */
 	public static function get_user_permissions_check( $request ) {
-		$user_id = $request->get_param( 'objectID' );
-		return current_user_can( 'edit_user', $user_id ) && Helper::get_settings( 'titles.author_add_meta_box' );
+		return Helper::get_settings( 'titles.author_add_meta_box' );
 	}
 
 	/**

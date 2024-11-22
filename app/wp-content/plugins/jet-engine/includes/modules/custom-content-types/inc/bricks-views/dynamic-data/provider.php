@@ -91,7 +91,13 @@ class Provider_Content_Types extends \Bricks\Integrations\Dynamic_Data\Providers
 	}
 
 	public function get_tag_value( $tag, $post, $args, $context ) {
-		$post    = jet_engine()->listings->data->get_current_object();
+		$post_type = get_post_type( $post );
+
+		if ( isset( $post->ID ) && jet_engine()->post_type->slug() === $post_type ) {
+			$preview = new \Jet_Engine_Listings_Preview( [], $post->ID );
+			$post = $preview->get_preview_object();
+		}
+
 		$post_id = isset( $post->_ID ) ? $post->_ID : '';
 
 		$field = $this->tags[ $tag ]['field'];

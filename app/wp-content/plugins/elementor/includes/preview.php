@@ -19,11 +19,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Preview extends App {
 
 	/**
-	 * The priority of the preview enqueued styles.
-	 */
-	const ENQUEUED_STYLES_PRIORITY = 20;
-
-	/**
 	 * Is Preview.
 	 *
 	 * Holds a flag if current request is a preview.
@@ -108,7 +103,7 @@ class Preview extends App {
 		add_action( 'wp_enqueue_scripts', function() {
 			$this->enqueue_styles();
 			$this->enqueue_scripts();
-		}, self::ENQUEUED_STYLES_PRIORITY );
+		} );
 
 		add_filter( 'the_content', [ $this, 'builder_wrapper' ], 999999 );
 

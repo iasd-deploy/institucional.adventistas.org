@@ -15,7 +15,6 @@ interface Browsers {
 	const BROWSER             = 'Browser';
 	const BUNJALLOO           = 'Bunjalloo';
 	const CAMINO              = 'Camino';
-	const CHATGPT_USER        = 'ChatGPT-User';
 	const CHROME              = 'Chrome';
 	const CURL                = 'curl';
 	const EDGE                = 'Edge';
@@ -25,20 +24,17 @@ interface Browsers {
 	const GOOGLEBOT           = 'Googlebot';
 	const GOOGLEBOT_IMAGE     = 'Googlebot-Image';
 	const GOOGLEBOT_VIDEO     = 'Googlebot-Video';
-	const GPTBOT              = 'GPTBot';
 	const HEADLESSCHROME      = 'HeadlessChrome';
 	const IEMOBILE            = 'IEMobile';
 	const IMESSAGEBOT         = 'iMessageBot';
 	const KINDLE              = 'Kindle';
 	const LYNX                = 'Lynx';
-	const MASTODON            = 'Mastodon';
 	const MIDORI              = 'Midori';
 	const MIUIBROWSER         = 'MiuiBrowser';
 	const MSIE                = 'MSIE';
 	const MSNBOT_MEDIA        = 'msnbot-media';
 	const NETFRONT            = 'NetFront';
 	const NINTENDOBROWSER     = 'NintendoBrowser';
-	const OAI_SEARCHBOT       = 'OAI-SearchBot';
 	const OCULUSBROWSER       = 'OculusBrowser';
 	const OPERA               = 'Opera';
 	const PUFFIN              = 'Puffin';
@@ -54,7 +50,6 @@ interface Browsers {
 	const VALVE_STEAM_TENFOOT = 'Valve Steam Tenfoot';
 	const VIVALDI             = 'Vivaldi';
 	const WGET                = 'Wget';
-	const WHALE               = 'Whale';
 	const WORDPRESS           = 'WordPress';
 	const YANDEX              = 'Yandex';
 	const YANDEXBOT           = 'YandexBot';

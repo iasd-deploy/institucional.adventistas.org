@@ -370,7 +370,7 @@ class Jet_Engine_Tools {
 	 *
 	 * @return [type] [description]
 	 */
-	public static function render_icon( $icon = null, $icon_class = '', $custom_atts = array(), $image_size = 'full' ) {
+	public static function render_icon( $icon = null, $icon_class = '', $custom_atts = array() ) {
 
 		$custom_atts_string = '';
 
@@ -398,11 +398,7 @@ class Jet_Engine_Tools {
 				}
 
 			} else {
-				if ( empty( $image_size ) ) {
-					$image_size = 'full';
-				}
-				
-				echo wp_get_attachment_image( $icon, $image_size );
+				echo wp_get_attachment_image( $icon, 'full' );
 			}
 
 			echo '</div>';

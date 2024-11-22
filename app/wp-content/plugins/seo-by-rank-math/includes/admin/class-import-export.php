@@ -507,19 +507,19 @@ class Import_Export implements Runner {
 	private function set_redirections( $redirections ) {
 		foreach ( $redirections as $key => $redirection ) {
 			$matched = \RankMath\Redirections\DB::match_redirections_source( $redirection['sources'] );
-			if ( ! empty( $matched ) || ! is_serialized( $redirection['sources'] ) ) {
+			if ( ! empty( $matched ) ) {
 				continue;
 			}
 
-			$sources = unserialize( trim( $redirection['sources'] ), [ 'allowed_classes' => false ] );
-			if ( ! is_array( $sources ) || $sources instanceof \__PHP_Incomplete_Class ) {
+			$sources = maybe_unserialize( $redirection['sources'] );
+			if ( ! is_array( $sources ) ) {
 				continue;
 			}
 
 			\RankMath\Redirections\DB::add(
 				[
 					'url_to'      => $redirection['url_to'],
-					'sources'     => $this->sanitize_sources( $sources ),
+					'sources'     => $sources,
 					'header_code' => $redirection['header_code'],
 					'hits'        => $redirection['hits'],
 					'created'     => $redirection['created'],
@@ -527,28 +527,6 @@ class Import_Export implements Runner {
 				]
 			);
 		}
-	}
-
-	/**
-	 * Sanitize the redirection source before storing it.
-	 *
-	 * @param array $sources An array of redirection sources.
-	 */
-	private function sanitize_sources( $sources ) {
-		$data = [];
-		foreach ( $sources as $source ) {
-			if ( empty( $source['pattern'] ) ) {
-				continue;
-			}
-
-			$data[] = [
-				'ignore'     => ! empty( $source['ignore'] ) ? 'case' : '',
-				'pattern'    => wp_strip_all_tags( $source['pattern'], true ),
-				'comparison' => in_array( $source['comparison'], [ 'exact', 'contains', 'start', 'end', 'regex' ], true ) ? $source['comparison'] : 'exact',
-			];
-		}
-
-		return $data;
 	}
 
 	/**
@@ -583,7 +561,6 @@ class Import_Export implements Runner {
 		}
 
 		$settings = rank_math()->settings->all_raw();
-		$data     = [];
 		foreach ( $panels as $panel ) {
 			if ( isset( $settings[ $panel ] ) ) {
 				$data[ $panel ] = $settings[ $panel ];

@@ -38,10 +38,6 @@ class Jet_Elements_Table extends Jet_Elements_Base {
 		return array( 'cherry' );
 	}
 
-	protected function is_dynamic_content(): bool {
-		return false;
-	}
-
 	public function get_script_depends() {
 
 		if ( isset( $_GET['elementor-preview'] ) && 'wp_enqueue_scripts' === current_filter() ) {
@@ -58,14 +54,14 @@ class Jet_Elements_Table extends Jet_Elements_Base {
 	public function get_style_depends() {
 
 		if ( isset( $_GET['elementor-preview'] ) && 'wp_enqueue_scripts' === current_filter() ) {
-			return array( 'elementor-icons-fa-solid', 'jet-table' );
+			return array( 'elementor-icons-fa-solid' );
 		}
 
 		if ( 'yes' === $this->get_settings( 'sorting_table' ) ) {
-			return array( 'elementor-icons-fa-solid', 'jet-table');
+			return array( 'elementor-icons-fa-solid' );
 		}
 
-		return array( 'jet-table' );
+		return array();
 	}
 
 	protected function register_controls() {

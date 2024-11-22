@@ -157,7 +157,7 @@ if ( ! class_exists( 'Jet_Engine_Module_Listing_Injections' ) ) {
 		 *
 		 * @return [type] [description]
 		 */
-		public function reset_injected_counter( $render_instance ) {
+		public function reset_injected_counter() {
 
 			if ( ! empty( $this->injected_counter ) ) {
 				$this->parent_injected_counter = $this->injected_counter;
@@ -167,11 +167,6 @@ if ( ! class_exists( 'Jet_Engine_Module_Listing_Injections' ) ) {
 			$this->injected_counter = array();
 			$this->injected_indexes = array();
 			$this->is_last_static_hooked = false;
-
-			//to fix https://github.com/Crocoblock/issues-tracker/issues/9216
-			if ( $render_instance->listing_id ?? false ) {
-				unset( $this->static_injections[ $render_instance->listing_id ] );
-			}
 		}
 
 		public function set_parent_injected_counter() {
@@ -468,10 +463,7 @@ if ( ! class_exists( 'Jet_Engine_Module_Listing_Injections' ) ) {
 
 							switch ( $class ) {
 								case 'WP_Post':
-									$user_fields = jet_engine()->listings->data->user_fields;
-									jet_engine()->listings->data->user_fields = array();
-									$meta_val = array( jet_engine()->listings->data->get_meta( $meta_key, $post ) );
-									jet_engine()->listings->data->user_fields = $user_fields;
+									$meta_val = get_post_meta( $post->ID, $meta_key );
 									break;
 
 								case 'WP_User':

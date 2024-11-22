@@ -85,14 +85,6 @@ class Jet_Elements_Instagram_Gallery extends Jet_Elements_Base {
 		return array( 'cherry' );
 	}
 
-	protected function is_dynamic_content(): bool {
-		return false;
-	}
-
-	public function get_style_depends() { 
-		return array( 'jet-instagram-gallery', 'jet-instagram-gallery-skin' ); 
-	}
-
 	protected function register_controls() {
 
 		$css_scheme = apply_filters(

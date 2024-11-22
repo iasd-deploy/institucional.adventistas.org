@@ -37,6 +37,7 @@ class ServiceProvider extends AbstractServiceProvider {
 		$this->getContainer()->add( 'varnish', Varnish::class );
 		$this->getContainer()->addShared( 'varnish_subscriber', Subscriber::class )
 			->addArgument( $this->getContainer()->get( 'varnish' ) )
-			->addArgument( $this->getContainer()->get( 'options' ) );
+			->addArgument( $this->getContainer()->get( 'options' ) )
+			->addTag( 'common_subscriber' );
 	}
 }

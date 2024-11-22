@@ -46,10 +46,6 @@ class Jet_Elements_Price_List extends Jet_Elements_Base {
 		return array( 'cherry' );
 	}
 
-	public function get_style_depends() { 
-		return array( 'jet-price-list', 'jet-price-list-skin' ); 
-	}
-
 	protected function register_controls() {
 		$css_scheme = apply_filters(
 			'jet-elements/price-list/css-scheme',

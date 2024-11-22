@@ -50,10 +50,6 @@ class Is_Profile_Page extends \Jet_Engine\Modules\Dynamic_Visibility\Conditions\
 			}
 		}
 
-		if ( ! is_array( $value ) ) {
-			$value = array( $value );
-		}
-
 		foreach ( $value as $page ) {
 
 			$data = explode( '::', $page );

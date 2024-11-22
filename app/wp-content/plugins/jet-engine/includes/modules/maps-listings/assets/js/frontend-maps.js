@@ -182,13 +182,7 @@
 					}
 
 					var querySeparator = general.querySeparator || '?';
-					var api = general.api +
-					          querySeparator +
-							  'listing_id=' + general.listingID +
-							  '&post_id=' +
-							  markerData.id +
-							  '&source=' + general.source +
-							  '&geo_query_distance=' + markerData.geo_query_distance;
+					var api = general.api + querySeparator + 'listing_id=' + general.listingID + '&post_id=' + markerData.id + '&source=' + general.source;
 					var queriedID = $container.data( 'queried-id' );
 
 					if ( queriedID ) {
@@ -223,12 +217,6 @@
 						JetEngineMaps.initHandlers( $container.find( '.jet-map-box' ) );
 
 						activeInfoWindow = infowindow;
-
-						if ( window.bricksIsFrontend ) {
-							document.dispatchEvent(
-								new CustomEvent("bricks/ajax/query_result/displayed")
-							);
-						}
 
 					}).fail( function( error ) {
 

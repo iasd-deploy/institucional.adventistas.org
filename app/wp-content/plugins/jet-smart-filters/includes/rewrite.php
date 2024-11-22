@@ -12,14 +12,14 @@ if ( ! class_exists( 'Jet_Smart_Filters_Rewrite_Rules' ) ) {
 	class Jet_Smart_Filters_Rewrite_Rules {
 
 		/**
-		 * Jet Smart Filters query variable
-		 */
-		private $query_var = 'jsf';
-
-		/**
 		 * Jet Smart Filters query pattern
 		 */
 		private $pattern = 'jsf/(.*)/?$';
+
+		/**
+		 * Jet Smart Filters query variable
+		 */
+		private $query_var = 'jsf';
 
 		/**
 		 * Jet Smart Filters query variable value
@@ -80,7 +80,6 @@ if ( ! class_exists( 'Jet_Smart_Filters_Rewrite_Rules' ) ) {
 			);
 
 			$rewritable_post_types = jet_smart_filters()->settings->get( 'rewritable_post_types' );
-
 			if ( is_array( $rewritable_post_types ) ) {
 				foreach ( $rewritable_post_types as $post_type => $post_type_enabled ) {
 					if ( $post_type_enabled === 'true' ) {
@@ -94,8 +93,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Rewrite_Rules' ) ) {
 						$taxonomies   = get_object_taxonomies( $post_type_object->name, 'objects ' );
 
 						if ( $rewrite_slug ) {
-							$rewrites[$rewrite_slug . '/' . $this->pattern]         = 'index.php?post_type=' . $post_type . '&' . $this->query_var . '=$matches[1]';
-							$rewrites[$rewrite_slug . '/([^/]+)/' . $this->pattern] = 'index.php?' . $rewrite_slug . '=$matches[1]&' . $this->query_var . '=$matches[2]';
+							$rewrites["$rewrite_slug/$this->pattern"] = 'index.php?post_type=' . $post_type . '&jsf=$matches[1]';
 						}
 
 						foreach ( $taxonomies as $taxonomy ) {
@@ -105,14 +103,14 @@ if ( ! class_exists( 'Jet_Smart_Filters_Rewrite_Rules' ) ) {
 								// product cat & tag default taxonomy
 								if ( $post_type_object->name === 'product' ) {
 									if ( in_array( $taxonomy->name, array( 'product_cat', 'product_tag' ) ) ) {
-										$rewrites[$tax_rewrite_slug . '/(.+?)/' . $this->pattern] =  'index.php?' . $taxonomy->name . '=$matches[1]&' . $this->query_var . '=$matches[2]';
+										$rewrites["$tax_rewrite_slug/(.+?)/$this->pattern"] =  'index.php?' . $taxonomy->name . '=$matches[1]&jsf=$matches[2]';
 
 										continue;
 									}
 								}
 
 								// custom taxonomy
-								$rewrites[$tax_rewrite_slug . '/(.+?)/' . $this->pattern] = 'index.php?taxonomy=' . $taxonomy->name . '&term=$matches[1]&' . $this->query_var . '=$matches[2]';
+								$rewrites["$tax_rewrite_slug/(.+?)/$this->pattern"] =  'index.php?taxonomy=' . $taxonomy->name . '&term=$matches[1]&jsf=$matches[2]';
 							}
 						}
 					}

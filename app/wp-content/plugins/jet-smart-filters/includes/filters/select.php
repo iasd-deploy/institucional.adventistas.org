@@ -78,7 +78,6 @@ if ( ! class_exists( 'Jet_Smart_Filters_Select_Filter' ) ) {
 			$content_provider     = isset( $args['content_provider'] ) ? $args['content_provider'] : false;
 			$additional_providers = isset( $args['additional_providers'] ) ? $args['additional_providers'] : false;
 			$apply_type           = isset( $args['apply_type'] ) ? $args['apply_type'] : false;
-			$apply_on             = isset( $args['apply_on'] ) ? $args['apply_on'] : false;
 
 			if ( ! $filter_id ) {
 				return false;
@@ -124,14 +123,16 @@ if ( ! class_exists( 'Jet_Smart_Filters_Select_Filter' ) ) {
 					break;
 
 				case 'posts':
-					$post_type  = get_post_meta( $filter_id, '_source_post_type', true );
-					$posts_args = apply_filters( 'jet-smart-filters/filters/posts-source/args', array(
+					$post_type = get_post_meta( $filter_id, '_source_post_type', true );
+					$args      = array(
 						'post_type' => $post_type,
 						'post_status' => 'publish',
 						'posts_per_page' => -1
-					) );
+					);
 
-					$posts      = get_posts( $posts_args );
+					$args = apply_filters( 'jet-smart-filters/filters/posts-source/args', $args );
+
+					$posts      = get_posts( $args );
 					$query_type = 'meta_query';
 					$query_var  = get_post_meta( $filter_id, '_query_var', true );
 
@@ -206,7 +207,6 @@ if ( ! class_exists( 'Jet_Smart_Filters_Select_Filter' ) ) {
 				'content_provider'     => $content_provider,
 				'additional_providers' => $additional_providers,
 				'apply_type'           => $apply_type,
-				'apply_on'             => $apply_on,
 				'filter_id'            => $filter_id,
 				'is_hierarchical'      => $is_hierarchical,
 				'query_id'             => ! empty( $args['query_id'] ) ? $args['query_id'] : false,

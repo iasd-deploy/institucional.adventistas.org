@@ -172,14 +172,10 @@ class Product_Data_Panel extends \Jet_Engine_CPT_Meta {
 		}
 
 		$name = $this->args['name'] ?? __( 'JetEngine Meta Box', 'jet-engine' );
-
-		// Replace empty spaces and dashes with underscores.
-		$id = preg_replace( '/[\s+\-]/', '_', strtolower( $name ) );
-		// Remove brackets.
-		$id = preg_replace( '/[()]/', '', $id );
+		$id   = preg_replace( '/[\s+\-]/', '_', strtolower( $name ) );
 
 		$tabs[ $id ] = [
-			'label'    => esc_html( $name ),
+			'label'    => esc_attr( $name ),
 			'target'   => esc_attr( $id ),
 			'class'    => $classes,
 			'priority' => $this->args['wc_product_data_priority'] ?? 80,
@@ -200,11 +196,7 @@ class Product_Data_Panel extends \Jet_Engine_CPT_Meta {
 	public function creat_meta_box_product_data_panel() {
 
 		$name = $this->args['name'] ?? __( 'JetEngine Meta Box', 'jet-engine' );
-
-		// Replace empty spaces and dashes with underscores.
-		$id = preg_replace( '/[\s+\-]/', '_', strtolower( $name ) );
-		// Remove brackets.
-		$id = preg_replace( '/[()]/', '', $id );
+		$id   = preg_replace( '/[\s+\-]/', '_', strtolower( $name ) );
 		?>
 
 		<div id="<?php echo esc_attr( $id ); ?>" class="panel woocommerce_options_panel hidden">

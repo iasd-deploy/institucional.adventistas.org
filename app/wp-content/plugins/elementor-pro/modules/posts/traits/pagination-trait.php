@@ -1,7 +1,6 @@
 <?php
 namespace ElementorPro\Modules\Posts\Traits;
 
-use ElementorPro\Modules\GlobalWidget\Widgets\Global_Widget;
 use ElementorPro\Modules\Posts\Widgets\Posts_Base;
 use ElementorPro\Plugin;
 
@@ -37,7 +36,7 @@ trait Pagination_Trait {
 		$posts_widgets = [];
 
 		foreach ( $widgets as $widget ) {
-			if ( $widget instanceof Posts_Base || $widget instanceof Global_Widget ) {
+			if ( $widget instanceof Posts_Base ) {
 				$posts_widgets[] = $widget->get_name();
 			}
 		}

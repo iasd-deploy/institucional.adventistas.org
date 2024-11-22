@@ -459,29 +459,6 @@
 			}
 		},
 
-		waypoint: function( $element, callback, options ) {
-
-			const defaultOptions = {
-			  offset: '100%',
-			  triggerOnce: true
-			};
-
-			options = jQuery.extend( defaultOptions, options );
-			const correctCallback = function () {
-			  const element = this.element || this,
-				result = callback.apply( element, arguments );
-		
-			  // If is Waypoint new API and is frontend
-			  if ( options.triggerOnce && this.destroy ) {
-				this.destroy();
-			  }
-
-			  return result;
-			};
-
-			return $element.elementorWaypoint(correctCallback, options);
-		},
-
 		prepareWaypointOptions: function( $scope, waypointOptions ) {
 			var options = waypointOptions || {},
 				$parentPopup = $scope.closest( '.jet-popup__container-inner, .elementor-popup-modal .dialog-message' );
@@ -556,7 +533,7 @@
 								breakpointsSettings[currentDeviceMode]['circumference']
 			);
 
-			JetElements.waypoint( $scope, function() {
+			elementorFrontend.waypoint( $scope, function() {
 
 				// animate counter
 				var $number = $scope.find( '.circle-counter__number' ),
@@ -1368,7 +1345,7 @@
 				type         = $target.data( 'type' ),
 				deltaPercent = percent * 0.01;
 
-			JetElements.waypoint( $target, function( direction ) {
+			elementorFrontend.waypoint( $target, function( direction ) {
 				var $this        = $( this ),
 					animeObject  = { charged: 0 },
 					$statusBar   = $( '.jet-progress-bar__status-bar', $this ),
@@ -1753,26 +1730,7 @@
 				accessibility     = true,
 				prevDeviceToShowValue,
 				prevDeviceToScrollValue,
-				slidesCount,
-				jetListing        = eTarget.closest( '.jet-listing-grid' ).hasClass( 'jet-listing' ),
-				jetListingItem    = eTarget.closest( '.jet-listing-grid__item' ),
-				jetnextArrow      = eTarget.find( '.prev-arrow' ),
-				jetprevArrow      = eTarget.find( '.next-arrow' );
-
-			// Compatibility slick carousel with jet listing
-			if ( jetListing && jetListingItem ){
-
-				options.nextArrow = false;
-				options.prevArrow = false;
-
-				jetListingItem.find( jetnextArrow ).on( 'click', function () {
-					$target.slick( 'slickPrev' );
-				});
-
-				jetListingItem.find( jetprevArrow ).on( 'click', function () {
-					$target.slick( 'slickNext' );
-				});
-			}
+				slidesCount;
 
 			if ( $target.hasClass( 'jet-image-comparison__instance' ) ) {
 				accessibility = false;
@@ -2680,7 +2638,7 @@
 				};
 			}
 
-			JetElements.waypoint( $scope, function() {
+			elementorFrontend.waypoint( $scope, function() {
 				var chartInstance = new Chart( $canvas, {
 					type:    'pie',
 					data:    data,
@@ -2737,7 +2695,7 @@
 				}
 			}
 
-			JetElements.waypoint( $chart_canvas, function() {
+			elementorFrontend.waypoint( $chart_canvas, function() {
 				var $this         = $( this ),
 					ctx           = $this[0].getContext( '2d' ),
 					wrappedLabels = [];
@@ -2788,7 +2746,7 @@
 				return;
 			}
 
-			JetElements.waypoint( $line_chart_canvas, function() {
+			elementorFrontend.waypoint( $line_chart_canvas, function() {
 
 				var $this   = $( this ),
 					ctx     = $this[0].getContext( '2d' ),
@@ -4008,10 +3966,6 @@
 					let $section  = sections[section].selector,
 						sectionId = $section.attr( 'id' );
 
-					if ( settings.sectionSwitch  ) { 
-						return false; 
-					}
-
 					if ( ! $('#' + sectionId  ).isInViewport() ) {
 						$( '[data-anchor=' + sectionId + ']', $instance ).removeClass( 'active' );
 					}
@@ -4021,7 +3975,7 @@
 			for ( var section in sections ) {
 				var $section = sections[section].selector;
 
-				JetElements.waypoint( $section, function( direction ) {
+				elementorFrontend.waypoint( $section, function( direction ) {
 					var $this = $( this ),
 						sectionId = $this.attr( 'id' );
 
@@ -4045,7 +3999,7 @@
 					triggerOnce: false
 				} );
 
-				JetElements.waypoint( $section, function( direction ) {
+				elementorFrontend.waypoint( $section, function( direction ) {
 					var $this = $( this ),
 						sectionId = $this.attr( 'id' );
 

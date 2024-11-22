@@ -9,7 +9,6 @@ use Elementor\Controls_Manager;
 use Elementor\Modules\NestedElements\Base\Widget_Nested_Base;
 use Elementor\Utils;
 use ElementorPro\Base\Base_Widget_Trait;
-use ElementorPro\Plugin;
 
 class Off_Canvas extends Widget_Nested_Base {
 
@@ -35,25 +34,6 @@ class Off_Canvas extends Widget_Nested_Base {
 
 	public function get_categories() {
 		return [ 'pro-elements' ];
-	}
-
-	// TODO: Replace this check with `is_active_feature` on 3.28.0 to support is_active_feature second parameter.
-	public function show_in_panel() {
-		return Plugin::elementor()->experiments->is_feature_active( 'nested-elements' ) && Plugin::elementor()->experiments->is_feature_active( 'container' );
-	}
-
-	/**
-	 * Get style dependencies.
-	 *
-	 * Retrieve the list of style dependencies the widget requires.
-	 *
-	 * @since 3.24.0
-	 * @access public
-	 *
-	 * @return array Widget style dependencies.
-	 */
-	public function get_style_depends(): array {
-		return [ 'widget-off-canvas' ];
 	}
 
 	protected function get_default_children_elements() {
@@ -122,16 +102,6 @@ class Off_Canvas extends Widget_Nested_Base {
 				'default' => 'yes',
 				'editor_available' => true,
 				'render_type' => 'ui',
-				'separator' => 'after',
-			]
-		);
-
-		$this->add_control(
-			'off_canvas_name',
-			[
-				'label' => esc_html__( 'Off-Canvas Name', 'elementor-pro' ),
-				'type' => Controls_Manager::TEXT,
-				'default' => esc_html__( 'Off-Canvas', 'elementor-pro' ),
 			]
 		);
 
@@ -540,6 +510,7 @@ class Off_Canvas extends Widget_Nested_Base {
 		?>
 		<#
 		const tag = elementor.helpers.validateHTMLTag( settings.wrapper_html_tag ),
+			offCanvasTitle = '<?php echo esc_html( $this->get_title() ); ?>',
 			isClosed = elementor.previewView.isBuffering || 'yes' !== settings.editing_mode;
 
 		view.addRenderAttribute( 'offCanvasWrapper', {
@@ -547,7 +518,7 @@ class Off_Canvas extends Widget_Nested_Base {
 			'id': 'off-canvas-' + view.getID(),
 			'role': 'dialog',
 			'aria-hidden': isClosed,
-			'aria-label': settings.off_canvas_name,
+			'aria-label': offCanvasTitle,
 			'aria-modal': 'true',
 		} );
 
@@ -559,7 +530,7 @@ class Off_Canvas extends Widget_Nested_Base {
 		}
 
 		view.addRenderAttribute( 'offCanvasOverlay', {
-			'class': [ 'e-off-canvas__overlay' ],
+			'class': [ 'e-off-canvas__overlay', 'yes' === settings.has_overlay ? '' : 'no-pointer-events' ],
 		} );
 		#>
 
@@ -582,7 +553,7 @@ class Off_Canvas extends Widget_Nested_Base {
 			'class' => 'e-off-canvas',
 			'role' => 'dialog',
 			'aria-hidden' => 'true',
-			'aria-label' => $this->get_settings_for_display( 'off_canvas_name' ),
+			'aria-label' => $this->get_title(),
 			'aria-modal' => 'true',
 			'inert' => '',
 			'data-delay-child-handlers' => 'true',

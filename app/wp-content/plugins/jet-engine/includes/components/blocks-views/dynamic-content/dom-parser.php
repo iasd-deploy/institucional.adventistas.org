@@ -8,8 +8,6 @@ class DOM_Parser {
 
 	protected $replaced = false;
 
-	public $content;
-
 	public function __construct( $content ) {
 		$this->content = $content;
 	}

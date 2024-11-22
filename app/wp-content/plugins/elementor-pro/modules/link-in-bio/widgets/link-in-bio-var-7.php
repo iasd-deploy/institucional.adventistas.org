@@ -5,15 +5,16 @@ namespace ElementorPro\Modules\LinkInBio\Widgets;
 use Elementor\Controls_Manager;
 use Elementor\Core\Base\Providers\Social_Network_Provider;
 use Elementor\Group_Control_Typography;
+use Elementor\Modules\LinkInBio\Base\Widget_Link_In_Bio_Base;
 use Elementor\Shapes;
-use ElementorPro\Modules\LinkInBio\Base\Widget_Link_In_Bio_Base_Pro;
 use ElementorPro\Modules\LinkInBio\Classes\Render\Single_Button_Cta_Render;
+
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
 
-class Link_In_Bio_Var_7 extends Widget_Link_In_Bio_Base_Pro {
+class Link_In_Bio_Var_7 extends Widget_Link_In_Bio_Base {
 
 	public static function get_configuration() {
 		$config = parent::get_configuration();

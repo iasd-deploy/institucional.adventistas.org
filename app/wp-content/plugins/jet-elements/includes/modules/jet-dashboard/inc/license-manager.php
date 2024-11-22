@@ -45,7 +45,7 @@ class License_Manager {
 
 		$this->maybe_modify_license_data();
 
-		 $this->maybe_site_not_activated();
+		$this->maybe_site_not_activated();
 
 	}
 
@@ -220,9 +220,9 @@ class License_Manager {
 
 		$license_list = Utils::get_license_data( 'license-list', [] );
 
-		$license_list[ $responce['license'] ] = array(
+		$license_list[ $license_key ] = array(
 			'licenseStatus'  => 'active',
-			'licenseKey'     => $responce['license'],
+			'licenseKey'     => $license_key,
 			'licenseDetails' => $responce,
 		);
 
@@ -475,11 +475,11 @@ class License_Manager {
 	 * @return [type] [description]
 	 */
 	public function maybe_site_not_activated() {
-		$license_sites = Utils::get_license_site_url();
+		$license_list = Utils::get_license_data( 'license-list', array() );
 
-		if ( empty( $license_sites ) ) {
+		if ( empty( $license_list ) ) {
 			Dashboard::get_instance()->notice_manager->register_notice( array(
-				'id'      => 'license-not-activated',
+				'id'      => 'site-not-activated',
 				'page'    => [ 'license-page', 'welcome-page' ],
 				'preset'  => 'alert',
 				'type'    => 'danger',
@@ -503,15 +503,35 @@ class License_Manager {
 			return;
 		}
 
-		if ( ! Utils::is_site_activated() ) {
+		$sites = array();
+
+		foreach ( $license_list as $license_key => $license_data ) {
+
+			if ( ! isset( $license_data['licenseDetails'] ) ) {
+				continue;
+			}
+
+			$license_details = $license_data['licenseDetails'];
+
+			if ( ! isset( $license_details['site_url'] ) ) {
+				continue;
+			}
+
+			$sites[] = $license_details['site_url'];
+		}
+
+		$current_site = strtolower( Utils::get_site_url() );
+
+		if ( ! in_array( $current_site, $sites ) ) {
+			Utils::set_license_data( 'license-list', [] );
 
 			Dashboard::get_instance()->notice_manager->register_notice( array(
-				'id'      => 'site-not-activated',
-				'page'    => [ 'license-page', 'welcome-page' ],
+				'id'      => 'license-data-cleared',
+				'page'    => 'license-page',
 				'preset'  => 'alert',
 				'type'    => 'danger',
-				'title'   => esc_html__( 'This site is not activated', 'jet-dashboard' ),
-				'message' => esc_html__( 'This site is not activated for this license. Go to the license manager deactivate your license and activate your key again', 'jet-dashboard' ),
+				'title'   => esc_html__( 'License data deleted', 'jet-dashboard' ),
+				'message' => esc_html__( 'This site is not activated for this license. The old key data has been deleted. Go to the license manager and activate your key', 'jet-dashboard' ),
 				'buttons' => array(
 					array(
 						'label' => esc_html__( 'Activate', 'jet-dashboard' ),

@@ -506,22 +506,14 @@ class Filters {
 
 		$new_args = jet_engine()->relations->types_helper->filtered_query_args( $object, $rel_ids );
 
-		$props_found = false;
+		if ( ! empty( $args['post__in'] ) && ! empty( $new_args['post__in'] ) && ! $is_inner ) {
+			$args['post__in'] = array_intersect( $args['post__in'], $new_args['post__in'] );
 
-		foreach ( array( 'post__in', 'include' ) as $key ) {
-			if ( ! empty( $args[ $key ] ) && ! empty( $new_args[ $key ] ) && ! $is_inner ) {
-				$props_found = true;
-
-				$args[ $key ] = array_intersect( $args[ $key ], $new_args[ $key ] );
-	
-				// Not found items.
-				if ( empty( $args[ $key ] ) ) {
-					$args[ $key ] = array( PHP_INT_MAX );
-				}
+			// Not found posts.
+			if ( empty( $args['post__in'] ) ) {
+				$args['post__in'] = array( PHP_INT_MAX );
 			}
-		}
 
-		if ( $props_found ) {
 			$result = $args;
 		} else {
 			$result = array_merge_recursive( $args, $new_args );

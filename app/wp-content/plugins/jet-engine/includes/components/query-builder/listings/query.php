@@ -43,6 +43,30 @@ class Query {
 
 	}
 
+	public function get_query_for_element( $query_id, $settings = [], $widget = null ) {
+
+		if ( ! $widget ) {
+			$widget = new class {
+				public function get_name() {
+					return false;
+				}
+			};
+		}
+
+		$query = Query_Manager::instance()->get_query_by_id( $query_id );
+
+		if ( ! $query ) {
+			return false;
+		}
+
+		$query->setup_query();
+
+		do_action( 'jet-engine/query-builder/listings/on-query', $query, $settings, $widget, $this );
+
+		return $query;
+
+	}
+
 	public function query_items( $items, $settings, $widget ) {
 
 		$listing_id = jet_engine()->listings->data->get_listing()->get_main_id();
@@ -58,15 +82,11 @@ class Query {
 			return array();
 		}
 
-		$query = Query_Manager::instance()->get_query_by_id( $query_id );
+		$query = $this->get_query_for_element( $query_id, $settings, $widget );
 
 		if ( ! $query ) {
 			return array();
 		}
-
-		$query->setup_query();
-
-		do_action( 'jet-engine/query-builder/listings/on-query', $query, $settings, $widget, $this );
 
 		$request = array( 'query_id' => $query_id );
 		$request = $this->maybe_add_load_more_query_args( $request, $query, $settings );

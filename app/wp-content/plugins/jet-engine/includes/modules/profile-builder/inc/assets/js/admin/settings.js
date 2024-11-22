@@ -126,14 +126,8 @@
 		data: function() {
 			return {
 				isActive: false,
-				macrosList: window.JetEngineProfileBuilder.profile_builder_macros,
+				macrosList: window.JetEngineProfileBuilder.user_page_title_macros,
 			};
-		},
-		props: {
-			activeTab: {
-				type: String,
-				default: ''
-			},
 		},
 		methods: {
 			switchIsActive: function() {
@@ -142,9 +136,6 @@
 			addMacro: function( macro ) {
 				this.$emit( 'add-macro', macro );
 				this.isActive = false;
-			},
-			isMacroAllowed: function( macroArgs ) {
-				return macroArgs.allowed_tabs.includes( this.activeTab );
 			},
 			onClickOutside: function() {
 				this.isActive = false;
@@ -165,7 +156,6 @@
 			postTypes: JetEngineProfileBuilder.post_types,
 			userPageImageFields: JetEngineProfileBuilder.user_page_image_fields,
 			saving: false,
-			activeTab: '',
 		},
 		mounted: function() {
 
@@ -195,10 +185,6 @@
 					}
 				] );
 			}
-
-			this.activeTab = this.$refs.settingsTabs.activeTab;
-
-			this.$refs.settingsTabs.$on( 'input', ( activeTab ) => this.activeTab = activeTab );
 
 		},
 		watch: {

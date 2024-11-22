@@ -56,7 +56,8 @@ class ServiceProvider extends AbstractServiceProvider implements BootableService
 			->addArgument( $this->getContainer()->get( 'options' ) )
 			->addArgument( $this->getContainer()->get( 'options_api' ) )
 			->addArgument( $this->getContainer()->get( 'beacon' ) )
-			->addArgument( $this->getContainer()->get( 'cloudflare_plugin_facade' ) );
+			->addArgument( $this->getContainer()->get( 'cloudflare_plugin_facade' ) )
+			->addTag( 'common_subscriber' );
 
 		$this->getContainer()->add( 'advanced_cache', AdvancedCache::class )
 			->addArgument( $this->getContainer()->get( 'template_path' ) . '/cache/' )

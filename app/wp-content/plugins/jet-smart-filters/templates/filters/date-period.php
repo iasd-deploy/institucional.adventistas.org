@@ -26,11 +26,11 @@ if ( '' !== $args['button_icon'] ) {
 ?>
 <div class="<?php echo implode( ' ', $classes ) ?>" <?php $this->filter_data_atts( $args ); ?>>
 	<div class="jet-date-period__wrapper">
-		<div class="jet-date-period__prev" <?php echo jet_smart_filters()->data->get_tabindex_attr(); ?>><?php echo jet_smart_filters()->print_template( 'svg/chevron-left.svg' ) ?></div>
+		<div class="jet-date-period__prev" <?php echo jet_smart_filters()->data->get_tabindex_attr(); ?>><i class="fa fa-chevron-left" aria-hidden="true"></i></div>
 		<div class="jet-date-period__datepicker date">
 			<div class="jet-date-period__datepicker-button input-group-addon" <?php echo jet_smart_filters()->data->get_tabindex_attr(); ?>>
 				<?php echo $datepicker_button_text ?>
-				<?php echo jet_smart_filters()->print_template( 'svg/angle-down.svg' ); ?>
+				<?php include jet_smart_filters()->get_template( 'svg/angle-down.svg' ); ?>
 			</div>
 			<input
 				class="jet-date-period__datepicker-input"
@@ -45,6 +45,6 @@ if ( '' !== $args['button_icon'] ) {
 				readonly
 			>
 		</div>
-		<div class="jet-date-period__next" <?php echo jet_smart_filters()->data->get_tabindex_attr(); ?>><?php echo jet_smart_filters()->print_template( 'svg/chevron-right.svg' ) ?></div>
+		<div class="jet-date-period__next" <?php echo jet_smart_filters()->data->get_tabindex_attr(); ?>><i class="fa fa-chevron-right" aria-hidden="true"></i></div>
 	</div>
 </div>

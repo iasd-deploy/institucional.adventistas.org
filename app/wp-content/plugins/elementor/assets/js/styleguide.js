@@ -1,4 +1,4 @@
-/*! elementor - v3.25.0 - 20-11-2024 */
+/*! elementor - v3.23.0 - 25-07-2024 */
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
@@ -29,9 +29,9 @@ module.exports = Marionette.Behavior.extend({
     if (hasDefault) {
       return false;
     }
-    var isFeatureAvailableToUser = elementor.helpers.hasPro() && !elementor.helpers.hasProAndNotConnected(),
+    var isFeatureAvalibleToUser = elementor.helpers.hasPro() && !elementor.helpers.hasProAndNotConnected(),
       hasTags = this.getOption('tags').length > 0;
-    return !isFeatureAvailableToUser || hasTags;
+    return !isFeatureAvalibleToUser || hasTags;
   },
   renderTools: function renderTools() {
     var _this = this;

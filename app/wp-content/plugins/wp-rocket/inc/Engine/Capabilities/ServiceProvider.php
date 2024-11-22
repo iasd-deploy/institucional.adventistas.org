@@ -36,6 +36,7 @@ class ServiceProvider extends AbstractServiceProvider {
 	public function register(): void {
 		$this->getContainer()->add( 'capabilities_manager', Manager::class );
 		$this->getContainer()->addShared( 'capabilities_subscriber', Subscriber::class )
-			->addArgument( $this->getContainer()->get( 'capabilities_manager' ) );
+			->addArgument( $this->getContainer()->get( 'capabilities_manager' ) )
+			->addTag( 'common_subscriber' );
 	}
 }

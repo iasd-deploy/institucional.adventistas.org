@@ -19,6 +19,6 @@ $search_placeholder = $args['search_placeholder'];
 		<?php echo $search_placeholder ? 'placeholder="' . $search_placeholder .'"' : '' ?>
 	>
 	<div class="jet-filter-items-search__clear">
-		<?php echo jet_smart_filters()->print_template( 'svg/close.svg' ); ?>
+		<?php include jet_smart_filters()->get_template( 'svg/close.svg' ); ?>
 	</div>
 </div>

@@ -373,9 +373,9 @@ class Imagify_Subscriber implements Webp_Interface, Subscriber_Interface {
 	 * @access public
 	 * @author Grégory Viguier
 	 *
-	 * @return string
+	 * @return bool
 	 */
-	public function get_basename(): string {
+	public function get_basename() {
 		if ( empty( $this->plugin_basename ) ) {
 			$this->plugin_basename = rocket_has_constant( 'IMAGIFY_FILE' )
 				? plugin_basename( rocket_get_constant( 'IMAGIFY_FILE' ) )

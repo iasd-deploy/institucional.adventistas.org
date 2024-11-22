@@ -5,6 +5,13 @@ namespace WP_Rocket\ThirdParty\Themes;
 
 class ThemeResolver {
 	/**
+	 * Name of the current theme.
+	 *
+	 * @var string
+	 */
+	private static $theme_name = '';
+
+	/**
 	 * Array of themes names with compatibility classes
 	 *
 	 * @var array
@@ -30,7 +37,7 @@ class ThemeResolver {
 	 */
 	public static function get_current_theme(): string {
 		$theme    = wp_get_theme();
-		$template = $theme->get_template();
+		$template = $theme->get_template() ?? '';
 
 		if ( empty( $template ) ) {
 			return '';
@@ -41,6 +48,8 @@ class ThemeResolver {
 		if ( ! in_array( $template, self::$compatibilities, true ) ) {
 			return '';
 		}
+
+		self::$theme_name = $template;
 
 		return $template;
 	}

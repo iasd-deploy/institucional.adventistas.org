@@ -42,7 +42,6 @@ class Updates implements Runner {
 		'1.0.208'   => 'updates/update-1.0.208.php',
 		'1.0.209'   => 'updates/update-1.0.209.php',
 		'1.0.211'   => 'updates/update-1.0.211.php',
-		'1.0.232'   => 'updates/update-1.0.232.php',
 	];
 
 	/**

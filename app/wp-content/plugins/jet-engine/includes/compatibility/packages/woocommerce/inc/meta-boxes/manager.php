@@ -256,7 +256,7 @@ class Manager {
 			:label="'<?php _e( 'Exclude or Include Product Types', 'jet-engine' ); ?>'"
 			:description="'<?php _e( 'Select product types where this meta box should be hidden or shown.', 'jet-engine' ); ?>'"
 			:wrapper-css="[ 'equalwidth' ]"
-			:options-list="window?.JetEngineWCMBConfig.product_types"
+			:options-list="window.JetEngineWCMBConfig.product_types"
 			:size="'fullwidth'"
 			:multiple="true"
 			:conditions="[

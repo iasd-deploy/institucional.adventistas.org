@@ -34,6 +34,7 @@ class ServiceProvider extends AbstractServiceProvider {
 	 */
 	public function register(): void {
 		$this->getContainer()->addShared( 'heartbeat_subscriber', HeartbeatSubscriber::class )
-			->addArgument( $this->getContainer()->get( 'options' ) );
+			->addArgument( $this->getContainer()->get( 'options' ) )
+			->addTag( 'common_subscriber' );
 	}
 }

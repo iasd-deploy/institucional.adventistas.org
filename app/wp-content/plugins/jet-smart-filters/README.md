@@ -2,53 +2,6 @@
 
 # ChangeLog
 
-## 3.5.7.1
-
-- FIX: hot fix: hierarchical, alphabet, geomap filters
-
-## 3.5.7
-
-- ADD: apply button active state conditions
-- FIX: work of two searches with different types together
-- FIX: Sorting filter WPML
-- FIX: filters are broken on front with "Dynamic Visibility"
-- FIX: indexer with taxonomy source and _tax_query key 
-- FIX: posts disappearing when translating with Polylang
-- FIX: included element section
-- FIX: added props to event ajaxFilters/updated
-
-## 3.5.6
-
-- ADD: checkboxes list filter relational operator option between items 
-- ADD: page reload apply type on value change
-- ADD: search filter input focus styles
-- UPD: initialize filter styles before rendering the filters themselves
-- FIX: indexer counter style "Position" option with elementor Optimized Control Loading
-- FIX: do not display a filter if it was selected in the widget and then deleted or moved to trash
-- FIX: Refactored provider "Bricks query loop" for better clarity
-
-## 3.5.5
-
-- ADD: Pagination Load More autoscroll
-- FIX: hierarchical filter clearing select control from filling with browser cache after returning to page
-- FIX: data source post args
-- FIX: permalink rewrite rules for JSF
-- FIX: active filters/tags with $ in value
-- FIX: additional settings search
-
-## 3.5.4
-
-- ADD: filter hook 'jet-smart-filters/filters/predefined-value'
-- FIX: CCT display bulk options
-- FIX: elementor products filtering issue with Loop Carousel having terms query
-- FIX: don't hide parent element if nested elements are not empty
-- FIX: date range filter translation
-- FIX: Indexer when filter option starts with +/*
-- FIX: save "N Selected NUMBER OF NAMED ITEMS" option in Gutenberg
-- FIX: Group terms by parents & Сollapsible styles
-- FIX: Added method merge_query_vars
-- FIX: remove font-awesome
-
 ## 3.5.3
 
 - UPD: remove font-awesome

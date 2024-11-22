@@ -727,8 +727,9 @@ abstract class Document extends Controls_Stack {
 
 		if ( static::get_property( 'has_elements' ) ) {
 			$container_config = [];
+			$experiments_manager = Plugin::$instance->experiments;
 
-			if ( Plugin::$instance->experiments->is_feature_active( 'container' ) ) {
+			if ( $experiments_manager->is_feature_active( 'container' ) ) {
 				$container_config = [
 					'container' => Plugin::$instance->elements_manager->get_element_types( 'container' )->get_config(),
 				];

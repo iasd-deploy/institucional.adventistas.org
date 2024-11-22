@@ -93,6 +93,10 @@ trait Jet_Engine_Get_Data_Sources_Trait {
 
 			foreach ( $extra_fields as $key => $data ) {
 
+				if ( ! isset( $data['label'] ) ) {
+					continue;
+				}
+
 				if ( ! is_array( $data ) ) {
 
 					$result[] = array(
@@ -105,10 +109,6 @@ trait Jet_Engine_Get_Data_Sources_Trait {
 						),
 					);
 
-					continue;
-				}
-
-				if ( ! isset( $data['label'] ) ) {
 					continue;
 				}
 

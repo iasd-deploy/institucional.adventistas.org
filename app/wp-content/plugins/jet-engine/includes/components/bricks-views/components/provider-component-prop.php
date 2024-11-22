@@ -5,6 +5,8 @@ use \Jet_Engine\Listings\Components\Component;
 
 class Provider_Component_Prop extends \Bricks\Integrations\Dynamic_Data\Providers\Base {
 
+	public $jet_provider_prefix = 'jet_component__';
+
 	public function register_tags() {
 
 		$fields = self::get_fields();
@@ -22,7 +24,7 @@ class Provider_Component_Prop extends \Bricks\Integrations\Dynamic_Data\Provider
 			$suffix = '___color';
 		}
 
-		$name  = 'jet_component__' . $field['name'] . $suffix;
+		$name  = $this->jet_provider_prefix . $field['name'] . $suffix;
 		$label = $field['title'];
 
 		$tag = [

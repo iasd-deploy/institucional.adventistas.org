@@ -190,6 +190,20 @@ class Listing_Grid extends Base {
 		);
 
 		$this->register_jet_control(
+			'notice_use_query_builder',
+			[
+				'tab'         => 'content',
+				'type'        => 'info',
+				'content'     => esc_html__( 'Use Query Builder to Apply Dynamic Styling for Listings', 'jet-smart-filters' ),
+				'description' => sprintf(
+					esc_html__( 'Using dynamic styles inside the listing? In this case, make sure to use Query Builder as a data source for it. You can apply a query from Query Builder in the Custom Query settings. Go to: %s.', 'jet-smart-filters' ),
+					'<a href="' . add_query_arg( array( 'page' => 'jet-engine-query' ), admin_url( 'admin.php' ) ) . '" target="_blank">Query Builder</a>'
+				),
+				'required'    => [ 'custom_query_id', '=', '' ],
+			]
+		);
+
+		$this->register_jet_control(
 			'columns',
 			[
 				'tab'     => 'content',
@@ -1372,19 +1386,18 @@ class Listing_Grid extends Base {
 
 	// Render element HTML
 	public function render() {
+
 		parent::render();
 
-		$settings          = $this->parse_jet_render_attributes( $this->get_jet_settings() );
-		$listing_id        = $settings['lisitng_id'];
-		$has_dynamic_value = jet_engine()->bricks_views->listing->has_dynamic_value_in_controls( $listing_id );
+		$settings = $this->parse_jet_render_attributes( $this->get_jet_settings() );
 
 		$this->set_attribute( '_root', 'class', 'brxe-' . $this->id );
-		$this->set_attribute( '_root', 'class', 'brxe-jet-listing' );
+		$this->set_attribute( '_root', 'class', 'jet-listing-base' );
 		$this->set_attribute( '_root', 'data-element-id', $this->id );
 		$this->set_attribute( '_root', 'data-listing-type', 'bricks' );
 
 		// STEP: Listing field is empty: Show placeholder text
-		if ( empty( $listing_id ) ) {
+		if ( empty( $settings['lisitng_id'] ) ) {
 			return $this->render_element_placeholder(
 				[
 					'title' => esc_html__( 'Please select listing to show.', 'jet-engine' )
@@ -1408,14 +1421,16 @@ class Listing_Grid extends Base {
 		$render->before_listing_grid();
 
 		echo "<div {$this->render_attributes( '_root' )}>";
-		jet_engine()->bricks_views->listing->render_assets( $listing_id, $has_dynamic_value );
+		jet_engine()->bricks_views->listing->render_assets( $this->get_jet_settings( 'lisitng_id' ) );
 		$render->render_content();
 		echo "</div>";
 
 		$render->after_listing_grid();
+
 	}
 
 	public function parse_jet_render_attributes( $attrs = [] ) {
+
 		$attrs['arrows']            = $attrs['arrows'] ?? false;
 		$attrs['autoplay']          = $attrs['autoplay'] ?? false;
 		$attrs['pause_on_hover']    = $attrs['pause_on_hover'] ?? false;

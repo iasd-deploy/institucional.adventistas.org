@@ -14,8 +14,6 @@ abstract class Base_Query {
 	public $query_id      = null;
 	public $preview       = array();
 	public $cache_query   = true;
-	public $cache_expires = 0;
-	public $cache_group   = 'jet-engine';
 
 	public $api_settings = [];
 
@@ -31,7 +29,6 @@ abstract class Base_Query {
 		$this->dynamic_query = ! empty( $args['dynamic_query'] ) ? $args['dynamic_query'] : false;
 		$this->preview       = ! empty( $args['preview'] ) ? $args['preview'] : $this->preview;
 		$this->cache_query   = isset( $args['cache_query'] ) ? filter_var( $args['cache_query'], FILTER_VALIDATE_BOOLEAN ) : true;
-		$this->cache_expires = isset( $args['cache_expires'] ) ? absint( $args['cache_expires'] ) : 0;
 
 		$this->api_settings = [
 			'api_endpoint' => ! empty( $args['api_endpoint'] ) ? $args['api_endpoint'] : false,
@@ -59,7 +56,7 @@ abstract class Base_Query {
 	/**
 	 * Register Rest API endpoint for this query if enbaled.
 	 * 
-	 * @return void
+	 * @return [type] [description]
 	 */
 	public function maybe_register_rest_api_endpoint() {
 
@@ -86,7 +83,7 @@ abstract class Base_Query {
 	 * Each query which allows pagintaion should implement own method to gettings items per page.
 	 *
 	 * @param  integer $default [description]
-	 * @return integer
+	 * @return [type]           [description]
 	 */
 	public function get_items_per_page() {
 		return 0;
@@ -95,8 +92,8 @@ abstract class Base_Query {
 	/**
 	 * Returns query cache
 	 *
-	 * @param  string $key [description]
-	 * @return string
+	 * @param  [type] $key [description]
+	 * @return [type]      [description]
 	 */
 	public function get_query_hash( $key = null ) {
 
@@ -115,7 +112,7 @@ abstract class Base_Query {
 	/**
 	 * Allows to return any query specific data that may be used by abstract 3rd parties
 	 *
-	 * @return array
+	 * @return [type] [description]
 	 */
 	public function get_query_meta() {
 		return array();
@@ -125,10 +122,10 @@ abstract class Base_Query {
 	 * Get cached data
 	 *
 	 * @param  [type] $key [description]
-	 * @return mixed
+	 * @return [type]      [description]
 	 */
 	public function get_cached_data( $key = null ) {
-		return $this->cache_query ? wp_cache_get( $this->get_query_hash( $key ), $this->cache_group ) : false;
+		return $this->cache_query ? wp_cache_get( $this->get_query_hash( $key ) ) : false;
 	}
 
 	/**
@@ -136,19 +133,10 @@ abstract class Base_Query {
 	 *
 	 * @param  [type] $data [description]
 	 * @param  [type] $key  [description]
-	 * @return bool
+	 * @return [type]       [description]
 	 */
 	public function update_query_cache( $data = null, $key = null ) {
-		return $this->cache_query ? wp_cache_set( $this->get_query_hash( $key ), $data, $this->cache_group, $this->get_cache_expiration() ) : false;
-	}
-
-	/**
-	 * Get cache expiration period for query results
-	 *
-	 * @return integer
-	 */
-	public function get_cache_expiration() {
-		return $this->cache_expires;
+		return $this->cache_query ? wp_cache_set( $this->get_query_hash( $key ), $data ) : false;
 	}
 
 	/**

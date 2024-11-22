@@ -47,7 +47,7 @@ class Jet_Elements_Slider extends Jet_Elements_Base {
 	}
 
 	public function get_style_depends() {
-		return array( 'jet-slider-pro-css', 'jet-slider', 'jet-slider-skin' );
+		return array( 'jet-slider-pro-css' );
 	}
 
 	protected function register_controls() {
@@ -772,7 +772,6 @@ class Jet_Elements_Slider extends Jet_Elements_Base {
 					'{{WRAPPER}} ' . $css_scheme['instance_slider'] . ' .jet-slider__content-inner' => 'max-width: {{SIZE}}{{UNIT}}',
 					'{{WRAPPER}} ' . $css_scheme['pagination'] => 'max-width: {{SIZE}}{{UNIT}}',
 				),
-				'render_type'        => 'template',
 			)
 		);
 

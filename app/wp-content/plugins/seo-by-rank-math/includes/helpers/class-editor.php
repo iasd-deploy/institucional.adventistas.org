@@ -18,6 +18,7 @@ defined( 'ABSPATH' ) || exit;
  * Editor class.
  */
 class Editor {
+
 	/**
 	 * Can add editor.
 	 *
@@ -28,14 +29,5 @@ class Editor {
 			Helper::has_cap( 'onpage_advanced' ) ||
 			Helper::has_cap( 'onpage_snippet' ) ||
 			Helper::has_cap( 'onpage_social' );
-	}
-
-	/**
-	 * Add option to Lock Modified date in the editor.
-	 *
-	 * @return bool
-	 */
-	public static function can_add_lock_modified_date() {
-		return apply_filters( 'rank_math/lock_modified_date', true );
 	}
 }

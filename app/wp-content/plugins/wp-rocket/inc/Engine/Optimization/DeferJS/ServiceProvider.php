@@ -39,8 +39,10 @@ class ServiceProvider extends AbstractServiceProvider {
 			->addArgument( $this->getContainer()->get( 'options' ) )
 			->addArgument( $this->getContainer()->get( 'dynamic_lists_defaultlists_data_manager' ) );
 		$this->getContainer()->addShared( 'defer_js_admin_subscriber', AdminSubscriber::class )
-			->addArgument( $this->getContainer()->get( 'defer_js' ) );
+			->addArgument( $this->getContainer()->get( 'defer_js' ) )
+			->addTag( 'admin_subscriber' );
 		$this->getContainer()->addShared( 'defer_js_subscriber', Subscriber::class )
-			->addArgument( $this->getContainer()->get( 'defer_js' ) );
+			->addArgument( $this->getContainer()->get( 'defer_js' ) )
+			->addTag( 'front_subscriber' );
 	}
 }

@@ -43,7 +43,6 @@
 					'jet-engine-conditional-field': true,
 					'cx-vui-repeater-item__copy': true,
 					'jet-engine-conditional-field--active': hasConditions( field ),
-					'jet-engine-conditional-field--invalid': conditionsInvalid( field ),
 				}"
 			>
 				<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd" stroke-linejoin="round" stroke-miterlimit="1.414">

@@ -4,14 +4,13 @@ namespace WP_Rocket\Engine\Activation;
 
 use WP_Rocket\Admin\Options;
 use WP_Rocket\Dependencies\League\Container\Container;
-use WP_Rocket\Engine\Common\PerformanceHints\Activation\ServiceProvider as PerformanceHintsActivationServiceProvider;
-use WP_Rocket\Engine\License\ServiceProvider as LicenseServiceProvider;
-use WP_Rocket\Engine\Preload\Activation\ServiceProvider as PreloadActivationServiceProvider;
-use WP_Rocket\Logger\ServiceProvider as LoggerServiceProvider;
 use WP_Rocket\ServiceProvider\Options as OptionsServiceProvider;
+use WP_Rocket\Engine\Preload\Activation\ServiceProvider as PreloadActivationServiceProvider;
+use WP_Rocket\Engine\License\ServiceProvider as LicenseServiceProvider;
+use WP_Rocket\Logger\ServiceProvider as LoggerServiceProvider;
+use WP_Rocket\Engine\Media\AboveTheFold\Activation\ServiceProvider as AboveTheFoldActivationServiceProvider;
 use WP_Rocket\ThirdParty\Hostings\HostResolver;
 use WP_Rocket\ThirdParty\Hostings\ServiceProvider as HostingsServiceProvider;
-use WP_Rocket\Event_Management\Event_Manager;
 
 /**
  * Plugin activation controller
@@ -32,7 +31,7 @@ class Activation {
 		'wp_cache',
 		'action_scheduler_check',
 		'preload_activation',
-		'performance_hints_activation',
+		'atf_activation',
 	];
 
 	/**
@@ -41,8 +40,7 @@ class Activation {
 	 * @return void
 	 */
 	public static function activate_plugin() {
-		$container     = new Container();
-		$event_manager = new Event_Manager();
+		$container = new Container();
 
 		$container->add( 'template_path', WP_ROCKET_PATH . 'views' );
 		$options_api = new Options( 'wp_rocket_' );
@@ -54,8 +52,7 @@ class Activation {
 		$container->addServiceProvider( new LicenseServiceProvider() );
 		$container->addServiceProvider( new LoggerServiceProvider() );
 		$container->get( 'logger' );
-		$container->addServiceProvider( new PerformanceHintsActivationServiceProvider() );
-		$event_manager->add_subscriber( $container->get( 'performance_hints_warmup_subscriber' ) );
+		$container->addServiceProvider( new AboveTheFoldActivationServiceProvider() );
 
 		$host_type = HostResolver::get_host_service();
 

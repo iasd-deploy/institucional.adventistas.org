@@ -2,7 +2,6 @@ import GroupedSelectControl from "components/grouped-select-control.js";
 import JetEngineRepeater from "components/repeater-control.js";
 import CustomControl from "components/custom-control.js";
 import { getCallbackArgs } from "utils/utility.js";
-import { isIdUnique } from "common/functions";
 
 import {
 	clone
@@ -56,7 +55,7 @@ if ( -1 !== window.JetEngineListingData.activeModules.indexOf( 'maps-listings' )
 
 			constructor( props ) {
 
-				if ( ! props.attributes._block_id || ! isIdUnique( props ) ) {
+				if ( ! props.attributes._block_id ) {
 					props.setAttributes( { _block_id: props.clientId } );
 				}
 
@@ -427,15 +426,6 @@ if ( -1 !== window.JetEngineListingData.activeModules.indexOf( 'maps-listings' )
 										props.setAttributes( { marker_label_text: newValue } );
 									} }
 								/> }
-								<SelectControl
-									label={ __( 'Image Size' ) }
-									value={ attributes.marker_image_size }
-									help={ __( 'Applies to the main marker if it is of image type, and to conditional image markers.' ) }
-									options={ JetEngineListingData.imageSizes || [] }
-									onChange={ newValue => {
-										props.setAttributes( { marker_image_size: newValue } );
-									} }
-								/>
 								{ -1 !== window.JetEngineListingData.activeModules.indexOf( 'custom-content-types' ) &&
 									( ( 'text' === attributes.marker_type && 'cct_field' === attributes.marker_label_type ) || 'dynamic_image_cct' === attributes.marker_type )  &&
 									<TextControl

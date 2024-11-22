@@ -9,9 +9,9 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 /**
- * Define Jet_Smart_Filters_Compatibility_WPML class
+ * Define Jet_Smart_Filters_Compatibility_WMPL class
  */
-class Jet_Smart_Filters_Compatibility_WPML {
+class Jet_Smart_Filters_Compatibility_WMPL {
 
 	/**
 	 * Constructor for the class
@@ -117,18 +117,7 @@ class Jet_Smart_Filters_Compatibility_WPML {
 
 		$nodes_to_translate[ 'jet-smart-filters-sorting' ] = array(
 			'conditions'        => array( 'widgetType' => 'jet-smart-filters-sorting' ),
-			'fields'            => array(
-					array(
-						'field'       => 'label',
-						'type'        => esc_html__( 'JetSmartFilters: Sorting Label', 'jet-smart-filters' ),
-						'editor_type' => 'LINE',
-					),
-					array(
-						'field'       => 'placeholder',
-						'type'        => esc_html__( 'JetSmartFilters: Sorting Placeholder', 'jet-smart-filters' ),
-						'editor_type' => 'LINE',
-					),
-				),
+			'fields'            => array(),
 			'integration-class' => 'WPML_Integration_Jet_Smart_Filters_Sorting',
 		);
 

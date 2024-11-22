@@ -9,6 +9,7 @@ use Elementor\Group_Control_Typography;
 use Elementor\Icons_Manager;
 use Elementor\Utils;
 use ElementorPro\Plugin;
+use ElementorPro\Modules\Search\Module as Search_Module;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
@@ -33,17 +34,14 @@ class Search_Form extends Base {
 	}
 
 	public function show_in_panel(): bool {
-		return false;
+		return ! Plugin::elementor()->experiments->is_feature_active( Search_Module::FEATURE_ID );
 	}
 
-	public function get_style_depends(): array {
-		$style_depends = [ 'widget-search-form' ];
-
+	public function get_style_depends() {
 		if ( Icons_Manager::is_migration_allowed() ) {
-			$style_depends[] = 'elementor-icons-fa-solid';
+			return [ 'elementor-icons-fa-solid' ];
 		}
-
-		return $style_depends;
+		return [];
 	}
 
 	protected function register_controls() {
@@ -54,11 +52,16 @@ class Search_Form extends Base {
 			]
 		);
 
-		$this->add_deprecation_message(
-			'3.24.0',
-			esc_html__( 'You are currently editing a Search Form Widget in its old version. Any new Search widget dragged into the canvas will be the new Search widget, with the improved search capabilities.', 'elementor-pro' ),
-			'search'
-		);
+		if ( Plugin::elementor()->experiments->is_feature_active( Search_Module::FEATURE_ID ) ) {
+			$this->add_deprecation_message(
+				'3.23.0',
+				esc_html__(
+					'You are currently editing a Search Form Widget in its old version. Any new Search widget dragged into the canvas will be the new Search widget, with the improved search capabilities.',
+					'elementor-pro'
+				),
+				'search'
+			);
+		}
 
 		$this->add_control(
 			'skin',

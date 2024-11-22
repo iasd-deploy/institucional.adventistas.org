@@ -93,20 +93,6 @@ class Widget_Video extends Widget_Base {
 	}
 
 	/**
-	 * Get style dependencies.
-	 *
-	 * Retrieve the list of style dependencies the widget requires.
-	 *
-	 * @since 3.24.0
-	 * @access public
-	 *
-	 * @return array Widget style dependencies.
-	 */
-	public function get_style_depends(): array {
-		return [ 'widget-video' ];
-	}
-
-	/**
 	 * Register video widget controls.
 	 *
 	 * Adds different input fields to allow the user to change and customize the widget settings.
@@ -1085,7 +1071,7 @@ class Widget_Video extends Widget_Base {
 							'entranceAnimation' => $settings['lightbox_content_animation'],
 							'entranceAnimation_tablet' => $settings['lightbox_content_animation_tablet'],
 							'entranceAnimation_mobile' => $settings['lightbox_content_animation_mobile'],
-							'videoAspectRatio' => $settings['aspect_ratio'] ?? '169',
+							'videoAspectRatio' => $settings['aspect_ratio'],
 						],
 					];
 
@@ -1142,7 +1128,7 @@ class Widget_Video extends Widget_Base {
 	/**
 	 * Render video widget as plain content.
 	 *
-	 * Override the default behavior, by printing the video URL instead of rendering it.
+	 * Override the default behavior, by printing the video URL insted of rendering it.
 	 *
 	 * @since 1.4.5
 	 * @access public

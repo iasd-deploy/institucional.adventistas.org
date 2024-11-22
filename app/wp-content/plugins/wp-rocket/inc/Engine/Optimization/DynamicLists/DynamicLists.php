@@ -105,17 +105,12 @@ class DynamicLists extends Abstract_Render {
 		$response     = [];
 		$success      = false;
 		$should_purge = false;
-		$titles       = [
-			'defaultlists'         => __( 'Default Lists', 'rocket' ),
-			'delayjslists'         => __( 'Delay JavaScript Execution Exclusion Lists', 'rocket' ),
-			'incompatible_plugins' => __( 'Incompatible plugins Lists', 'rocket' ),
-		];
 
-		foreach ( $this->providers as $provider_id => $provider ) {
+		foreach ( $this->providers as $provider ) {
 			$result = $provider->api_client->get_exclusions_list( $provider->data_manager->get_lists_hash() );
 
 			if ( empty( $result['code'] ) || empty( $result['body'] ) ) {
-				$response[ $titles[ $provider_id ] ] = [
+				$response[ $provider->title ] = [
 					'success' => false,
 					'data'    => '',
 					'message' => __( 'Could not get updated lists from server.', 'rocket' ),
@@ -124,7 +119,7 @@ class DynamicLists extends Abstract_Render {
 			}
 
 			if ( 206 === $result['code'] ) {
-				$response[ $titles[ $provider_id ] ] = [
+				$response[ $provider->title ] = [
 					'success' => true,
 					'data'    => '',
 					'message' => __( 'Lists are up to date.', 'rocket' ),
@@ -133,7 +128,7 @@ class DynamicLists extends Abstract_Render {
 			}
 
 			if ( ! $provider->data_manager->save_dynamic_lists( $result['body'] ) ) {
-				$response[ $titles[ $provider_id ] ] = [
+				$response[ $provider->title ] = [
 					'success' => false,
 					'data'    => '',
 					'message' => __( 'Could not update lists.', 'rocket' ),
@@ -141,9 +136,8 @@ class DynamicLists extends Abstract_Render {
 				continue;
 			}
 
-			$success = true;
-
-			$response[ $titles[ $provider_id ] ] = [
+			$success                      = true;
+			$response[ $provider->title ] = [
 				'success' => true,
 				'data'    => '',
 				'message' => __( 'Lists are successfully updated.', 'rocket' ),
@@ -307,28 +301,5 @@ class DynamicLists extends Abstract_Render {
 		$lists = $this->providers['defaultlists']->data_manager->get_lists();
 
 		return $lists->exclude_js_template ?? [];
-	}
-
-	/**
-	 * Get the lazy rendered exclusions.
-	 *
-	 * @return array
-	 */
-	public function get_lrc_exclusions(): array {
-		$lists = $this->providers['defaultlists']->data_manager->get_lists();
-
-		return $lists->lazy_rendering_exclusions ?? [];
-	}
-
-	/**
-	 * Updates the lists from JSON files
-	 *
-	 * @return void
-	 */
-	public function update_lists_from_files() {
-		foreach ( $this->providers as $provider ) {
-			$provider->data_manager->remove_lists_cache();
-			$provider->data_manager->get_lists();
-		}
 	}
 }

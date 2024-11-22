@@ -49,7 +49,7 @@ class Jet_Elements_Image_Comparison extends Jet_Elements_Base {
 	}
 
 	public function get_style_depends() {
-		return array( 'jet-juxtapose-css', 'jet-image-comparison', 'jet-image-comparison-skin' );
+		return array( 'jet-juxtapose-css' );
 	}
 
 	protected function register_controls() {

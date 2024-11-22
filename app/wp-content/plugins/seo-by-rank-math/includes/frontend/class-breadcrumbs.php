@@ -118,7 +118,7 @@ class Breadcrumbs {
 			wp_parse_args(
 				$args,
 				[
-					'separator'   => $this->settings['separator'],
+					'delimiter'   => '&nbsp;&#47;&nbsp;',
 					'wrap_before' => '<nav aria-label="breadcrumbs" class="rank-math-breadcrumb"><p>',
 					'wrap_after'  => '</p></nav>',
 					'before'      => '',
@@ -145,14 +145,14 @@ class Breadcrumbs {
 			$link = $link ? '<a href="' . esc_url( $crumb[1] ) . '">' . esc_html( $crumb[0] ) . '</a>' :
 				'<span class="last">' . esc_html( $crumb[0] ) . '</span>';
 
-			$html .= wp_kses_post( $args['before'] ) . $link . wp_kses_post( $args['after'] );
+			$html .= $args['before'] . $link . $args['after'];
 
 			if ( $size !== $key + 1 ) {
-				$html .= '<span class="separator"> ' . wp_kses_post( $args['separator'] ) . ' </span>';
+				$html .= '<span class="separator"> ' . wp_kses_post( $this->settings['separator'] ) . ' </span>';
 			}
 		}
 
-		$html = wp_kses_post( $args['wrap_before'] ) . $html . wp_kses_post( $args['wrap_after'] );
+		$html = $args['wrap_before'] . $html . $args['wrap_after'];
 
 		/**
 		 * Change the breadcrumbs HTML output.
@@ -393,10 +393,6 @@ class Breadcrumbs {
 	private function add_crumbs_category() {
 		$this->maybe_add_blog();
 		$term = $GLOBALS['wp_query']->get_queried_object();
-		if ( empty( $term ) ) {
-			return;
-		}
-
 		$this->maybe_add_term_ancestors( $term );
 		$this->add_crumb( $this->get_breadcrumb_title( 'term', $term, $term->name ), get_term_link( $term ) );
 	}
@@ -558,7 +554,7 @@ class Breadcrumbs {
 	 * @return bool
 	 */
 	private function can_add_term_ancestors( $term ) {
-		if ( empty( $term ) || 0 === $term->parent || false === $this->settings['show_ancestors'] || false === is_taxonomy_hierarchical( $term->taxonomy ) ) {
+		if ( 0 === $term->parent || false === $this->settings['show_ancestors'] || false === is_taxonomy_hierarchical( $term->taxonomy ) ) {
 			return false;
 		}
 

@@ -36,11 +36,11 @@ abstract class Field_Base {
 
 	public function add_assets_depends( $form ) {
 		foreach ( $this->depended_scripts as $script ) {
-			wp_enqueue_script( $script );
+			$form->add_script_depends( $script );
 		}
 
 		foreach ( $this->depended_styles as $style ) {
-			wp_enqueue_style( $style );
+			$form->add_style_depends( $style );
 		}
 	}
 

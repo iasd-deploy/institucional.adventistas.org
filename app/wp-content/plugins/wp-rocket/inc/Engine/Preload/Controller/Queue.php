@@ -6,6 +6,7 @@ use ActionScheduler_Store;
 use WP_Rocket\Engine\Common\Queue\AbstractASQueue;
 
 class Queue extends AbstractASQueue {
+
 	/**
 	 * Group from the queue.
 	 *
@@ -17,7 +18,7 @@ class Queue extends AbstractASQueue {
 	/**
 	 * Add Async load initial sitemap job.
 	 *
-	 * @return int
+	 * @return string
 	 */
 	public function add_job_preload_job_load_initial_sitemap_async() {
 		return $this->add_async( 'rocket_preload_job_load_initial_sitemap' );
@@ -28,7 +29,7 @@ class Queue extends AbstractASQueue {
 	 *
 	 * @param string $sitemap_url sitemap url.
 	 *
-	 * @return int
+	 * @return string
 	 */
 	public function add_job_preload_job_parse_sitemap_async( string $sitemap_url ) {
 		return $this->add_async(
@@ -44,7 +45,7 @@ class Queue extends AbstractASQueue {
 	 *
 	 * @param string $url url to preload.
 	 *
-	 * @return int
+	 * @return string
 	 */
 	public function add_job_preload_job_preload_url_async( string $url ) {
 		return $this->add_async(
@@ -55,15 +56,16 @@ class Queue extends AbstractASQueue {
 		);
 	}
 
+
 	/**
 	 * Add a job that check if the preload is finished.
 	 *
-	 * @return int
+	 * @return string
 	 */
 	public function add_job_preload_job_check_finished_async() {
 
 		if ( $this->job_preload_job_check_finished_async_exists() ) {
-			return 0;
+			return '';
 		}
 
 		return $this->schedule_single( time() + MINUTE_IN_SECONDS, 'rocket_preload_job_check_finished', [ time() ] );

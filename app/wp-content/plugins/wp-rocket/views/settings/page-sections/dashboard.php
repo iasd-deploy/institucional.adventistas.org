@@ -22,7 +22,6 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$rocket_manual_preload = (bool) get_rocket_option( 'manual_preload', false );
 ?>
 <div id="<?php echo esc_attr( $data['id'] ); ?>" class="wpr-Page">
 	<div class="wpr-sectionHeader">
@@ -159,19 +158,18 @@ $rocket_manual_preload = (bool) get_rocket_option( 'manual_preload', false );
 				<fieldset class="wpr-fieldsContainer-fieldset">
 					<?php if ( current_user_can( 'rocket_purge_cache' ) ) : ?>
 					<div class="wpr-field">
-						<h4 class="wpr-title3"><?php esc_html_e( 'Cache files', 'rocket' ); ?></h4>
-						<p><?php echo $rocket_manual_preload ? esc_html__( 'This action will clear and preload all the cache files.', 'rocket' ) : esc_html__( 'This action will clear all the cache files.', 'rocket' ); ?></p>
+						<h4 class="wpr-title3"><?php esc_html_e( 'Remove all cached files', 'rocket' ); ?></h4>
 						<?php
 						$this->render_action_button(
 							'link',
 							'purge_cache',
 							[
-								'label'      => $rocket_manual_preload ? __( 'Clear and preload', 'rocket' ) : __( 'Clear', 'rocket' ),
+								'label'      => (bool) get_rocket_option( 'manual_preload', false ) ? __( 'Clear and preload cache', 'rocket' ) : __( 'Clear cache', 'rocket' ),
 								'parameters' => [
 									'type' => 'all',
 								],
 								'attributes' => [
-									'class' => 'wpr-button wpr-button--icon wpr-button--small wpr-icon-trash wpr-button--no-min-width',
+									'class' => 'wpr-button wpr-button--icon wpr-button--small wpr-icon-trash',
 								],
 							]
 						);

@@ -1,6 +1,7 @@
 <?php
 namespace Elementor;
 
+use Elementor\Core\Files\Uploads_Manager;
 use Elementor\Core\Utils\Hints;
 use Elementor\Modules\DynamicTags\Module as TagsModule;
 
@@ -427,10 +428,6 @@ class Control_Media extends Control_Base_Multiple {
 
 		$alt = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
 		if ( ! $alt ) {
-			if ( Utils::has_invalid_post_permissions( $attachment ) ) {
-				return '';
-			}
-
 			$alt = $attachment->post_excerpt;
 			if ( ! $alt ) {
 				$alt = $attachment->post_title;

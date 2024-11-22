@@ -91,17 +91,13 @@ abstract class Loco_test_WordPressTestCase extends WP_UnitTestCase {
         Loco_mvc_PostParams::destroy();
         Loco_error_AdminNotices::destroy();
         Loco_package_Listener::destroy();
-        Loco_fs_Locations::clear();
         wp_cache_flush();
         // text domains should be unloaded at start of all tests, and locale reset
         unset( $GLOBALS['locale'] );
         $GLOBALS['l10n'] = [];
-        $GLOBALS['l10n_unloaded'] = [];
         $this->enable_locale('en_US');
         $this->assertSame( 'en_US', get_locale(), 'Ensure test site is English to start');
         $this->assertSame( 'en_US', get_user_locale(),'Ensure test site is English to start');
-        // We can't clear the registry, so we have to hack it
-        $GLOBALS['wp_textdomain_registry'] = new WP_Textdomain_Registry;
         // Any enqueued scripts should be destroyed
         unset($GLOBALS['wp_scripts']);
         // ensure test themes are registered and WordPress's cache is valid
@@ -121,14 +117,10 @@ abstract class Loco_test_WordPressTestCase extends WP_UnitTestCase {
         ];
         // remove all filters before adding
         remove_all_filters('filesystem_method');
-        remove_all_filters('loco_constant');
-        remove_all_filters('loco_constant_WP_PLUGIN_DIR');
-        remove_all_filters('loco_constant_WPMU_PLUGIN_DIR');
         remove_all_filters('loco_constant_DISALLOW_FILE_MODS');
         remove_all_filters('file_mod_allowed');
         remove_all_filters('loco_file_mod_allowed_context');
         remove_all_filters('loco_setcookie');
-        remove_all_filters('site_transient_update_core');
         // tests should always dictate the file system method, which defaults to direct
         add_filter('filesystem_method', [$this,'filter_fs_method'] );
         add_filter('loco_constant_DISALLOW_FILE_MODS', [$this,'filter_fs_disallow'] );
@@ -136,7 +128,6 @@ abstract class Loco_test_WordPressTestCase extends WP_UnitTestCase {
         add_filter('loco_file_mod_allowed_context', [$this,'filter_fs_allow_context'],10,2); // <- used with file_mod_allowed
         // capture cookies so we can test what is set 
         add_filter('loco_setcookie', [$this,'captureCookie'], 10, 1 );
-        add_filter('site_transient_update_core',[__CLASS__,'filter_site_transient_update_core'], 10, 1 );
         $this->cookies_set = [];
         $this->enable_network();
         //
@@ -251,7 +242,7 @@ abstract class Loco_test_WordPressTestCase extends WP_UnitTestCase {
     public function set_fs_method( $method ){
         $GLOBALS['wp_filesystem'] = null;
         $this->fs_method = $method;
-        class_exists('Loco_test_DummyFtpConnect'); // ping
+        $ping = class_exists('Loco_test_DummyFtpConnect');
         return $this;
     }
 
@@ -289,7 +280,6 @@ abstract class Loco_test_WordPressTestCase extends WP_UnitTestCase {
     /**
      * Filters context passed to filter_fs_allow
      * @internal
-     * @noinspection PhpUnusedParameterInspection
      */
     public function filter_fs_allow_context( $context, Loco_fs_File $file = null ){
         return 'loco_test';
@@ -336,12 +326,12 @@ abstract class Loco_test_WordPressTestCase extends WP_UnitTestCase {
         }
        
         $user = self::factory()->user->create( [ 'role' => $role ] );
-        /*if( $user instanceof WP_Error ){
+        if( $user instanceof WP_Error ){
             foreach( $user->get_error_messages() as $message ){
                 trigger_error( $message );
             }
             throw new Exception('Failed to login');
-        }*/
+        }
         // setting user required to have proper user object
         $user = wp_set_current_user( $user );
         // simulate default permissions used in admin menu hook
@@ -414,7 +404,7 @@ abstract class Loco_test_WordPressTestCase extends WP_UnitTestCase {
      * @return void
      */    
     protected function enable_debug_locale(){
-         $this->enable_locale('en_GB_debug');
+         return $this->enable_locale('en_GB_debug');
     }
 
 
@@ -474,9 +464,6 @@ abstract class Loco_test_WordPressTestCase extends WP_UnitTestCase {
     }
 
 
-    /**
-     * @internal 
-     */
     public static function filter_allows_fake_plugins_to_exist( array $data, $handle ){
         $file = LOCO_TEST_DATA_ROOT.'/plugins/'.$handle;
         if( file_exists($file) && is_file($file) ) {
@@ -486,33 +473,11 @@ abstract class Loco_test_WordPressTestCase extends WP_UnitTestCase {
         }
         return $data;
     }
-    
-    
-    public static function filter_enforce_test_plugins_only( $path ){
-        return LOCO_TEST_DATA_ROOT.'/'.basename($path);
-    }
-    
-    
-    public function enable_test_plugins(){
-        add_filter('loco_constant_WP_PLUGIN_DIR',[__CLASS__,'filter_enforce_test_plugins_only']);
-        add_filter('loco_constant_WPMU_PLUGIN_DIR',[__CLASS__,'filter_enforce_test_plugins_only']);
-    }
-    
 
 
     /**
-     * Fake update prompts to avoid polluting output
-     * @internal
-     */
-    public static function filter_site_transient_update_core( $value ){
-        // fwrite( STDERR, json_encode($value) );
-        return (object) [ 'updates' => [] ];
-    }
-
-
-    /**
-     * @param int $status
-     * @param string $message
+     * @param int
+     * @param string
      * @return string location
      */
     public function assertRedirected( $status = 302, $message = 'Failed to redirect' ){
@@ -525,7 +490,7 @@ abstract class Loco_test_WordPressTestCase extends WP_UnitTestCase {
 
     /**
      * Set $_POST
-     * @param string[] $post
+     * @param string[]
      * @return void
      */
     public function setPostArray( array $post ){
@@ -539,7 +504,7 @@ abstract class Loco_test_WordPressTestCase extends WP_UnitTestCase {
 
     /**
      * Augment $_POST
-     * @param string[] $post
+     * @param string[]
      * @return void
      */
     public function addPostArray( array $post ){
@@ -549,7 +514,7 @@ abstract class Loco_test_WordPressTestCase extends WP_UnitTestCase {
 
     /**
      * Set $_GET
-     * @param string[] $get
+     * @param string[]
      * @return void
      */
     public function setGetArray( array $get ){
@@ -562,7 +527,7 @@ abstract class Loco_test_WordPressTestCase extends WP_UnitTestCase {
 
     /**
      * Augment $_GET
-     * @param string[] $get
+     * @param string[]
      * @return void
      */
     public function addGetArray( array $get ){
@@ -571,8 +536,8 @@ abstract class Loco_test_WordPressTestCase extends WP_UnitTestCase {
     
     
     /**
-     * @param string $key _FILES key
-     * @param string $path real file on local system that would be uploaded
+     * @param string _FILES key
+     * @param string real file on local system that would be uploaded
      */
     public function addFileUpload( $key, $path ){
         if( 'POST' !== $_SERVER['REQUEST_METHOD'] ){

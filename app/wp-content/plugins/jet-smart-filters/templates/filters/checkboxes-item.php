@@ -3,7 +3,7 @@
  * Checkbox list item template
  */
 
-$checked_icon = apply_filters( 'jet-smart-filters/templates/checkboxes-item/checked-icon', jet_smart_filters()->print_template( 'svg/check.svg' ) );
+$checked_icon = apply_filters( 'jet-smart-filters/templates/checkboxes-item/checked-icon', 'fa fa-check' );
 $collapsible  = isset( $args['collapsible'] ) ? $args['collapsible'] : false;
 
 ?>
@@ -25,9 +25,7 @@ $collapsible  = isset( $args['collapsible'] ) ? $args['collapsible'] : false;
 		>
 		<div class="jet-checkboxes-list__button">
 			<?php if ( $show_decorator ) : ?>
-				<span class="jet-checkboxes-list__decorator">
-					<i class="jet-checkboxes-list__checked-icon"><?php echo $checked_icon ?></i>
-				</span>
+				<span class="jet-checkboxes-list__decorator"><i class="jet-checkboxes-list__checked-icon <?php echo $checked_icon ?>"></i></span>
 			<?php endif; ?>
 			<span class="jet-checkboxes-list__label"><?php echo $label; ?></span>
 			<?php do_action('jet-smart-filter/templates/counter', $args ); ?>

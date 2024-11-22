@@ -32,7 +32,7 @@ class Manager {
 		}
 
 		add_action( 'init', [ $this, 'register_elements' ], 11 );
-		add_action( 'init', [ $this, 'enqueue_styles_for_builder' ] );
+		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_styles_for_builder' ] );
 		add_action( 'jet-smart-filters/render/ajax/before', [ $this, 'register_bricks_dynamic_data_on_ajax' ] );
 
 		add_filter( 'bricks/builder/i18n', function( $i18n ) {
@@ -158,7 +158,7 @@ class Manager {
 
 	public function add_control_to_elements() {
 		// Only container, block and div element have query controls
-		$elements = [ 'section', 'container', 'block', 'div' ];
+		$elements = [ 'container', 'block', 'div' ];
 
 		foreach ( $elements as $name ) {
 			add_filter( "bricks/elements/{$name}/controls", [ $this, 'add_jet_smart_filters_controls' ], 40 );
@@ -215,7 +215,7 @@ class Manager {
 				} );
 			} );
 			
-			window.JetSmartFilters.events.subscribe("ajaxFilters/updated", (provider, queryId, response, props) => {
+			window.JetSmartFilters.events.subscribe("ajaxFilters/updated", (provider, queryId, response) => {
 				if ("bricks-query-loop" !== provider) {
 					return;
 				}
@@ -234,15 +234,11 @@ class Manager {
 				const {
 					rendered_content: renderedContent,
 					element_id: elementId,
+					loadMore,
 					pagination,
 					styles: styleElement,
 					popups,
 				} = response;
-				
-				const {
-					append,
-					autoscroll,
-				} = props;
 				
 				const selector = `jsfb-query--${queryId}`;
 				
@@ -260,7 +256,7 @@ class Manager {
 					}
 					
 					// Replace content
-					if ( append ) {
+					if ( loadMore ) {
 						jQuery(providerSelector).last().after(renderedContent);
 					} else {
 						jQuery(providerSelector).replaceWith(() => replaceContent());
@@ -306,16 +302,6 @@ class Manager {
 							}
 						});	
 					}
-				}
-				
-				if (autoscroll || autoscroll === 0) {
-					const scrollOffset = typeof autoscroll === "number"
-						? autoscroll
-						: 0;
-
-					jQuery("html, body").stop().animate({
-						scrollTop: nodes.offset().top + nodes.outerHeight(true) - scrollOffset
-					}, 500);
 				}
 			});
 		' );

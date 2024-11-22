@@ -57,7 +57,11 @@ class Purge {
 	 * @param boolean $pagination Purge also pagination.
 	 * @return void
 	 */
-	public function purge_url( string $url, $pagination = false ) {
+	public function purge_url( $url, $pagination = false ) {
+		if ( ! is_string( $url ) ) {
+			return;
+		}
+
 		global $wp_rewrite;
 
 		$parsed_url = $this->parse_url( $url );

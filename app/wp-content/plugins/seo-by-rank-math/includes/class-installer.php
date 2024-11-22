@@ -238,8 +238,7 @@ class Installer {
 				target_post_id bigint(20) unsigned NOT NULL,
 				type varchar(8) NOT NULL,
 				PRIMARY KEY  (id),
-				KEY link_direction (post_id, type),
-				KEY target_post_id (target_post_id)
+				KEY link_direction (post_id, type)
 			) $collate;";
 
 			$table_schema[] = "CREATE TABLE {$wpdb->prefix}rank_math_internal_meta (

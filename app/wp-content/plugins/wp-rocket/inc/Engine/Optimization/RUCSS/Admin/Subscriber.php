@@ -441,6 +441,7 @@ class Subscriber implements Subscriber_Interface {
 
 		if ( ! current_user_can( 'rocket_manage_options' ) ) {
 			wp_send_json_error();
+			return;
 		}
 
 		spawn_cron();
@@ -499,13 +500,12 @@ class Subscriber implements Subscriber_Interface {
 	/**
 	 * Disable RUCSS on wrong license.
 	 *
-	 * @return null|false
+	 * @return bool
 	 */
 	public function disable_russ_on_wrong_license() {
 		if ( false !== (bool) get_option( 'wp_rocket_no_licence' ) ) {
 			return false;
 		}
-
 		return null;
 	}
 

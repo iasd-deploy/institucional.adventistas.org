@@ -75,7 +75,6 @@ class Role_Manager extends Base {
 						'wp-data'                => '',
 						'wp-components'          => '',
 						'wp-api-fetch'           => '',
-						'rank-math-components'   => '',
 						'rank-math-role-manager' => $uri . '/assets/js/role-manager.js',
 					],
 					'json'    => [

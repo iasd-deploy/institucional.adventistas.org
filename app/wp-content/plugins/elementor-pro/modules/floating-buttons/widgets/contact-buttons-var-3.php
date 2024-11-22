@@ -3,14 +3,14 @@
 namespace ElementorPro\Modules\FloatingButtons\Widgets;
 
 use Elementor\Core\Base\Providers\Social_Network_Provider;
-use ElementorPro\Modules\FloatingButtons\Base\Widget_Contact_Button_Base_Pro;
+use Elementor\Modules\FloatingButtons\Base\Widget_Contact_Button_Base;
 use ElementorPro\Modules\FloatingButtons\Classes\Render\Contact_Buttons_Var_3_Render;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
 
-class Contact_Buttons_Var_3 extends Widget_Contact_Button_Base_Pro {
+class Contact_Buttons_Var_3 extends Widget_Contact_Button_Base {
 
 	public static function get_configuration() {
 		$config = parent::get_configuration();
@@ -77,7 +77,6 @@ class Contact_Buttons_Var_3 extends Widget_Contact_Button_Base_Pro {
 				'contact_icon_platform' => Social_Network_Provider::WAZE,
 			],
 		];
-		$config['content']['contact_section']['has_accessible_name'] = false;
 
 		$config['style']['chat_box_section']['section_name'] = esc_html__( 'Box', 'elementor-pro' );
 		$config['style']['chat_box_section']['has_width'] = false;

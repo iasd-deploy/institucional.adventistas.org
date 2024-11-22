@@ -46,7 +46,7 @@ class RUCSSQueueRunner extends ActionScheduler_Abstract_QueueRunner {
 	 * @return RUCSSQueueRunner Instance.
 	 */
 	public static function instance() {
-		if ( null === self::$runner ) {
+		if ( empty( self::$runner ) ) {
 			self::$runner = new RUCSSQueueRunner();
 		}
 		return self::$runner;
@@ -106,7 +106,6 @@ class RUCSSQueueRunner extends ActionScheduler_Abstract_QueueRunner {
 			wp_schedule_event( time(), $schedule, self::WP_CRON_HOOK, $cron_context );
 		}
 
-		// @phpstan-ignore-next-line Action callback returns int but should not return anything.
 		add_action( self::WP_CRON_HOOK, [ self::instance(), 'run' ] );
 		$this->hook_dispatch_async_request();
 	}
@@ -164,7 +163,7 @@ class RUCSSQueueRunner extends ActionScheduler_Abstract_QueueRunner {
 	 * @param string $context Optional identifier for the context in which this action is being processed, e.g. 'WP CLI' or 'WP Cron'
 	 *        Generally, this should be capitalised and not localised as it's a proper noun.
 	 *
-	 * @return int
+	 * @return void
 	 */
 	public function run( $context = 'WP Cron' ) {
 		\ActionScheduler_Compatibility::raise_memory_limit();
@@ -181,8 +180,6 @@ class RUCSSQueueRunner extends ActionScheduler_Abstract_QueueRunner {
 		}
 
 		do_action( 'action_scheduler_after_process_queue' );// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
-
-		return $processed_actions;
 	}
 
 	/**

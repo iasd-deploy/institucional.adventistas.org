@@ -144,6 +144,20 @@ return array(
 				'_is_hierarchical' => array( false, '' ),
 			),
 		),
+		'_terms_relational_operator' => array(
+			'title'            => __( 'Relational Operator', 'jet-smart-filters' ),
+			'type'             => 'select',
+			'element'          => 'control',
+			'options' => array(
+				'OR'  => __( 'Union', 'jet-smart-filters' ),
+				'AND' => __( 'Intersection', 'jet-smart-filters' ),
+			),
+			'conditions'       => array(
+				'_filter_type' => array( 'checkboxes' ),
+				'_data_source' => 'taxonomies',
+				'_is_hierarchical' => array( false, '' ),
+			),
+		),
 		'_source_post_type' => array(
 			'title'      => __( 'Post Type', 'jet-smart-filters' ),
 			'type'       => 'select',
@@ -434,20 +448,6 @@ return array(
 			'element' => 'control',
 			'conditions' => array(
 				'_filter_type' => 'search',
-			),
-		),
-		'_terms_relational_operator' => array(
-			'title'            => __( 'Relational Operator', 'jet-smart-filters' ),
-			'type'             => 'select',
-			'element'          => 'control',
-			'options' => array(
-				'OR'  => __( 'Union', 'jet-smart-filters' ),
-				'AND' => __( 'Intersection', 'jet-smart-filters' ),
-			),
-			'conditions'       => array(
-				'_filter_type' => array( 'checkboxes' ),
-				//'_data_source' => 'taxonomies',
-				'_is_hierarchical' => array( false, '' ),
 			),
 		),
 		'_is_custom_checkbox' => array(

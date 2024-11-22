@@ -123,7 +123,6 @@ class Data extends \Jet_Engine_Base_Data {
 			'api_access_cap',
 			'api_access_role',
 			'api_schema',
-			'cache_expires',
 		);
 
 		foreach ( $regular_args as $key ) {
@@ -161,13 +160,9 @@ class Data extends \Jet_Engine_Base_Data {
 		$args['name'] = $labels['name'];
 		$result       = array_merge( $item, $args );
 
-		// Set default value for `cache_query` & `cache_expires` settings.
+		// Set default value for `cache_query` setting if setting is not existing.
 		if ( ! isset( $result['cache_query'] ) ) {
 			$result['cache_query'] = true;
-		}
-
-		if ( ! isset( $result['cache_expires'] ) ) {
-			$result['cache_expires'] = 0;
 		}
 
 		unset( $result['args'] );

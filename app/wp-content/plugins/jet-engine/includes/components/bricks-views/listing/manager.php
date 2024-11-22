@@ -6,7 +6,6 @@
 namespace Jet_Engine\Bricks_Views\Listing;
 
 use Bricks\Database;
-use Bricks\Elements;
 use Bricks\Query;
 
 /**
@@ -40,6 +39,8 @@ class Manager {
 
 		add_action( 'jet-smart-filters/render/ajax/before', [ $this, 'set_page_data' ] );
 
+		add_action( 'jet-engine/listing/grid/before-render', [ $this, 'set_global_post_for_listing' ] );
+
 		add_filter( 'bricks/link_css_selectors', [ $this, 'link_css_selectors' ], 10, 1 );
 
 		add_action( 'jet-engine/listing/grid/before', [ $this, 'pre_render_grid_items' ], 10 );
@@ -50,28 +51,32 @@ class Manager {
 
 		add_filter( 'jet-engine/compatibility/listing/query-id', [ $this, 'modify_query_id' ], 10, 2 );
 
-		add_action( 'wpml_translation_job_saved', [ $this, 'sync_listing_type_for_translation' ], 10, 3 );
-
-		/**
-		 * Using a closure to ensure this function is only triggered from the 'wpml_page_builder_string_translated' hook
-		 *
-		 * Necessary because the function sets $is_processing_wpml_translation to true, which should only happen in the context of WPML string translation.
-		 *
-		 * @since 1.11
-		 */
-		add_action(
-			'wpml_page_builder_string_translated',
-			function( $package_kind, $translated_post_id, $original_post, $string_translations, $lang ) {
-				$this->wpml_page_builder_string_translated( $package_kind, $translated_post_id, $original_post, $string_translations, $lang );
-			},
-			10,
-			5
-		);
-
 		require_once jet_engine()->bricks_views->component_path( 'listing/render.php' );
 		$this->render = new Render();
 
 		$this->ensure_listing_post_type_support();
+
+	}
+
+	public function set_global_post_for_listing() {
+
+		$post_id = ! empty( $_REQUEST['postId'] ) ? $_REQUEST['postId'] : false;
+
+		if ( ! $post_id ) {
+			$post_id = isset( Database::$page_data['original_post_id'] ) ? Database::$page_data['original_post_id'] : Database::$page_data['preview_or_post_id'];
+		}
+
+		if ( ! $post_id ) {
+			return;
+		}
+
+		if ( get_post_type( $post_id ) === jet_engine()->post_type->slug() ) {
+			return;
+		}
+
+		global $post;
+		$post = get_post( $post_id );
+
 	}
 
 	public function get_slug() {
@@ -110,13 +115,9 @@ class Manager {
 			return $settings;
 		}
 
-		foreach ( $bricks_data as $element ) {
+		foreach ( $bricks_data as $el_id => $element ) {
 			if ( $element['id'] === $element_id ) {
-				return array_merge( $element['settings'], array(
-					'_id'                => $element['id'],
-					'_element_id'        => $element['settings']['_cssId'] ?? '',
-					'inline_columns_css' => true
-				) );
+				return array_merge( $element['settings'], array( '_id' => $element_id, 'inline_columns_css' => true ) );
 			}
 		}
 
@@ -184,24 +185,31 @@ class Manager {
 	}
 
 	public function render_assets( $listing_id, $force = false ) {
+
 		if ( ! class_exists( '\Jet_Engine\Bricks_Views\Listing\Assets' ) ) {
 			require_once jet_engine()->bricks_views->component_path( 'listing/assets.php' );
 			new Assets();
 		}
 
-		if ( ! $force && in_array( $listing_id, $this->css_rendered ) ) {
+		$any          = Query::is_any_looping();
+		$query_object = Query::get_query_object( $any );
+
+		if ( empty( $query_object ) && ! $force ) {
 			return;
 		}
 
-		$listing_id = strval( $listing_id );
+		if ( is_int( $listing_id ) ) {
+			$listing_id = strval( $listing_id );
+		}
 
-		$this->css_rendered[] = $listing_id;
+		$element_id       = $query_object->element_id ?? $listing_id;
+		$is_array_element = array_key_exists( $element_id, $this->css_rendered ) && $this->css_rendered[ $element_id ] === $listing_id;
 
-		$inline_css = Assets::generate_inline_css( $listing_id, $force );
-		$inline_css = Assets::minify_css( $inline_css );
-
-		printf( '<style>%s</style>', $inline_css );
-		Assets::jet_print_editor_fonts();
+		if ( ! $is_array_element ) {
+			$this->css_rendered[ $element_id ] = $listing_id;
+			printf( '<style>%s</style>', Assets::generate_inline_css( $listing_id, $force ) );
+			Assets::jet_print_editor_fonts();
+		}
 	}
 
 	public function link_css_selectors( $selectors ) {
@@ -275,148 +283,5 @@ class Manager {
 
 	public function modify_query_id( $query_id, $settings ) {
 		return $settings['_cssId'] ?? $query_id;
-	}
-
-	/**
-	 * Checks if any element in the Bricks page content has a dynamic value.
-	 *
-	 * @param int $post_id The ID of the post to check for dynamic values.
-	 *
-	 * @return bool True if at least one element has a dynamic value, false otherwise.
-	 */
-	public function has_dynamic_value_in_controls( $post_id ) {
-		$elements          = get_post_meta( $post_id, BRICKS_DB_PAGE_CONTENT, true );
-		$has_dynamic_value = false;
-
-		if ( ! empty( $elements ) ) {
-			foreach ( $elements as $element ) {
-				if ( $this->check_element_has_dynamic_value( $element ) ) {
-					$has_dynamic_value = true;
-					break;
-				}
-			}
-		}
-
-		return $has_dynamic_value;
-	}
-
-	public function check_element_has_dynamic_value( $element, $has_dynamic_value = false ) {
-		$controls = Elements::get_element( $element, 'controls' );
-		$settings = ! empty( $element['settings'] ) ? $element['settings'] : [];
-
-		foreach ( $settings as $setting_key => $setting_value ) {
-			if ( $has_dynamic_value ) {
-				break;
-			}
-
-			$control_key = $setting_key;
-			$control      = ! empty( $controls[ $control_key ] ) ? $controls[ $control_key ] : false;
-
-			$css_definitions = isset( $control['css'] ) && is_array( $control['css'] ) ? $control['css'] : false;
-
-			if ( $css_definitions ) {
-				// Check if setting value uses dynamic data tags (@since 1.8)
-				$has_dynamic_value = strpos( wp_json_encode( $setting_value ), '"{' ) !== false;
-			}
-		}
-
-		return $has_dynamic_value;
-	}
-
-	/**
-	 * Synchronizes the '_listing_type' meta field for translated JetEngine items.
-	 */
-	public function sync_listing_type_for_translation( $post_id, $data, $job ) {
-		if ( get_post_type( $post_id ) === 'jet-engine' ) {
-			// Retrieve the '_listing_type' value from the original post
-			$original_listing_type = get_post_meta( $job->original_doc_id, '_listing_type', true );
-
-			// If the original '_listing_type' is 'bricks', update the meta field for the translated post
-			if ( $original_listing_type === 'bricks' ) {
-				update_post_meta( $post_id, '_listing_type', 'bricks' );
-			}
-		}
-	}
-
-	/**
-	 * WPML: Translated strings are applied to the translated post.
-	 *
-	 * https://git.onthegosystems.com/glue-plugins/wpml/wpml-page-builders/-/wikis/Integrating-a-page-builder-with-WPML#applying-the-string-translations-in-post-translation
-	 *
-	 * @param string            $package_kind
-	 * @param int               $translated_post_id
-	 * @param \WP_Post|stdClass $original_post
-	 * @param array             $string_translations
-	 * @param string            $lang
-	 *
-	 * @since 1.8 NOTE: This is a modified version of the original function
-	 */
-	private function wpml_page_builder_string_translated( $package_kind, $translated_post_id, $original_post, $string_translations, $lang ) {
-		// Return: Package is not for 'Bricks'
-		if ( $package_kind !== 'Bricks' ) {
-			return;
-		}
-
-		$area = 'content';
-
-		$bricks_elements = Database::get_data( $translated_post_id, $area );
-
-		if ( ! is_array( $bricks_elements ) ) {
-			return;
-		}
-
-		// Loop over translations for this post
-		foreach ( $string_translations as $string_id => $translation ) {
-			$is_je_custom_field = $this->is_jetengine_custom_field( $string_id );
-
-			if ( ! $is_je_custom_field ) {
-				continue;
-			}
-
-			list( $element_id, $setting_key ) = explode( '_', $string_id, 2 );
-
-			if ( ! $element_id || ! $setting_key ) {
-				continue;
-			}
-
-			// Loop over element and replace their text
-			foreach ( $bricks_elements as $index => $element ) {
-				// STEP: Replace the text of the element with the translated text
-				if ( $element['id'] === $element_id && isset( $translation[ $lang ]['value'] ) ) {
-					$bricks_elements[ $index ]['settings'][ $setting_key ] = $translation[ $lang ]['value'];
-				}
-			}
-		}
-
-		// Save the original post data which now contains the translations
-		$meta_key = Database::get_bricks_data_key( $area );
-
-		update_post_meta( $translated_post_id, $meta_key, $bricks_elements );
-	}
-
-	/**
-	 * Checks if the provided string contains any of the predefined JetEngine custom field keys.
-	 *
-	 * @param string $string The string to be checked.
-	 * @return bool Returns true if the string contains one of the specified JetEngine keys; otherwise, false.
-	 */
-	public function is_jetengine_custom_field( $string ) {
-		$je_custom_fields = [
-			'dynamic_field_format',
-			'field_fallback',
-			'terms_prefix',
-			'terms_suffix',
-			'link_label',
-			'added_to_store_text',
-			'added_to_store_label',
-		];
-
-		foreach ( $je_custom_fields as $key ) {
-			if ( strpos( $string, $key ) !== false ) {
-				return true;
-			}
-		}
-
-		return false;
 	}
 }

@@ -468,31 +468,6 @@ class Manager extends \Jet_Engine_Base_WP_Intance {
 	}
 
 	/**
-	 * Enqueue reindex script and vraibles for it
-	 * @return [type] [description]
-	 */
-	public function enqueue_reindex( $id = false ) {
-
-		wp_enqueue_script(
-			'jet-engine-relations-reindex',
-			jet_engine()->plugin_url( 'includes/components/relations/assets/js/reindex.js' ),
-			array( 'jquery' ),
-			jet_engine()->get_version(),
-			true
-		);
-
-		wp_localize_script( 'jet-engine-relations-reindex', 'JetEngineRelationsReindex', array(
-			'action'      => 'jet_engine_relations_reindex',
-			'relation_id' => $id,
-			'_nonce'      => wp_create_nonce( 'jet-engine-relations-control' ),
-			'label'       => $id ? __( 'Reindex Relation Table', 'jet-engine' ) : __( 'Reindex All Relations Tables', 'jet-engine' ),
-			'processing'  => __( 'Processing...', 'jet-engine' ),
-			'done'        => __( 'Done!', 'jet-engine' ),
-		) );
-
-	}
-
-	/**
 	 * Returns current menu page title (for JetEngine submenu)
 	 * @return [type] [description]
 	 */

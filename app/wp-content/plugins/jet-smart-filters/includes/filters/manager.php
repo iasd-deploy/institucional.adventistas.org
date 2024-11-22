@@ -103,6 +103,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Filter_Manager' ) ) {
 						$query_settings['jsf_signature'] = $signature;
 
 						$localized_data['settings'][ $provider ][ $query_id ] = $query_settings;
+
 					}
 				}
 			}
@@ -143,7 +144,6 @@ if ( ! class_exists( 'Jet_Smart_Filters_Filter_Manager' ) ) {
 				'sort',
 				'alphabet',
 				'_s',
-				'_sm',
 				'pagenum',
 				'plain_query',
 				// backward compatibility
@@ -167,7 +167,28 @@ if ( ! class_exists( 'Jet_Smart_Filters_Filter_Manager' ) ) {
 				return;
 			}
 
-			wp_enqueue_style( 'jet-smart-filters' );
+			wp_enqueue_style(
+				'jet-smart-filters',
+				jet_smart_filters()->plugin_url( 'assets/css/public.css' ),
+				array(),
+				jet_smart_filters()->get_version()
+			);
+
+			// Filter inline styles
+			$tabindex_color = jet_smart_filters()->settings->get( 'tabindex_color', '#0085f2' );
+
+			$filter_inline_styles = "
+				.jet-filter {
+					--tabindex-color: $tabindex_color;
+					--tabindex-shadow-color: " . jet_smart_filters()->utils->hex2rgba( $tabindex_color, 0.4 ) . ";
+				}
+			";
+
+			if ( jet_smart_filters()->provider_preloader->is_enabled ) {
+				$filter_inline_styles .= jet_smart_filters()->provider_preloader->css;
+			}
+
+			wp_add_inline_style( 'jet-smart-filters', $filter_inline_styles );
 		}
 
 		/**

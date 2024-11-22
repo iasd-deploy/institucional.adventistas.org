@@ -337,7 +337,7 @@ class Jet_Smart_Filters_Checkboxes_Widget extends Jet_Smart_Filters_Base_Widget 
 					),
 				),
 				'default'    => array(
-					'size' => 16,
+					'size' => 15,
 					'unit' => 'px',
 				),
 				'selectors'  => array(

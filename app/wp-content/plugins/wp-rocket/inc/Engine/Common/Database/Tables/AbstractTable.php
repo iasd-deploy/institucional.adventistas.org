@@ -2,7 +2,7 @@
 
 namespace WP_Rocket\Engine\Common\Database\Tables;
 
-use WP_Rocket\Dependencies\BerlinDB\Database\Table;
+use WP_Rocket\Dependencies\Database\Table;
 use WP_Rocket\Engine\Common\Database\TableInterface;
 
 class AbstractTable extends Table implements TableInterface {
@@ -83,14 +83,14 @@ class AbstractTable extends Table implements TableInterface {
 	 */
 	public function get_old_rows(): array {
 		if ( ! $this->exists() ) {
-			return [];
+			return false;
 		}
 		// Get the database interface.
 		$db = $this->get_db();
 
 		// Bail if no database interface is available.
 		if ( ! $db ) {
-			return [];
+			return false;
 		}
 
 		$prefixed_table_name = $this->apply_prefix( $this->table_name );

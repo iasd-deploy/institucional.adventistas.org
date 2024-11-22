@@ -18,7 +18,6 @@ use RankMath\Frontend_SEO_Score;
 use RankMath\Admin\Admin_Helper;
 use RankMath\Helpers\Str;
 use RankMath\Helpers\Url;
-use RankMath\Helpers\Param;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -51,7 +50,7 @@ class Post_Screen implements IScreen {
 	public function get_object_id() {
 		global $post;
 
-		return ! empty( $post->ID ) ? $post->ID : '';
+		return $post->ID;
 	}
 
 	/**
@@ -138,7 +137,6 @@ class Post_Screen implements IScreen {
 			'frontEndScore'          => Frontend_SEO_Score::show_on(),
 			'postName'               => get_post_field( 'post_name', get_post() ),
 			'permalinkFormat'        => $this->get_permalink_format(),
-			'showLockModifiedDate'   => Editor::can_add_lock_modified_date(),
 			'assessor'               => [
 				'focusKeywordLink' => admin_url( 'edit.php?focus_keyword=%focus_keyword%&post_type=%post_type%' ),
 				'hasTOCPlugin'     => $this->has_toc_plugin(),
@@ -154,9 +152,6 @@ class Post_Screen implements IScreen {
 	 */
 	public function get_object_values() {
 		global $post;
-		if ( empty( $post ) ) {
-			return [];
-		}
 
 		return [
 			'primaryTerm'         => $this->get_primary_term_id(),
@@ -164,7 +159,6 @@ class Post_Screen implements IScreen {
 			'titleTemplate'       => Helper::get_settings( "titles.pt_{$post->post_type}_title", '%title% %sep% %sitename%' ),
 			'descriptionTemplate' => Helper::get_settings( "titles.pt_{$post->post_type}_description", '' ),
 			'showScoreFrontend'   => ! Helper::get_post_meta( 'dont_show_seo_score', $this->get_object_id() ),
-			'lockModifiedDate'    => ! empty( Helper::get_post_meta( 'lock_modified_date', $this->get_object_id() ) ),
 		];
 	}
 
@@ -227,16 +221,12 @@ class Post_Screen implements IScreen {
 		$post_id = $this->get_object_id();
 		$post    = get_post( $post_id );
 
-		if ( empty( $post ) ) {
-			return;
-		}
-
 		if ( 'attachment' === $post->post_type ) {
 			return str_replace( $post->post_name, '%postname%', get_permalink( $post ) );
 		}
 
-		if ( ( 'auto-draft' !== $post->post_status || 'post' !== $post->post_type ) && function_exists( 'get_sample_permalink' ) ) {
-			$sample_permalink = \get_sample_permalink( $post_id, null, null );
+		if ( 'auto-draft' !== $post->post_status || 'post' !== $post->post_type ) {
+			$sample_permalink = get_sample_permalink( $post_id, null, null );
 			return isset( $sample_permalink[0] ) ? $sample_permalink[0] : home_url();
 		}
 
@@ -292,9 +282,6 @@ class Post_Screen implements IScreen {
 	 */
 	private function enqueue_custom_fields() {
 		global $post;
-		if ( empty( $post ) ) {
-			return;
-		}
 
 		$custom_fields = Str::to_arr_no_empty( Helper::get_settings( 'titles.pt_' . $post->post_type . '_analyze_fields' ) );
 		if ( empty( $custom_fields ) ) {

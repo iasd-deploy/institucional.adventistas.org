@@ -90,6 +90,20 @@ class Maps_Listings extends Listing_Grid {
 		);
 
 		$this->register_jet_control(
+			'notice_use_query_builder',
+			[
+				'tab'         => 'content',
+				'type'        => 'info',
+				'content'     => esc_html__( 'Use Query Builder to Apply Dynamic Styling for Listings', 'jet-smart-filters' ),
+				'description' => sprintf(
+					esc_html__( 'Using dynamic styles inside the listing? In this case, make sure to use Query Builder as a data source for it. You can apply a query from Query Builder in the Custom Query settings. Go to: %s.', 'jet-smart-filters' ),
+					'<a href="' . add_query_arg( array( 'page' => 'jet-engine-query' ), admin_url( 'admin.php' ) ) . '" target="_blank">Query Builder</a>'
+				),
+				'required'    => [ 'custom_query_id', '=', '' ],
+			]
+		);
+
+		$this->register_jet_control(
 			'address_field',
 			[
 				'tab'            => 'content',
@@ -248,18 +262,6 @@ class Maps_Listings extends Listing_Grid {
 				'label'    => esc_html__( 'Image', 'jet-engine' ),
 				'type'     => 'image',
 				'required' => [ 'marker_type', '=', 'image' ],
-			]
-		);
-
-		$this->register_jet_control(
-			'marker_image_size',
-			[
-				'tab'         => 'content',
-				'label'       => esc_html__( 'Image Size', 'jet-engine' ),
-				'type'        => 'select',
-				'default'     => 'full',
-				'options'     => \Jet_Engine_Tools::get_image_sizes(),
-				'description' => __( 'Applies to the main marker if it is of image type, and to conditional image markers.', 'jet-engine' ),
 			]
 		);
 
@@ -858,8 +860,8 @@ class Maps_Listings extends Listing_Grid {
 		}
 
 		$this->set_attribute( '_root', 'class', 'brxe-' . $this->id );
-		$this->set_attribute( '_root', 'class', 'brxe-jet-listing' );
 		$this->set_attribute( '_root', 'data-is-block', 'jet-engine/bricks-' . $this->jet_element_render );
+		$this->set_attribute( '_root', 'class', 'jet-listing-base' );
 		$this->set_attribute( '_root', 'data-id', $this->id );
 
 		$this->enqueue_scripts();

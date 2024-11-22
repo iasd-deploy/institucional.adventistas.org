@@ -68,7 +68,6 @@ if ( ! class_exists( 'Jet_Engine_Render_Listing_Grid' ) ) {
 				'custom_query'             => false,
 				'custom_query_id'          => null,
 				'_element_id'              => '',
-				'collapse_first_last_gap'  => '',
 			) );
 		}
 
@@ -1402,18 +1401,6 @@ if ( ! class_exists( 'Jet_Engine_Render_Listing_Grid' ) ) {
 					$settings,
 					$this
 				);
-
-				if ( is_array( $settings['collapse_first_last_gap'] ?? '' ) ) {
-					$collapse_gap = $settings['collapse_first_last_gap']['value'] ?? false;
-				} else {
-					$collapse_gap = $settings['collapse_first_last_gap'] ?? false;
-				}
-
-				$collapse_gap = filter_var( $collapse_gap, FILTER_VALIDATE_BOOLEAN );
-
-				if ( $collapse_gap ) {
-					$container_classes[] = 'grid-collapse-gap';
-				}
 
 				do_action( 'jet-engine/listing/grid-items/before', $settings, $this );
 

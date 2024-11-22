@@ -133,7 +133,8 @@ class ServiceProvider extends AbstractServiceProvider {
 			->addArgument( $fetch_sitemap_controller )
 			->addArgument( $preload_url_controller )
 			->addArgument( $check_finished_controller )
-			->addArgument( $this->getContainer()->get( 'load_initial_sitemap_controller' ) );
+			->addArgument( $this->getContainer()->get( 'load_initial_sitemap_controller' ) )
+			->addTag( 'common_subscriber' );
 
 		$this->getContainer()->add( 'preload_clean_controller', ClearCache::class )
 			->addArgument( $cache_query );
@@ -147,18 +148,22 @@ class ServiceProvider extends AbstractServiceProvider {
 			->addArgument( $this->getContainer()->get( 'preload_activation' ) )
 			->addArgument( $this->getContainer()->get( 'preload_mobile_detect' ) )
 			->addArgument( $clean_controller )
-			->addArgument( $queue );
+			->addArgument( $queue )
+			->addTag( 'common_subscriber' );
 
 		$this->getContainer()->addShared( 'preload_cron_subscriber', CronSubscriber::class )
 			->addArgument( $preload_settings )
 			->addArgument( $cache_query )
-			->addArgument( $preload_url_controller );
+			->addArgument( $preload_url_controller )
+			->addTag( 'common_subscriber' );
 
 		$this->getContainer()->addShared( 'fonts_preload_subscriber', Fonts::class )
 			->addArgument( $options )
-			->addArgument( $this->getContainer()->get( 'cdn' ) );
+			->addArgument( $this->getContainer()->get( 'cdn' ) )
+			->addTag( 'common_subscriber' );
 
 		$this->getContainer()->add( 'preload_admin_subscriber', AdminSubscriber::class )
-			->addArgument( $preload_settings );
+			->addArgument( $preload_settings )
+			->addTag( 'common_subscriber' );
 	}
 }

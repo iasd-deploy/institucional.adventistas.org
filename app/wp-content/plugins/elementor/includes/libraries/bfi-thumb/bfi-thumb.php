@@ -593,7 +593,7 @@ if ( ! class_exists( 'BFI_Thumb_1_3' ) ) {
 			}
 
 
-			// destination paths and urls
+			// desination paths and urls
 			$destfilename = "{$upload_dir}/{$dst_rel_path}-{$suffix}.{$ext}";
 
 			// The urls generated have lower case extensions regardless of the original case

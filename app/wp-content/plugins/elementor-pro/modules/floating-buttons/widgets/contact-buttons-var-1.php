@@ -2,7 +2,7 @@
 
 namespace ElementorPro\Modules\FloatingButtons\Widgets;
 
-use ElementorPro\Modules\FloatingButtons\Base\Widget_Contact_Button_Base_Pro;
+use Elementor\Modules\FloatingButtons\Base\Widget_Contact_Button_Base;
 use ElementorPro\Modules\FloatingButtons\Classes\Render\Contact_Buttons_Var_1_Render;
 
 
@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
 
-class Contact_Buttons_Var_1 extends Widget_Contact_Button_Base_Pro {
+class Contact_Buttons_Var_1 extends Widget_Contact_Button_Base {
 
 	public static function get_configuration() {
 		$config = parent::get_configuration();
@@ -20,7 +20,6 @@ class Contact_Buttons_Var_1 extends Widget_Contact_Button_Base_Pro {
 		$config['content']['message_bubble_section']['has_typing_animation'] = false;
 		$config['style']['message_bubble_section']['has_chat_background'] = false;
 		$config['style']['send_button_section']['has_typography'] = false;
-		$config['content']['contact_section']['has_accessible_name'] = false;
 
 		return $config;
 	}

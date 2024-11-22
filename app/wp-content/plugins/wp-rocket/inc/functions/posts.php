@@ -12,8 +12,7 @@ defined( 'ABSPATH' ) || exit;
  * @param int    $id The post ID.
  * @param string $title The post title.
  * @param string $name The post name.
- *
- * @return array
+ * @return string The permalink
  */
 function get_rocket_sample_permalink( $id, $title = null, $name = null ) { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals
 	$post = get_post( $id );

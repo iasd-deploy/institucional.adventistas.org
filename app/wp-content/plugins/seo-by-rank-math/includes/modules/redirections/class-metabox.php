@@ -26,6 +26,7 @@ class Metabox {
 	 * The Constructor.
 	 */
 	public function __construct() {
+		$this->action( 'rank_math/metabox/process_fields', 'save_advanced_meta' );
 		$this->action( 'rank_math/metabox/values', 'add_json_data' );
 	}
 

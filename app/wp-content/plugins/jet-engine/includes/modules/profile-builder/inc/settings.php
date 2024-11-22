@@ -10,15 +10,13 @@ class Settings {
 	public $user_key    = 'user_page_structure';
 
 	public $default_settings = array(
-		'user_page_rewrite'      => 'login',
-		'not_logged_in_action'   => 'login_redirect',
-		'template_mode'          => 'rewrite',
-		'posts_restrictions'     => array(),
-		'user_page_seo_title'    => '%username% %sep% %sitename%',
-		'user_page_seo_desc'     => '',
-		'user_page_seo_image'    => '',
-		'account_page_seo_title' => '%pagetitle% %sep% %sitename%',
-		'account_page_seo_desc'  => '',
+		'user_page_rewrite'    => 'login',
+		'not_logged_in_action' => 'login_redirect',
+		'template_mode'        => 'rewrite',
+		'posts_restrictions'   => array(),
+		'user_page_seo_title'  => '%username% %sep% %sitename%',
+		'user_page_seo_desc'   => '',
+		'user_page_seo_image'  => '',
 	);
 
 	private $nonce_action = 'jet-engine-profile-builder';
@@ -39,28 +37,6 @@ class Settings {
 
 		add_filter( 'jet-engine/rest-api/search-posts/result-item', [ $this, 'adjust_serach_results' ], 10, 3 );
 
-		add_filter( 'display_post_states', [ $this, 'add_profile_builder_post_state' ], 100, 2 );
-
-	}
-
-	public function get_post_states() {
-		return array(
-			'account_page'     => __( 'Account Page', 'jet-engine' ),
-			'single_user_page' => __( 'Single User Page', 'jet-engine' ),
-			'users_page'       => __( 'Users Page', 'jet-engine' ),
-		);
-	}
-
-	public function add_profile_builder_post_state( $states, $post ) {
-		foreach ( $this->get_pages() as $page => $id ) {
-			$id = ( int ) apply_filters( 'jet-engine/profile-builder/settings/post-state-id', $id, $post );
-
-			if ( $id === $post->ID ) {
-				$states[ 'jet-engine-pb-' . $page ] = __( 'Jet Engine ', 'jet-engine' ) . $this->get_post_states()[ $page ];
-			}
-		}
-
-		return $states;
 	}
 
 	public function adjust_serach_results( $result, $post, $context ) {
@@ -235,14 +211,13 @@ class Settings {
 			'label' => __( 'Guests (Not logged-in users)', 'jet-engine' ),
 		);
 
-		$all_title_macros  = Module::instance()->frontend->get_profile_builder_macros();
+		$all_title_macros  = Module::instance()->frontend->get_user_page_title_macros();
 		$title_macros_list = array();
 
 		foreach ( $all_title_macros as $macro => $args ) {
 			$title_macros_list[] = array(
-				'label'        => $args['label'],
-				'macro'        => '%' . ( ! empty( $args['variable'] ) ? $args['variable'] : $macro ) . '%',
-				'allowed_tabs' => $args['allowed_tabs'] ?? array( 'user_page' ),
+				'label' => $args['label'],
+				'macro' => '%' . ( ! empty( $args['variable'] ) ? $args['variable'] : $macro ) . '%',
 			);
 		}
 
@@ -299,7 +274,7 @@ class Settings {
 						'label' => __( 'User ID', 'jet-engine' ),
 					),
 				),
-				'profile_builder_macros' => $title_macros_list,
+				'user_page_title_macros' => $title_macros_list,
 				'user_page_image_fields' => $this->get_user_image_fields(),
 				'_nonce' => wp_create_nonce( $this->nonce_action ),
 			)
@@ -317,11 +292,6 @@ class Settings {
 
 	}
 
-	/**
-	 * Get Jet Engine user fields
-	 *
-	 * @return array Array of user image fields
-	 */
 	public function get_user_image_fields() {
 
 		$fields = array(
@@ -354,7 +324,7 @@ class Settings {
 	/**
 	 * Print profile builder settings templates
 	 *
-	 * @return void
+	 * @return [type] [description]
 	 */
 	public function print_templates() {
 
@@ -474,8 +444,8 @@ class Settings {
 	/**
 	 * Get saved settings by name or get all settings
 	 *
-	 * @param  string $setting Setting name. If omitted - all settings returned
-	 * @return mixed           Setting value. Array of settings if no setting name provided
+	 * @param  [type] $setting [description]
+	 * @return [type]          [description]
 	 */
 	public function get( $setting = null, $default = false ) {
 
@@ -494,8 +464,6 @@ class Settings {
 		if ( ! $default ) {
 			$default = ! empty( $this->default_settings[ $setting ] ) ? $this->default_settings[ $setting ] : $default;
 		}
-
-		$this->settings = apply_filters( 'jet-engine/profile-builder/settings', $this->settings );
 
 		return isset( $this->settings[ $setting ] ) ? $this->settings[ $setting ] : $default;
 
@@ -550,20 +518,10 @@ class Settings {
 		}
 
 		$page_id = $pages[ $page ];
-		$url     = get_permalink( $page_id );
-
-		preg_match( '/\?.+$/', $url, $params );
-
-		$url = preg_replace( '/\?.+$/', '', $url );
+		$url     = trailingslashit( get_permalink( $page_id ) );
 
 		if ( 'single_user_page' === $page ) {
 			$url .= Module::instance()->query->get_queried_user_slug() . '/';
-		}
-
-		$url = trailingslashit( $url );
-
-		if ( ! empty( $params[0] ) ) {
-			$url .= $params[0];
 		}
 
 		return $url;
@@ -583,14 +541,9 @@ class Settings {
 			return false;
 		} else {
 
-			preg_match( '/\?.+$/', $page_url, $params );
-
-			$page_url = preg_replace( '/\?.+$/', '', $page_url );
-
 			$page_data = $this->get_subpage_data( $slug, $page );
 
 			$url = ! empty( $slug ) ? $page_url . $slug . '/' : $page_url;
-			$url .= $params[0] ?? '';
 
 			return apply_filters( 'jet-engine/profile-builder/subpage-url', $url, $slug, $page, $page_data, $this );
 

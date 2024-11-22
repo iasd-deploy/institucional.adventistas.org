@@ -45,12 +45,7 @@ class Provider extends \Jet_Smart_Filters_Provider_Base {
 	public function __construct() {
 		add_filter( 'bricks/query/force_run', '__return_true' );
 		add_filter( 'bricks/element/set_root_attributes', [ $this, 'set_attributes' ], 999, 2 );
-		add_action( 'bricks/query/before_loop', [ $this, 'store_query_props' ], 10 );
-
-		// TODO Remove this code after verifying stability in v3.6.1 (expected removal in 2-3 releases).
-		if ( function_exists( 'jet_engine' ) && jet_engine()->get_version() < '3.5.6' ) {
-			add_action( 'bricks/query/before_loop', [ $this, 'store_custom_query_props' ], 10 );
-		}
+		add_filter( 'bricks/element/settings', [ $this, 'store_default_provider_query' ], 10 );
 	}
 
 	/**
@@ -87,6 +82,38 @@ class Provider extends \Jet_Smart_Filters_Provider_Base {
 	}
 
 	/**
+	 * First of all you need to store default provider query and required attributes to allow
+	 * JetSmartFilters attach this data to AJAX request.
+	 *
+	 * @param array $settings The current settings.
+	 * @param object $element The element object.
+	 * @return array The modified settings.
+	 */
+	public function store_default_provider_query( $settings ) {
+		if ( ! isset( $settings['jsfb_is_filterable'] ) ) {
+			return $settings;
+		}
+
+		$object_type = $this->get_object_type( $settings );
+
+		if ( $this->check_default_object_type( $object_type ) ) {
+			// Set default properties for the provider.
+			$this->store_default_props( $settings );
+
+			add_filter( "bricks/{$object_type}s/query_vars", [ $this, 'store_default_query' ], 10, 3 );
+		}
+
+		if ( $object_type === 'jet_engine_query_builder' ) {
+			// Set custom properties for the provider.
+			$this->store_custom_props( $settings );
+
+			add_filter( 'bricks/query/run', [ $this, 'store_custom_query' ], 10, 2 );
+		}
+
+		return $settings;
+	}
+
+	/**
 	 * Set attributes for an element based on its settings.
 	 *
 	 * @param array $attributes The existing attributes for the element.
@@ -107,6 +134,7 @@ class Provider extends \Jet_Smart_Filters_Provider_Base {
 
 		return $this->merge_attributes( $attributes, 'class', $classes );
 	}
+
 
 	/**
 	 * Merge specified attributes into an existing array of attributes.
@@ -132,100 +160,186 @@ class Provider extends \Jet_Smart_Filters_Provider_Base {
 	}
 
 	/**
-	 * First of all you need to store default provider query and required attributes to allow
-	 * JetSmartFilters attach this data to AJAX request.
+	 * Store the properties array of the default object type for the given settings.
 	 *
-	 * @param array $settings The current settings.
-	 * @param object $element The element object.
-	 * @return array The modified settings.
+	 * @param array $settings The settings array.
+	 * @return void
 	 */
-	public function store_query_props( $query ) {
-		if ( ! isset( $query->settings['jsfb_is_filterable'] ) ) {
-			return;
+	public function store_default_props( $settings ) {
+		$query_bricks = Query::get_query_object();
+		$query_id     = $settings['jsfb_query_id'] ?? 'default';
+		$props        = [];
+
+		if ( ! $query_bricks ) {
+			$props = [
+				'found_posts'   => 0,
+				'max_num_pages' => 0,
+				'page'          => 0,
+			];
 		}
 
-		if ( ! $this->check_default_object_type( $query->object_type ) ) {
-			return;
-		}
+		// Set properties for the appropriate query type.
+		if ( false !== $query_bricks ) {
+			switch ( $this->get_object_type( $settings ) ) {
+				case 'post':
+					$query = $query_bricks->query_result;
 
-		$query_id = $query->settings['jsfb_query_id'] ?? 'default';
+					if ( empty( $query ) ) {
+						return;
+					}
+
+					$props = [
+						'found_posts'   => $query->found_posts,
+						'max_num_pages' => $query->max_num_pages,
+						'page'          => max( 1, $query->get( 'paged', 1 ) ),
+					];
+					break;
+
+				case 'user':
+					$props = [
+						'found_posts'   => $query_bricks->count,
+						'max_num_pages' => $query_bricks->max_num_pages,
+						'page'          => $this->get_current_page(),
+					];
+					break;
+
+				case 'term':
+					$query_vars = $settings['query'];
+					unset( $query_vars['objectType'] );
+					$props = $this->get_term_props( $query_vars );
+					break;
+			}
+		}
 
 		// Set the properties
 		jet_smart_filters()->query->set_props(
 			$this->get_id(),
-			[
-				'found_posts'   => $query->count,
-				'max_num_pages' => $query->max_num_pages,
-				'page'          => Query::get_paged_query_var( $query->query_vars ),
-			],
-			$query_id
-		);
-
-		if ( jet_smart_filters()->query->is_ajax_filter() ) {
-			return;
-		}
-
-		jet_smart_filters()->providers->add_provider_settings(
-			$this->get_id(),
-			[
-				'filtered_post_id'      => $this->get_post_id(),
-				'element_id'            => $query->element_id,
-				'is_archive_main_query' => $query->query_vars['is_archive_main_query'] ?? '',
-			],
-			$query_id
-		);
-
-		jet_smart_filters()->query->store_provider_default_query(
-			$this->get_id(),
-			$query->query_vars,
+			$props,
 			$query_id
 		);
 	}
 
-	public function store_custom_query_props( $query ) {
-		if ( $query->object_type !== 'jet_engine_query_builder' ) {
-			return;
-		}
-
-		$query_id = $query->settings['jsfb_query_id'] ?? 'default';
-		$query_builder = $this->get_query_builder_from_settings( $query->settings );
+	/**
+	 * Store the properties array of the custom object type for the given settings.
+	 *
+	 * @param array $settings The settings array.
+	 * @return void
+	 */
+	public function store_custom_props( $settings ) {
+		$query_id      = $settings['jsfb_query_id'] ?? 'default';
+		$query_builder = $this->get_query_builder_from_settings( $settings );
 
 		if ( ! $query_builder ) {
 			return;
 		}
 
-		// Setup props for the pager
+		// Prepare properties.
+		$props = [
+			'found_posts'   => $query_builder->get_items_total_count(),
+			'max_num_pages' => $query_builder->get_items_pages_count(),
+			'page'          => $query_builder->get_current_items_page(),
+			'query_type'    => $query_builder->get_query_type(),
+			'query_id'      => $query_builder->id,
+			'query_meta'    => $query_builder->get_query_meta(),
+		];
+
 		jet_smart_filters()->query->set_props(
 			$this->get_id(),
-			array(
-				'found_posts'   => $query_builder->get_items_total_count(),
-				'max_num_pages' => $query_builder->get_items_pages_count(),
-				'page'          => $query_builder->get_current_items_page(),
-				'query_type'    => $query_builder->get_query_type(),
-				'query_id'      => $query_builder->id,
-				'query_meta'    => $query_builder->get_query_meta(),
-			),
+			$props,
 			$query_id
 		);
+	}
 
-		if ( jet_smart_filters()->query->is_ajax_filter() ) {
-			return;
+	/**
+	 * Store query attributes of the default object type to add them to filters AJAX request
+	 *
+	 * @param array $query_vars The original query_vars.
+	 * @param array $settings The settings array.
+	 * @param int $element_id The ID of the element.
+	 * @return array The modified query_vars.
+	 */
+	public function store_default_query( $query_vars, $settings, $element_id ) {
+		if ( jet_smart_filters()->query->is_ajax_filter() || empty( $settings['jsfb_is_filterable'] ) ) {
+			return $query_vars;
 		}
 
-		// Store settings to localize it by SmartFilters later
-		jet_smart_filters()->providers->store_provider_settings(
+		$this->store_query( $query_vars, $settings, $element_id );
+
+		return $query_vars;
+	}
+
+	/**
+	 * Store query attributes of the custom object type to add them to filters AJAX request
+	 *
+	 * @param array $arr The original array.
+	 * @param object $query The query object.
+	 * @return array The modified array.
+	 */
+	public function store_custom_query( $arr, $query ) {
+		if ( jet_smart_filters()->query->is_ajax_filter() ) {
+			return $arr;
+		}
+
+		$settings = $query->settings;
+
+		if ( empty( $settings['jsfb_is_filterable'] ) || $query->object_type !== 'jet_engine_query_builder' ) {
+			return $arr;
+		}
+
+		$query_builder = $this->get_query_builder_from_settings( $settings );
+
+		if ( ! $query_builder ) {
+			return $arr;
+		}
+
+		$query_vars = $query_builder->get_query_args();
+
+		$this->store_query( $query_vars, $settings, $query->element_id );
+
+		return $arr;
+	}
+
+	/**
+	 * Store query.
+	 *
+	 * @param array $query_vars The query variables.
+	 * @param array $settings The settings array.
+	 * @param int $element_id The ID of the element.
+	 * @return void
+	 */
+	public function store_query( $query_vars, $settings, $element_id ) {
+		$query_id              = $settings['jsfb_query_id'] ?? 'default';
+		$is_archive_main_query = $query_vars['is_archive_main_query'] ?? '';
+		$post_id               = Database::$page_data['original_post_id'] ?? Database::$page_data['preview_or_post_id'];
+		$template_content_type = Database::$active_templates['content_type'] ?? '';
+
+		if ( $template_content_type === 'archive' ) {
+			$post_id = Database::$active_templates['content'];
+		}
+
+		if ( $template_content_type === 'search' ) {
+			$post_id = Database::$active_templates['search'];
+		}
+
+		$attrs = [
+			'filtered_post_id'      => $post_id,
+			'element_id'            => $element_id,
+			'is_archive_main_query' => $is_archive_main_query,
+		];
+
+		if ( Query::get_query_object()->object_type === 'user' ) {
+			$query_vars['_query_type'] = 'users';
+		}
+
+		jet_smart_filters()->query->store_provider_default_query(
 			$this->get_id(),
-			array(
-				'filtered_post_id'      => $this->get_post_id(),
-				'element_id'            => $query->element_id,
-			),
+			$query_vars,
 			$query_id
 		);
 
-		// Store current query to allow indexer to get correct posts count for current query
-		jet_smart_filters()->query->store_provider_default_query(
+		jet_smart_filters()->providers->add_provider_settings(
 			$this->get_id(),
-			$query_builder->get_query_args(),
+			$attrs,
 			$query_id
 		);
 	}
@@ -294,7 +408,10 @@ class Provider extends \Jet_Smart_Filters_Provider_Base {
 						return $vars;
 					}
 
-					return $this->merge_query_vars( $vars, $query_vars );
+					// Merge the query vars
+					$merged_query_vars = Query::merge_query_vars( $vars, $query_vars );
+
+					return $merged_query_vars;
 				}, 10, 3
 			);
 		}
@@ -376,7 +493,9 @@ class Provider extends \Jet_Smart_Filters_Provider_Base {
 		);
 
 		if ( $is_default_object_type ) {
-			remove_filter( "bricks/{$object_type}s/query_vars", [ $this, 'store_query' ] );
+			remove_filter( "bricks/{$object_type}s/query_vars", [ $this, 'store_default_query' ] );
+		} else {
+			remove_filter( 'bricks/query/run', [ $this, 'store_custom_query' ] );
 		}
 	}
 
@@ -448,7 +567,9 @@ class Provider extends \Jet_Smart_Filters_Provider_Base {
 						}
 					}
 
-					return $this->merge_query_vars( $vars, $query_vars );
+					$merged_query_vars = Query::merge_query_vars( $vars, $query_vars );
+
+					return $merged_query_vars;
 				}, 11, 3
 			);
 		}
@@ -519,6 +640,61 @@ class Provider extends \Jet_Smart_Filters_Provider_Base {
 		return '.jsfb-filterable';
 	}
 
+	/**
+	 * Retrieves and processes term properties based on the provided query variables.
+	 *
+	 * @param array $query_vars An associative array containing the query variables for retrieving terms.
+	 * @return array An associative array containing the total count of found terms, maximum number of pages, and current page.
+	 */
+	public function get_term_props( $query_vars ) {
+		// Pagination: Fix the offset value
+		$offset = ! empty( $query_vars['offset'] ) ? $query_vars['offset'] : 0;
+
+		// Hide empty
+		if ( isset( $query_vars['show_empty'] ) ) {
+			$query_vars['hide_empty'] = false;
+
+			unset( $query_vars['show_empty'] );
+		} else {
+			$query_vars['hide_empty'] = true;
+		}
+
+		$query_args  = jet_smart_filters()->query->get_query_args();
+		$query_vars  = array_merge( $query_vars, $query_args );
+		$terms_query = new \WP_Term_Query( $query_vars );
+		$result      = $terms_query->get_terms();
+
+		// STEP: Populate the total count
+		if ( empty( $query_vars['number'] ) ) {
+			$count = ! empty( $result ) && is_array( $result ) ? count( $result ) : 0;
+		} else {
+			$args = $query_vars;
+
+			unset( $args['offset'] );
+			unset( $args['number'] );
+
+			// Numeric string containing the number of terms in that taxonomy or WP_Error if the taxonomy does not exist.
+			$count = wp_count_terms( $args );
+
+			if ( is_wp_error( $count ) ) {
+				$count = 0;
+			} else {
+				$count = (int) $count;
+
+				$count = $offset <= $count ? $count - $offset : 0;
+			}
+		}
+
+		// STEP : Populate the max number of pages
+		$max_num_pages = empty( $query_vars['number'] ) ? 1 : ceil( $count / $query_vars['number'] );
+
+		return [
+			'found_posts'   => $count,
+			'max_num_pages' => $max_num_pages,
+			'page'          => $this->get_current_page(),
+		];
+	}
+
 	// Retrieves a query builder instance from the given settings.
 	public function get_query_builder_from_settings( $settings ) {
 		$query_builder_id = $settings['jet_engine_query_builder_id'] ?? '';
@@ -533,6 +709,11 @@ class Provider extends \Jet_Smart_Filters_Provider_Base {
 	// Retrieves the object type from the given settings.
 	public function get_object_type( $settings ) {
 		return ! empty( $settings['query']['objectType'] ) ? $settings['query']['objectType'] : 'post';
+	}
+
+	// Retrieves the current page number from the query arguments.
+	public function get_current_page() {
+		return jet_smart_filters()->query->get_query_args()['paged'] ?? 1;
 	}
 
 	// Checks if the given object type is one of the default types.
@@ -562,7 +743,7 @@ class Provider extends \Jet_Smart_Filters_Provider_Base {
 		$posts_per_page = 0;
 
 		switch ( $object_type ) {
-			case "posts":
+			case "posts": 
 				$posts_per_page = $query_vars['posts_per_page'] ?? 0;
 				break;
 
@@ -600,65 +781,5 @@ class Provider extends \Jet_Smart_Filters_Provider_Base {
 		}
 
 		return '<div class="' . $classes . '">' . $content . '</div>';
-	}
-
-	/**
-	 * Duplicate this method from bricks with some variables.
-	 * Merge two query vars arrays, instead of using wp_parse_args
-	 *
-	 * wp_parse_args will only set those values that are not already set in the original array.
-	 */
-	public function merge_query_vars( $original_query_vars, $merging_query_vars ) {
-		foreach ( $merging_query_vars as $key => $value ) {
-			// If the key already exists in the $original_query_vars, and the value is an array, merge the two arrays
-			if ( isset( $original_query_vars[ $key ] ) && is_array( $original_query_vars[ $key ] ) && is_array( $value ) ) {
-				/**
-				 * Handle special case for 'tax_query'
-				 * merging via key might be wrong, as the key is just index of the array
-				 */
-				if ( $key === 'tax_query' ) {
-					$original_query_vars[ $key ] = Query::merge_tax_or_meta_query_vars( $original_query_vars[ $key ], $value, 'tax' );
-				}
-
-				/**
-				 * Handle special case for 'meta_query'
-				 *
-				 * This logic is still needed for 'meta_query' to work correctly.
-				 * Otherwise will merge wrongly into wrong array when performing query filter.
-				 */
-				elseif ( $key === 'meta_query' ) {
-					$original_query_vars[ $key ] = Query::merge_tax_or_meta_query_vars( $original_query_vars[ $key ], $value, 'meta' );
-				}
-
-				else {
-					$original_query_vars[ $key ] = $this->merge_query_vars( $original_query_vars[ $key ], $value ); // Recursively merge arrays (@since 1.9.6)
-				}
-
-			} else {
-				$original_query_vars[ $key ] = $value;
-			}
-		}
-
-		return $original_query_vars;
-	}
-
-	/**
-	 * Retrieves the post ID based on the current page data and active template settings.
-	 *
-	 * @return int|string The resolved post ID.
-	 */
-	public function get_post_id() {
-		$post_id               = Database::$page_data['original_post_id'] ?? Database::$page_data['preview_or_post_id'];
-		$template_content_type = Database::$active_templates['content_type'] ?? '';
-
-		if ( $template_content_type === 'archive' ) {
-			$post_id = Database::$active_templates['content'];
-		}
-
-		if ( $template_content_type === 'search' ) {
-			$post_id = Database::$active_templates['search'];
-		}
-
-		return $post_id;
 	}
 }

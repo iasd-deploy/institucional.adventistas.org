@@ -40,15 +40,14 @@ class Share_Buttons extends Base_Widget {
 		],
 	];
 
-	public function get_style_depends(): array {
-		$style_depends = [ 'widget-share-buttons', 'e-apple-webkit' ];
-
+	public function get_style_depends() {
 		if ( Icons_Manager::is_migration_allowed() ) {
-			$style_depends[] = 'elementor-icons-fa-solid';
-			$style_depends[] = 'elementor-icons-fa-brands';
+			return [
+				'elementor-icons-fa-solid',
+				'elementor-icons-fa-brands',
+			];
 		}
-
-		return $style_depends;
+		return [];
 	}
 
 	private static function get_network_icon_data( $network_name ) {

@@ -16,13 +16,20 @@ class Widgets_Css extends Base {
 	protected $assets_category = 'widgets';
 
 	protected function get_asset_content() {
-		$asset_css_file_exists = $this->get_file_data( 'exists' );
+		$asset_css_file_size = $this->get_file_data( 'size' );
 
 		$widget_css = '';
 
-		if ( $asset_css_file_exists ) {
-			$asset_url = $this->get_config_data( 'file_url' );
-			$widget_css = sprintf( '<link rel="stylesheet" href="%s">', $asset_url );
+		if ( $asset_css_file_size ) {
+			// If the file size is larger than 8KB then calling the external CSS file, otherwise, printing inline CSS.
+			if ( $asset_css_file_size > 8000 ) {
+				$asset_url = $this->get_config_data( 'file_url' );
+
+				$widget_css = sprintf( '<link rel="stylesheet" href="%s">', $asset_url );
+			} else {
+				$widget_css = $this->get_file_data( 'content' );
+				$widget_css = sprintf( '<style>%s</style>', $widget_css );
+			}
 		}
 
 		return $widget_css;

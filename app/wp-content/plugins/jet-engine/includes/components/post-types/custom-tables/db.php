@@ -41,8 +41,7 @@ class DB extends \Jet_Engine_Base_DB {
 
 		return "CREATE TABLE $table (
 			$columns_schema
-			PRIMARY KEY ( meta_ID ),
-			KEY object_ID ( object_ID )
+			PRIMARY KEY ( meta_ID, object_ID )
 		) $charset_collate;";
 	}
 

@@ -137,18 +137,11 @@
 				<cx-vui-input
 					:name="'query_var'"
 					:label="'<?php _e( 'Register Query Var', 'jet-engine' ); ?>'"
-					:description="'<?php _e( 'Sets the query_var key for this taxonomy. You may leave it empty to disable query_var, or set to taxonomy slug or any other value you need', 'jet-engine' ); ?>'"
+					:description="'<?php _e( 'Sets the query_var key for this taxonomy', 'jet-engine' ); ?>'"
 					:wrapper-css="[ 'equalwidth' ]"
 					:size="'fullwidth'"
 					v-model="advancedSettings.query_var"
-				>
-					<a
-						href="#"
-						style="text-decoration-style: dashed;"
-						@click.prevent="setDefaultQueryVar"
-					><?php _e( 'Set to taxonomy slug', 'jet-engine' ); ?></a>
-				</cx-vui-input>
-				
+				></cx-vui-input>
 				<cx-vui-switcher
 					:name="'rewrite'"
 					:label="'<?php _e( 'Rewrite', 'jet-engine' ); ?>'"

@@ -31,9 +31,9 @@ gulp.task('css', () => {
 		.pipe(gulp.dest('./assets/css/'))
 		.pipe(notify('Compile Sass Done!'));
 });
-//css
-gulp.task('css-addons', () => {
-	return gulp.src( './assets/scss/addons/*.scss' )
+
+gulp.task('css-skin', () => {
+	return gulp.src('./assets/scss/jet-elements-skin.scss')
 		.pipe(
 			plumber( {
 				errorHandler: function ( error ) {
@@ -49,29 +49,30 @@ gulp.task('css-addons', () => {
 				cascade: false
 		}))
 
-		.pipe(gulp.dest('./assets/css/addons'))
+		.pipe(rename('jet-elements-skin.css'))
+		.pipe(gulp.dest('./assets/css/'))
 		.pipe(notify('Compile Sass Done!'));
 });
 
-gulp.task('css-skin', () => {
-	return gulp.src( './assets/scss/skin/*.scss' )
-		.pipe(
-			plumber( {
-				errorHandler: function ( error ) {
-					console.log('=================ERROR=================');
-					console.log(error.message);
-					this.emit( 'end' );
-				}
-			})
-		)
-		.pipe(sass( { outputStyle: 'compressed' } ))
-		.pipe(autoprefixer({
+gulp.task('css-skin-rtl', () => {
+	return gulp.src('./assets/scss/jet-elements-skin-rtl.scss')
+			.pipe(
+				plumber( {
+					errorHandler: function ( error ) {
+						console.log('=================ERROR=================');
+						console.log(error.message);
+						this.emit( 'end' );
+					}
+				})
+			)
+			.pipe(sass( { outputStyle: 'compressed' } ))
+			.pipe(autoprefixer({
 				browsers: ['last 10 versions'],
 				cascade: false
-		}))
-
-		.pipe(gulp.dest('./assets/css/skin'))
-		.pipe(notify('Compile Sass Done!'));
+			}))
+			.pipe(rename('jet-elements-skin-rtl.css'))
+			.pipe(gulp.dest('./assets/css/'))
+			.pipe(notify('Compile Sass Done!'));
 });
 
 gulp.task('css-admin', () => {
@@ -182,7 +183,7 @@ gulp.task( 'js-editor-minify', function() {
 
 //watch
 gulp.task('watch', () => {
-	gulp.watch( './assets/scss/**', gulp.series( ...['css', 'css-addons', 'css-skin', 'css-admin', 'css-rtl', 'css-icons', 'css-editor'] ) );
+	gulp.watch( './assets/scss/**', gulp.series( ...['css', 'css-skin', 'css-admin', 'css-rtl', 'css-skin-rtl', 'css-icons', 'css-editor'] ) );
 
 	gulp.watch( './assets/js/jet-elements.js', gulp.series( 'js-minify' ) );
 	gulp.watch( './assets/js/jet-elements-editor.js', gulp.series( 'js-editor-minify' ) );

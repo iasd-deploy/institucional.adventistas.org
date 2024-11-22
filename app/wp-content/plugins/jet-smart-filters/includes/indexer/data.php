@@ -357,6 +357,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Data' ) ) {
 						break;
 
 					case 'posts':
+
 						$query_type = 'meta_query';
 						$query_var  = $source['_query_var'][0];
 						$post_type  = isset( $source['_source_post_type'] ) ? $source['_source_post_type'][0] : false;
@@ -400,6 +401,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Data' ) ) {
 						$options     = ! empty( $custom_args['options'] ) ? $custom_args['options'] : false;
 
 						if ( empty( $options ) ) {
+						
 							$options = apply_filters( 'jet-smart-filters/filters/filter-options', $options, $filter_id, false );
 
 							if ( ! empty( $options ) ) {
@@ -407,6 +409,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Data' ) ) {
 									return '' !== $value;
 								} );
 							}
+
 						}
 
 						$data[$query_var] = $options;

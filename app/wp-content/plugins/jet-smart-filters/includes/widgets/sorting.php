@@ -95,7 +95,10 @@ class Jet_Smart_Filters_Sorting_Widget extends Widget_Base {
 				'options'   => array(
 					'value'  => __( 'Value change', 'jet-smart-filters' ),
 					'submit' => __( 'Click on apply button', 'jet-smart-filters' ),
-				)
+				),
+				'condition' => array(
+					'apply_type' => array( 'ajax', 'mixed' ),
+				),
 			)
 		);
 
@@ -108,10 +111,7 @@ class Jet_Smart_Filters_Sorting_Widget extends Widget_Base {
 				'label_on'     => esc_html__( 'Yes', 'jet-smart-filters' ),
 				'label_off'    => esc_html__( 'No', 'jet-smart-filters' ),
 				'return_value' => 'yes',
-				'default'      => 'yes',
-				'condition'    => array(
-					'apply_on' => 'submit'
-				)
+				'default'      => ''
 			)
 		);
 
@@ -122,9 +122,8 @@ class Jet_Smart_Filters_Sorting_Widget extends Widget_Base {
 				'type'      => Controls_Manager::TEXT,
 				'default'   => __( 'Apply filter', 'jet-smart-filters' ),
 				'condition' => array(
-					'apply_on'     => 'submit',
 					'apply_button' => 'yes'
-				)
+				),
 			)
 		);
 
@@ -757,9 +756,8 @@ class Jet_Smart_Filters_Sorting_Widget extends Widget_Base {
 		printf( '<div class="%1$s jet-filter">', $base_class );
 
 		include jet_smart_filters()->get_template( 'filters/sorting.php' );
+		include jet_smart_filters()->get_template( 'common/apply-filters.php' );
 
 		echo '</div>';
-
-		include jet_smart_filters()->get_template( 'common/apply-filters.php' );
 	}
 }

@@ -10,7 +10,6 @@
 
 namespace RankMath\Redirections;
 
-use RankMath\Traits\Hooker;
 use RankMath\Helper;
 use RankMath\Helpers\Param;
 use RankMath\Admin\List_Table;
@@ -22,8 +21,6 @@ defined( 'ABSPATH' ) || exit;
  * Table class.
  */
 class Table extends List_Table {
-
-	use Hooker;
 
 	/**
 	 * The Constructor.
@@ -206,7 +203,9 @@ class Table extends List_Table {
 			'redirection' => $item['id'],
 			'security'    => wp_create_nonce( 'redirection_list_action' ),
 		];
-		$params   = wp_parse_args( $params, $defaults );
+
+		$params = wp_parse_args( $params, $defaults );
+
 		return esc_url( Helper::get_admin_url( 'redirections', $params ) );
 	}
 
@@ -235,20 +234,9 @@ class Table extends List_Table {
 			);
 		}
 
-		$redirection = $this->do_filter(
-			'redirections/table_item',
-			[
-				'id'          => $item['id'],
-				'sources'     => unserialize( $item['sources'] ),
-				'url_to'      => $item['url_to'],
-				'header_code' => $item['header_code'],
-				'status'      => $item['status'],
-			]
-		);
-
 		return $this->row_actions(
 			[
-				'edit'       => '<a data-redirection="' . esc_attr( wp_json_encode( $redirection ) ) . '" href="' . $edit_url . '" class="rank-math-redirection-edit">' . esc_html__( 'Edit', 'rank-math' ) . '</a>',
+				'edit'       => '<a href="' . $edit_url . '" class="rank-math-redirection-edit">' . esc_html__( 'Edit', 'rank-math' ) . '</a>',
 				'deactivate' => '<a href="' . $url . '" data-action="deactivate" class="rank-math-redirection-action">' . esc_html__( 'Deactivate', 'rank-math' ) . '</a>',
 				'activate'   => '<a href="' . $url . '" data-action="activate" class="rank-math-redirection-action">' . esc_html__( 'Activate', 'rank-math' ) . '</a>',
 				'trash'      => '<a href="' . $url . '" data-action="trash" class="rank-math-redirection-action">' . esc_html__( 'Trash', 'rank-math' ) . '</a>',

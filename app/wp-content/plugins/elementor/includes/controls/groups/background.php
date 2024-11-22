@@ -170,7 +170,6 @@ class Group_Control_Background extends Group_Control_Base {
 			'label' => esc_html__( 'Color', 'elementor' ),
 			'type' => Controls_Manager::COLOR,
 			'default' => '',
-			'control_type' => 'content',
 			'title' => esc_html__( 'Background Color', 'elementor' ),
 			'selectors' => [
 				'{{SELECTOR}}' => 'background-color: {{VALUE}};',

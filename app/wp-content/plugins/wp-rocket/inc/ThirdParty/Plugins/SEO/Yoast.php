@@ -7,6 +7,21 @@ use WP_Rocket\Admin\Options_Data;
 use WP_Rocket\Event_Management\Subscriber_Interface;
 
 class Yoast implements Subscriber_Interface {
+	/**
+	 * Options Data instance
+	 *
+	 * @var Options_Data
+	 */
+	private $options;
+
+	/**
+	 * Constructor
+	 *
+	 * @param Options_Data $options Options_Data instance.
+	 */
+	public function __construct( Options_Data $options ) {
+		$this->options = $options;
+	}
 
 	/**
 	 * Array of events this subscriber listens to
@@ -28,7 +43,11 @@ class Yoast implements Subscriber_Interface {
 	 *
 	 * @return array
 	 */
-	public function add_sitemap( array $sitemaps ): array {
+	public function add_sitemap( $sitemaps ): array {
+		if ( ! is_array( $sitemaps ) ) {
+			$sitemaps = (array) $sitemaps;
+		}
+
 		if ( ! $this->is_sitemap_enabled() ) {
 			return $sitemaps;
 		}
