@@ -259,12 +259,21 @@ if ( ! class_exists( 'Jet_Smart_Filters_Data' ) ) {
 				}
 			}
 
-			if ( empty( $found_field['options'] ) ) {
-				return $result;
+			if ( ! empty( $found_field['options'] ) ) {
+				foreach ( $found_field['options'] as $option ) {
+					$result[ $option['key'] ] = $option['value'];
+				}
 			}
 
-			foreach ( $found_field['options'] as $option ) {
-				$result[ $option['key'] ] = $option['value'];
+			if ( isset( $found_field['options_source'] ) && $found_field['options_source'] === 'manual_bulk' && ! empty( $found_field['bulk_options'] ) ) {
+				$bulk_options = explode( PHP_EOL, $found_field['bulk_options'] );
+
+				$result = array();
+
+				foreach ( $bulk_options as $option ) {
+					$parsed_option             = explode( '::', trim( $option ) );
+					$result[$parsed_option[0]] = isset( $parsed_option[1] ) ? $parsed_option[1] : $parsed_option[0];
+				}
 			}
 
 			return $result;

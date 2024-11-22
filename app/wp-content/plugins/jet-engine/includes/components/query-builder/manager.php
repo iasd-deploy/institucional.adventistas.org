@@ -96,8 +96,18 @@ class Manager extends \Jet_Engine_Base_WP_Intance {
 		add_action( 'jet-engine/rest-api/init-endpoints', array( $this, 'init_rest' ) );
 		add_action( 'jet-engine/meta-boxes/init-options-sources', array( $this, 'init_options_source' ) );
 
+		add_filter( 'jet-engine/listing-injections/item-meta-value', array( $this, 'get_injection_repeater_field_value' ), 10, 3 );
+
 		$this->init_admin_pages();
 
+	}
+
+	public function get_injection_repeater_field_value( $value, $post, $meta_key ) {
+		if ( ! class_exists( 'Jet_Engine_Queried_Repeater_Item' ) || ! is_a( $post, 'Jet_Engine_Queried_Repeater_Item' ) ) {
+			return $value;
+		}
+
+		return isset( $post->$meta_key ) ? array( $post->$meta_key ) : false;
 	}
 
 	public function init_options_source() {

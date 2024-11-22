@@ -25,11 +25,151 @@ class Ajax_Handlers {
 			'update_relation_items',
 			'disconnect_relation_items',
 			'create_item_of_type',
+			'reindex'
 		);
 
 		foreach ( $endpoints as $endpoint ) {
 			add_action( 'wp_ajax_jet_engine_relations_' . $endpoint, array( $this, $endpoint ) );
 		}
+
+	}
+
+	/**
+	 * Change Rel ID column type fro text to varchar(40)
+	 * 
+	 * @param  [type] $db_instance [description]
+	 * @return [type]              [description]
+	 */
+	public function fix_rel_id_column_type( $db_instance ) {
+
+		$table_name  = $db_instance->table();
+		$column_name = 'rel_id';
+
+		// Query to check the column type
+		$query = $db_instance->wpdb()->prepare(
+			"SELECT DATA_TYPE
+			FROM information_schema.COLUMNS
+			WHERE TABLE_SCHEMA = %s
+			AND TABLE_NAME = %s
+			AND COLUMN_NAME = %s",
+			DB_NAME,
+			$table_name,
+			$column_name
+		);
+
+		$column = $db_instance->wpdb()->get_row( $query );
+
+		// Check if the column type is TEXT
+		if ( $column && 'text' === $column->DATA_TYPE ) {
+			// Alter the column to VARCHAR(40)
+			$alter_query = "ALTER TABLE `$table_name` MODIFY `$column_name` VARCHAR(40)";
+			$db_instance->wpdb()->query( $alter_query );
+		}
+
+	}
+
+	/**
+	 * Reindex relations
+	 * 
+	 * @return [type] [description]
+	 */
+	public function reindex() {
+
+		$this->check_nonce();
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'You not allowed to do this', 'jet-engine' ) );
+		}
+
+		$relations   = jet_engine()->relations->get_active_relations();
+		$relation_id = ! empty( $_REQUEST['relation'] ) ? absint( $_REQUEST['relation'] ) : false;
+		$checked_default = [];
+
+		if ( ! empty( $relations ) ) {
+
+			foreach ( $relations as $relation ) {
+
+				if ( $relation_id && absint( $relation->get_id() ) !== $relation_id ) {
+					continue;
+				}
+
+				$data = [
+					'main' => [
+						'db_intance' => $relation->db,
+						'drop'       => [
+							"DROP INDEX parent_id ON " . '%1$s' . ";",
+							"DROP INDEX child_id ON " . '%1$s' . ";",
+						],
+						'index_base' => [
+							"CREATE INDEX parent_id ON " . '%1$s' . " ( rel_id, parent_object_id );",
+							"CREATE INDEX child_id ON " . '%1$s' . " ( rel_id, child_object_id );"
+						],
+						'index_custom' => [
+							"CREATE INDEX parent_id ON " . '%1$s' . " ( parent_object_id );",
+							"CREATE INDEX child_id ON " . '%1$s' . " ( child_object_id );",
+						],
+					],
+					'meta' => [
+						'db_intance'   => $relation->meta_db,
+						'drop'         => [
+							"DROP INDEX meta_id ON " . '%1$s' . ";"
+						],
+						'index_base'   => [
+							"CREATE INDEX meta_id ON " . '%1$s' . " ( rel_id, parent_object_id, child_object_id );"
+						],
+						'index_custom' => [
+							"CREATE INDEX  meta_id ON " . '%1$s' . " ( parent_object_id, child_object_id );",
+						],
+					],
+				];
+
+				foreach ( $data as $key => $table_data ) {
+
+					if ( $table_data['db_intance'] ) {
+
+						$index_sql = [];
+						$drop_sql  = [];
+
+						if ( $relation->get_args( 'db_table' ) ) {
+							$source = 'index_custom';
+							$this->fix_rel_id_column_type( $table_data['db_intance'] );
+						} else {
+
+							$source = 'index_base';
+
+							if ( ! in_array( $key, $checked_default ) ) {
+								$this->fix_rel_id_column_type( $table_data['db_intance'] );
+								$checked_default[] = $key;
+							}
+
+						}
+
+						foreach ( $table_data[ $source ] as $row ) {
+							$index_sql[] = sprintf( $row, $table_data['db_intance']->table() );
+						}
+
+						$index_sql = apply_filters( 'jet-engine/relations/db/index-sql', $index_sql, $relation, $key );
+						
+						foreach ( $table_data['drop'] as $row ) {
+							$drop_sql[] = sprintf( $row, $table_data['db_intance']->table() );
+						}
+
+						foreach ( $drop_sql as $query ) {
+							$table_data['db_intance']->raw_query( $query );
+						}
+
+						foreach ( $index_sql as $query ) {
+							$table_data['db_intance']->raw_query( $query );
+						}
+
+					}
+				}
+
+			}
+
+		}
+
+		wp_send_json_success();
 
 	}
 

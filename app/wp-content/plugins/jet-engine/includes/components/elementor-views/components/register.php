@@ -16,12 +16,6 @@ class Register {
 	public function __construct() {
 
 		add_filter(
-			'jet-engine/elementor-views/dynamic-tags/replace-dynamic-css-selector',
-			[ $this, 'prevent_selector_replace' ],
-			10, 3
-		);
-
-		add_filter(
 			'jet-engine/twig-views/editor/css-variables',
 			[ $this, 'register_css_vars_for_component_controls' ]
 		);
@@ -50,11 +44,11 @@ class Register {
 
 	/**
 	 * Print Elementor CSS for Elementor-created component in block editor
-	 * 
+	 *
 	 * @return [type] [description]
 	 */
 	public function print_block_preview_css( $component ) {
-		
+
 		if ( 'elementor' !== $component->get_render_view() ) {
 			return;
 		}
@@ -71,12 +65,12 @@ class Register {
 
 	/**
 	 * Synch elementor controls with component settings
-	 * 
+	 *
 	 * @param  [type] $component [description]
 	 * @return [type]            [description]
 	 */
 	public function on_settings_update( $component ) {
-		
+
 		if ( 'elementor' !== $component->get_render_view() ) {
 			return;
 		}
@@ -89,7 +83,7 @@ class Register {
 				if ( empty( $prop['_id'] ) && ! empty( $prop['id'] ) ) {
 					$props[ $i ]['_id'] = $prop['id'];
 				}
-				
+
 			}
 		}
 
@@ -98,7 +92,7 @@ class Register {
 				if ( empty( $prop['_id'] ) && ! empty( $prop['id'] ) ) {
 					$styles[ $i ]['_id'] = $prop['id'];
 				}
-				
+
 			}
 		}
 
@@ -124,7 +118,7 @@ class Register {
 	}
 
 	/**
-	 * Regsiter CSS variables for component controls 
+	 * Regsiter CSS variables for component controls
 	 * @return [type] [description]
 	 */
 	public function register_css_vars_for_component_controls( $css_vars = [] ) {
@@ -157,25 +151,6 @@ class Register {
 		}
 
 		return $css_vars;
-	}
-
-	/**
-	 * Prevent CSS selectors replace for dynamic CSS of components
-	 * @param  [type] $replace    [description]
-	 * @param  [type] $listing_id [description]
-	 * @param  [type] $post_id    [description]
-	 * @return [type]             [description]
-	 */
-	public function prevent_selector_replace( $replace, $listing_id, $post_id ) {
-
-		if ( jet_engine()->listings->components->is_component( $listing_id ) ) {
-			$replace = [
-				'.elementor-' . $post_id => '.jet-listing-grid--' . $listing_id
-			];
-		}
-
-		return $replace;
-
 	}
 
 	/**

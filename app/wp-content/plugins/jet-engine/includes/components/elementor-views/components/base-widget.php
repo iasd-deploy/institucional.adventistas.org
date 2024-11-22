@@ -11,6 +11,7 @@ if ( ! defined( 'WPINC' ) ) {
 class Base_Widget extends \Elementor\Widget_Base {
 
 	protected $jet_engine_component;
+	protected $jet_instance_id;
 
 	public function __construct( $data = [], $args = null, $component = null ) {
 
@@ -50,7 +51,7 @@ class Base_Widget extends \Elementor\Widget_Base {
 
 	/**
 	 * Map abstract names of componets props types to specific Elementor control name
-	 * 
+	 *
 	 * @param  [type] $type [description]
 	 * @return [type]       [description]
 	 */
@@ -86,7 +87,7 @@ class Base_Widget extends \Elementor\Widget_Base {
 			'default'     => 'default_object',
 			'label_block' => true,
 			'options'     => jet_engine()->listings->allowed_context_list(),
-			
+
 		];
 
 		if ( ! empty( $props ) ) {
@@ -101,7 +102,7 @@ class Base_Widget extends \Elementor\Widget_Base {
 
 				$this->add_control(
 					$prop['control_name'],
-					array_merge( 
+					array_merge(
 						[
 							'label_block' => true,
 							'dynamic'     => [
@@ -110,6 +111,7 @@ class Base_Widget extends \Elementor\Widget_Base {
 									\Jet_Engine_Dynamic_Tags_Module::TEXT_CATEGORY,
 									\Jet_Engine_Dynamic_Tags_Module::JET_MACROS_CATEGORY,
 									\Jet_Engine_Dynamic_Tags_Module::NUMBER_CATEGORY,
+									\Jet_Engine_Dynamic_Tags_Module::IMAGE_CATEGORY,
 									\Jet_Engine_Dynamic_Tags_Module::URL_CATEGORY,
 									\Jet_Engine_Dynamic_Tags_Module::POST_META_CATEGORY,
 									\Jet_Engine_Dynamic_Tags_Module::COLOR_CATEGORY,
@@ -173,7 +175,7 @@ class Base_Widget extends \Elementor\Widget_Base {
 	/**
 	 * Check if we have directly set Elementor global variable into default value
 	 * and extract is as __globals__ attribute is yes
-	 * 
+	 *
 	 * @param  array $style Default style control data
 	 * @return array
 	 */
@@ -195,14 +197,81 @@ class Base_Widget extends \Elementor\Widget_Base {
 
 	}
 
+	/**
+	 * Get unique intstance ID for given component
+	 *
+	 * @return [type] [description]
+	 */
+	public function get_jet_instance_id() {
+
+		if ( ! $this->jet_instance_id ) {
+			$this->jet_instance_id = rand( 1000, 9999 );
+		}
+
+		return $this->jet_instance_id;
+	}
+
+	/**
+	 * Returns unique classname for current component instance
+	 * @return [type] [description]
+	 */
+	public function get_jet_component_instance_class() {
+
+
+		return 'jet-component-instance-' . $this->get_jet_instance_id();
+	}
+
+	/**
+	 * Apply unique class to component dynamic styles selectors
+	 *
+	 * @param  [type] $selector [description]
+	 * @return [type]           [description]
+	 */
+	public function apply_component_selector( $selector ) {
+		return '.' . $this->get_jet_component_instance_class() . ' .jet-listing-grid--' . $this->jet_engine_component->get_id();
+	}
+
+	public function apply_unique_css_id( $unique_id ) {
+		return $this->get_jet_instance_id();
+	}
+
 	protected function render() {
 
 		$settings = $this->get_settings_for_display();
 
 		$this->jet_engine_component->set_component_context( $this->get_settings( 'component_context' ) );
-		$content  = $this->jet_engine_component->get_content( $settings, false );
 
-		// If is 'elementor' component - we can just echo content, 
+		add_filter(
+			'jet-engine/elementor-views/dynamic-tags/dynamic-css-unique-id',
+			[ $this, 'apply_unique_css_id' ]
+		);
+
+		add_filter(
+			'jet-engine/elementor-views/dynamic-css/unique-listing-selector',
+			[ $this, 'apply_component_selector' ]
+		);
+
+		$content = $this->jet_engine_component->get_content( $settings, false );
+
+		remove_filter(
+			'jet-engine/elementor-views/dynamic-tags/dynamic-css-unique-id',
+			[ $this, 'apply_unique_css_id' ]
+		);
+
+		remove_filter(
+			'jet-engine/elementor-views/dynamic-css/unique-listing-selector',
+			[ $this, 'apply_component_selector' ]
+		);
+
+		$base_class   = 'jet-listing-grid--' . $this->jet_engine_component->get_id();
+		$unique_class = $this->get_jet_component_instance_class();
+		$classes      = [ $base_class, $unique_class ];
+
+		$this->add_render_attribute( '_wrapper', array(
+			'class' => $unique_class,
+		) );
+
+		// If is 'elementor' component - we can just echo content,
 		// for other views we need some additional moves to ensure CSS controls correctly processed
 		if ( 'elementor' === $this->jet_engine_component->get_render_view() ) {
 			echo $content;
@@ -215,8 +284,8 @@ class Base_Widget extends \Elementor\Widget_Base {
 			}
 
 			printf(
-				'<div class="jet-listing-grid--%1$s" style="%2$s">%3$s</div>',
-				$this->jet_engine_component->get_id(),
+				'<div class="%1$s" style="%2$s">%3$s</div>',
+				implode( ' ', $classes ),
 				$this->jet_engine_component->css_variables_string( $settings ),
 				$content
 			);

@@ -46,7 +46,6 @@ class Manager {
 		add_action( 'init', array( $this, 'register_elements' ), 10 );
 		add_action( 'init', array( $this, 'init_listings' ), 10 );
 		add_action( 'init', array( $this, 'integrate_jet_engine_in_bricks_loop' ), 10 );
-		add_action( 'init', array( $this, 'integrate_query_builder_in_bricks' ), 10 );
 		add_action( 'init', array( $this, 'register_providers' ), 90 );
 
 		add_filter( 'jet-engine/gallery/grid/args', array( $this, 'add_arguments_to_gallery_grid' ), 10 );
@@ -75,8 +74,6 @@ class Manager {
 		} );
 
 		$this->compat_tweaks();
-
-		add_action( 'jet-engine/dashboard/export-import/process', [ $this, 'init_export_import_manager' ] );
 	}
 
 	public function init_export_import_manager() {
@@ -99,17 +96,23 @@ class Manager {
 	public function integrate_jet_engine_in_bricks_loop() {
 		require_once $this->component_path( 'query-loop.php' );
 		new Query_Loop();
-	}
 
-	public function integrate_query_builder_in_bricks() {
-		require_once $this->component_path( 'query-controller.php' );
-		new Query_Controller();
+		// TODO Remove this check after verifying stability in v3.6.1 (expected removal in 2-3 releases).
+		if ( function_exists( 'jet_smart_filters' ) && jet_smart_filters()->get_version() >= '3.5.6' ) {
+			require_once $this->component_path( 'filters.php' );
+			new Filters();
+		}
 	}
 
 	public function register_providers() {
 		require_once $this->component_path( 'dynamic-data/providers.php' );
+		require jet_engine()->bricks_views->component_path( 'dynamic-data/provider-jet-engine-data.php' );
+		require jet_engine()->bricks_views->component_path( 'dynamic-data/provider-jet-engine-macros.php' );
 
-		$dynamic_data_providers = apply_filters( 'jet-engine/bricks-views/dynamic_data/register_providers', [] );
+		$dynamic_data_providers = apply_filters( 'jet-engine/bricks-views/dynamic_data/register_providers', array(
+			'jet-engine-data'   => '\Jet_Engine\Bricks_Views\Dynamic_Data',
+			'jet-engine-macros' => '\Jet_Engine\Bricks_Views\Dynamic_Data'
+		) );
 
 		Dynamic_Data\Providers::register( $dynamic_data_providers );
 	}

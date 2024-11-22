@@ -133,7 +133,7 @@ class UpdaterSubscriber implements Event_Manager_Aware_Subscriber_Interface {
 	 * @return array           Updated array of HTTP request arguments.
 	 */
 	public function exclude_rocket_from_wp_updates( $request, $url ) {
-		if ( ! is_string( $url ) ) {
+		if ( ! is_string( $url ) ) { // @phpstan-ignore-line GH #7042 - $url variable may be change by other plugins to something else than string.
 			return $request;
 		}
 
@@ -204,7 +204,7 @@ class UpdaterSubscriber implements Event_Manager_Aware_Subscriber_Interface {
 	/**
 	 * Add WPR update data to the "WP update" transient.
 	 *
-	 * @param  \stdClass $transient_value New value of site transient.
+	 * @param  \stdClass|array $transient_value New value of site transient.
 	 * @return \stdClass
 	 */
 	public function maybe_add_rocket_update_data( $transient_value ) {
@@ -470,6 +470,7 @@ class UpdaterSubscriber implements Event_Manager_Aware_Subscriber_Interface {
 
 		set_site_transient( 'update_plugins', $plugin_transient );
 
+		// @phpstan-ignore-next-line
 		require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 
 		// translators: %s is the plugin name.

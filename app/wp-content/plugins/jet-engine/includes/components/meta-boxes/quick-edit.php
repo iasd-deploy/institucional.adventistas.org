@@ -287,7 +287,11 @@ if ( ! class_exists( 'Jet_Engine_CPT_Quick_Edit' ) ) {
 				self::$is_first = false;
 				echo '<div class="cx-ui-clear"></div>';
 			}
-
+			
+			//https://github.com/Crocoblock/issues-tracker/issues/10492
+			//actual value is set in includes/components/meta-boxes/assets/js/inline-quick-edit.js inlineEditPost.edit
+			unset( $field['value'] );
+			
 			$builder->register_control( $field );
 			$control_html = $builder->render( false );
 

@@ -55,6 +55,11 @@ class Meta_Storage {
 					return $result;
 				}
 
+				if ( ! $meta_key ) {
+					// Handle edge case when no meta key was provided and we handling all meta
+					return $this->get_merged_data( $object_id, $object_type );
+				}
+
 				return $this->get_data( $object_id, $meta_key, $single );
 
 			},
@@ -131,8 +136,13 @@ class Meta_Storage {
 	 * @return boolean              [description]
 	 */
 	public function is_custom_field_from_storage( $object_type, $object_id, $meta_key ) {
-		
-		if ( ! in_array( $meta_key, $this->fields ) ) {
+
+		// If meta key was not provided - check only by $object_id
+		if ( ! $meta_key && $this->is_object_of_type( $object_type, $object_id ) ) {
+			return true;
+		}
+
+		if ( ! $meta_key || ! in_array( $meta_key, $this->fields ) ) {
 			return false;
 		}
 
@@ -243,13 +253,9 @@ class Meta_Storage {
 	 */
 	public function get_data( $object_id = 0, $meta_key = '', $single = true ) {
 
-		$cache_key = $this->get_cache_key( $object_id );
-		$group     = 'jet_engine_custom_tables';
-		$obj_row   = wp_cache_get( $cache_key, $group );
-
 		$object = jet_engine()->listings->data->get_current_object();
 
-		if ( $object && isset( $object->object_ID ) 
+		if ( $object && isset( $object->object_ID )
 			&& absint( $object->object_ID ) === absint( $object_id )
 			&& isset( $object->$meta_key )
 		) {
@@ -257,20 +263,68 @@ class Meta_Storage {
 			return [ maybe_unserialize( $object->$meta_key ) ];
 		}
 
-		if ( false === $obj_row ) {
-			$obj_row = $this->db->get_item( $object_id, 'object_ID' );
-			wp_cache_set( $cache_key, $obj_row, $group );
-		}
-		
-		if ( ! $obj_row ) {
-			return false;
-		}
-
-		$result = isset( $obj_row[ $meta_key ] ) ? maybe_unserialize( $obj_row[ $meta_key ] ) : false;
+		$obj_row = $this->get_all_data( $object_id );
+		$result  = isset( $obj_row[ $meta_key ] ) ? maybe_unserialize( $obj_row[ $meta_key ] ) : false;
 
 		// We always need to return an array here, because result of "get_{$meta_type}_metadata" filter processed as an array in the WP core
 		return [ $result ];
 
+	}
+
+	/**
+	 * Get all data by object ID
+	 *
+	 * @param  int $object_id Post ID.
+	 * @return array
+	 */
+	public function get_all_data( $object_id ) {
+
+		$cache_key = $this->get_cache_key( $object_id );
+		$group     = 'jet_engine_custom_tables';
+		$obj_row   = wp_cache_get( $cache_key, $group );
+
+		if ( false === $obj_row ) {
+			$obj_row = $this->db->get_item( $object_id, 'object_ID' );
+			wp_cache_set( $cache_key, $obj_row, $group );
+		}
+
+		if ( ! $obj_row ) {
+			return [];
+		}
+
+		return $obj_row;
+	}
+
+	/**
+	 * Get all post meta - merged custom and default.
+	 *
+	 * @param  int    $object_id Post ID
+	 * @param  string $meta_type Meta type - post, term or user.
+	 * @return array
+	 */
+	public function get_merged_data( $object_id, $meta_type ) {
+
+		$custom_data = $this->get_all_data( $object_id );
+		$meta_cache = wp_cache_get( $object_id, $meta_type . '_meta' );
+
+		if ( ! $meta_cache ) {
+			$meta_cache = update_meta_cache( $meta_type, array( $object_id ) );
+			if ( isset( $meta_cache[ $object_id ] ) ) {
+				$meta_cache = $meta_cache[ $object_id ];
+			} else {
+				$meta_cache = [];
+			}
+		}
+
+		if ( ! empty( $custom_data['meta_ID'] ) ) {
+			unset( $custom_data['meta_ID'] );
+		}
+
+		if ( ! empty( $custom_data['object_ID'] ) ) {
+			unset( $custom_data['object_ID'] );
+		}
+
+		return array_merge( $meta_cache, $custom_data );
 	}
 
 	/**

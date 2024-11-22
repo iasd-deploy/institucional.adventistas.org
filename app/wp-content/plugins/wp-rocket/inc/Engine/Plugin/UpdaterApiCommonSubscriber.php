@@ -82,7 +82,7 @@ class UpdaterApiCommonSubscriber implements Subscriber_Interface {
 	 * @return array           An array of requested arguments
 	 */
 	public function maybe_set_rocket_user_agent( $request, $url ) {
-		if ( ! is_string( $url ) ) {
+		if ( ! is_string( $url ) ) { // @phpstan-ignore-line GH #7042 - $url variable may be change by other plugins to something else than string.
 			return $request;
 		}
 
@@ -116,14 +116,10 @@ class UpdaterApiCommonSubscriber implements Subscriber_Interface {
 		if ( current_user_can( 'rocket_manage_options' ) && wp_verify_nonce( filter_input( INPUT_POST, '_wpnonce' ), $this->settings_nonce_key . '-options' ) ) {
 			$posted = filter_input( INPUT_POST, $this->settings_slug, FILTER_DEFAULT, FILTER_REQUIRE_ARRAY );
 
-			if ( ! empty( $posted[ $field_name ] ) && is_string( $posted[ $field_name ] ) ) {
+			if ( ! empty( $posted[ $field_name ] ) ) {
 				// The value has been posted through the settings page.
 				return sanitize_text_field( $posted[ $field_name ] );
 			}
-		}
-
-		if ( ! $this->plugin_options ) {
-			return '';
 		}
 
 		$option_value = $this->plugin_options->get( $field_name );

@@ -1,5 +1,6 @@
 import GroupedSelectControl from "components/grouped-select-control.js";
 import JetEngineRepeater from "components/repeater-control.js";
+import { isIdUnique } from "common/functions";
 
 import {
 	clone
@@ -55,7 +56,7 @@ registerBlockType( 'jet-engine/listing-grid', {
 
 		constructor( props ) {
 
-			if ( ! props.attributes._block_id ) {
+			if ( ! props.attributes._block_id || ! isIdUnique( props ) ) {
 				props.setAttributes( { _block_id: props.clientId } );
 			}
 

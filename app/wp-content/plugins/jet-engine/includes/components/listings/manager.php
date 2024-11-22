@@ -54,7 +54,7 @@ if ( ! class_exists( 'Jet_Engine_Listings' ) ) {
 		/**
 		 * Data manager instance
 		 *
-		 * @var null
+		 * @var \Jet_Engine_Listings_Data
 		 */
 		public $data = null;
 
@@ -96,7 +96,7 @@ if ( ! class_exists( 'Jet_Engine_Listings' ) ) {
 		/**
 		 * Holder for objects stack instance.
 		 *
-		 * @var null
+		 * @var \Jet_Engine_Objects_Stack
 		 */
 		public $objects_stack = null;
 
@@ -553,6 +553,8 @@ if ( ! class_exists( 'Jet_Engine_Listings' ) ) {
 			);
 
 			$meta_fields = array();
+
+			$default['options']['object_prop'] = __( 'Post/Term/User/Object Data', 'jet-engine' );
 
 			if ( jet_engine()->options_pages ) {
 				$default['options']['options_page'] = __( 'Options', 'jet-engine' );

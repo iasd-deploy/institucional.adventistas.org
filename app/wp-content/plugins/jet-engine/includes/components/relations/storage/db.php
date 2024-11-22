@@ -17,6 +17,7 @@ class DB extends \Jet_Engine_Base_DB {
 
 	public static $prefix = 'jet_rel_';
 	public $relations_cache = [];
+	public $table_keys = false;
 
 	/**
 	 * Insert booking
@@ -85,6 +86,15 @@ class DB extends \Jet_Engine_Base_DB {
 	}
 
 	/**
+	 * Set table keys to create indexes with the table creation
+	 * 
+	 * @param boolean $keys [description]
+	 */
+	public function set_table_keys( $keys = false ) {
+		$this->table_keys = $keys;
+	}
+
+	/**
 	 * Returns table columns schema
 	 *
 	 * @return [type] [description]
@@ -117,9 +127,12 @@ class DB extends \Jet_Engine_Base_DB {
 			}
 		}
 
+		$keys = $this->table_keys;
+
 		return "CREATE TABLE $table (
 			$columns_schema
-			PRIMARY KEY (_ID)
+			PRIMARY KEY ( _ID ),
+			$keys
 		) $charset_collate;";
 
 	}

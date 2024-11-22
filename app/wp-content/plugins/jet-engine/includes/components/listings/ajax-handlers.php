@@ -362,8 +362,7 @@ if ( ! class_exists( 'Jet_Engine_Listings_Ajax_Handlers' ) ) {
 				}
 			}
 			*/
-
-			if ( $is_lazy_load && ! empty( $query ) ) { // for Archive pages
+			if ( $is_lazy_load && ! empty( $query ) && empty( $query['query_id'] ) ) { // for Archive pages
 
 				jet_engine()->listings->data->set_listing_by_id( $widget_settings['lisitng_id'] );
 

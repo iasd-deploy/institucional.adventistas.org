@@ -49,24 +49,22 @@ class ServiceProvider extends AbstractServiceProvider {
 		$this->getContainer()->addShared( 'rocketcdn_data_manager_subscriber', DataManagerSubscriber::class )
 			->addArgument( $this->getContainer()->get( 'rocketcdn_api_client' ) )
 			->addArgument( $this->getContainer()->get( 'rocketcdn_options_manager' ) )
-			->addTag( 'admin_subscriber' );
+			->addArgument( $this->getContainer()->get( 'options' ) )
+			->addArgument( $this->getContainer()->get( 'options_api' ) );
 		// RocketCDN REST API Subscriber.
 		$this->getContainer()->addShared( 'rocketcdn_rest_subscriber', RESTSubscriber::class )
 			->addArgument( $this->getContainer()->get( 'rocketcdn_options_manager' ) )
-			->addArgument( $options )
-			->addTag( 'common_subscriber' );
+			->addArgument( $options );
 		// RocketCDN Notices Subscriber.
 		$this->getContainer()->addShared( 'rocketcdn_notices_subscriber', NoticesSubscriber::class )
 			->addArgument( $this->getContainer()->get( 'rocketcdn_api_client' ) )
 			->addArgument( $this->getContainer()->get( 'beacon' ) )
-			->addArgument( __DIR__ . '/views' )
-			->addTag( 'admin_subscriber' );
+			->addArgument( __DIR__ . '/views' );
 		// RocketCDN settings page subscriber.
 		$this->getContainer()->addShared( 'rocketcdn_admin_subscriber', AdminPageSubscriber::class )
 			->addArgument( $this->getContainer()->get( 'rocketcdn_api_client' ) )
 			->addArgument( $options )
 			->addArgument( $this->getContainer()->get( 'beacon' ) )
-			->addArgument( __DIR__ . '/views' )
-			->addTag( 'admin_subscriber' );
+			->addArgument( __DIR__ . '/views' );
 	}
 }

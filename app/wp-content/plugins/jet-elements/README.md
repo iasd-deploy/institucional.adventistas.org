@@ -4,6 +4,45 @@ Brand new addon for Elementor Page builder. It provides the set of modules to cr
 
 # ChangeLog
 
+## [2.7.1.1](https://github.com/ZemezLab/jet-elements/archive/2.7.1.1.zip) - 01.11.2024
+* Added: [Crocoblock/suggestions#7831](https://github.com/Crocoblock/suggestions/issues/7831)
+* Added: [Crocoblock/suggestions#7836](https://github.com/Crocoblock/suggestions/issues/7836)
+* Fixed: minor issue.
+
+## [2.7.1](https://github.com/ZemezLab/jet-elements/archive/2.7.1.zip) - 28.10.2024
+* Update: styles enqueue & compatibility with Elementor 3.24
+* Added: widget output caching
+
+## [2.7.0](https://github.com/ZemezLab/jet-elements/archive/2.7.0.zip) - 25.09.2024
+* Added: [Crocoblock/suggestions#7547](https://github.com/Crocoblock/suggestions/issues/7547)
+* Added: [Crocoblock/suggestions#6391](https://github.com/Crocoblock/suggestions/issues/6391)
+* Added: сompatibility with Elementor 3.24
+* Added: SVG icons for control buttons in the Audio widget
+* Added: option `YouTube Shorts` in the Video Player widget
+* Added: option `GDPR` for vimeo in the Video Player widget
+* Fixed: escaping attribute values in the Slider widget
+* Fixed: compatibility with deprecated methods
+* Fixed: minor issues
+* Update: Chart js
+
+## [2.6.20.1](https://github.com/ZemezLab/jet-elements/archive/2.6.20.1.zip) - 09.08.2024
+* Fixed: security issues 
+
+## [2.6.20](https://github.com/ZemezLab/jet-elements/archive/2.6.20.zip) - 06.08.2024
+* Added: `Lazy Load Images` option in the Testimonials widget
+* Added: compatibility slick carousel with Listing Grid widget
+* Added: сompatibility with Elementor 3.24
+* Fixed: navigation icon in the Slider widget
+* Fixed: minor issues
+* Update: JetDashboard Module to v2.2.0
+
+## [2.6.19](https://github.com/ZemezLab/jet-elements/archive/2.6.19.zip) - 27.06.2024
+* Fixed: fade animation effect for mobile Safari in the Animated Box widget
+* Fixed: active dots during scroll up in the Scroll Navigation widget
+* Fixed: arrow icon on Safari in the Slider widget
+* Fixed: WPML compatibility for repeater widgets
+* Fixed: minor issues
+
 ## [2.6.18](https://github.com/ZemezLab/jet-elements/archive/2.6.18.zip) - 14.05.2024
 * Added: `jet-elements/advanced-map/query-arg` filter hook
 * Added: new icons of widgets

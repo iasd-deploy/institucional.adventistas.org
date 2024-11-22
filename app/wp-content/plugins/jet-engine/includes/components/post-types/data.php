@@ -409,7 +409,7 @@ if ( ! class_exists( 'Jet_Engine_CPT_Data' ) ) {
 			}
 
 			/**
-			 * @todo probabaly process as hook from \Jet_Engine\CPT\Custom_Tables\Manager class
+			 * @todo probably process as hook from \Jet_Engine\CPT\Custom_Tables\Manager class
 			 */
 			if ( ! empty( $item['args']['custom_storage'] ) ) {
 

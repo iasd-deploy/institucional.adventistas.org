@@ -85,15 +85,8 @@ class Module {
 
 		// Init compatibility classes
 		if ( defined( 'BORLABS_COOKIE_VERSION' ) ) {
-
-			if ( version_compare( BORLABS_COOKIE_VERSION, '3.0.0', '>=' ) ) {
-				require jet_engine()->modules->modules_path( 'maps-listings/inc/compatibility/borlabs-cookie-v3.php' );
-				new Compatibility\Borlabs_Cookie_v3();
-			} else {
-				require jet_engine()->modules->modules_path( 'maps-listings/inc/compatibility/borlabs-cookie.php' );
-				new Compatibility\Borlabs_Cookie();
-			}
-
+			require jet_engine()->modules->modules_path( 'maps-listings/inc/compatibility/borlabs-cookie-v3.php' );
+			new Compatibility\Borlabs_Cookie_v3();
 		}
 
 		if ( function_exists( 'jet_form_builder' ) ) {

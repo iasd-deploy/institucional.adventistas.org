@@ -179,6 +179,8 @@ if ( ! class_exists( 'Jet_Engine_Relations_Page_Edit' ) ) {
 
 			add_action( 'admin_footer', array( $this, 'add_page_template' ) );
 
+			$this->manager->enqueue_reindex( $id );
+
 		}
 
 		/**

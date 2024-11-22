@@ -184,17 +184,17 @@ class Jet_Smart_Filters_Bricks_Base extends \Jet_Engine\Bricks_Views\Elements\Ba
 						'submit' => esc_html__( 'Click on apply button', 'jet-smart-filters' ),
 					],
 					'default'  => 'value',
-					'required' => [ 'apply_type', '=', [ 'ajax', 'mixed' ] ],
 				]
 			);
 
 			$this->register_jet_control(
 				'apply_button',
 				[
-					'tab'     => 'content',
-					'label'   => esc_html__( 'Show apply button', 'jet-smart-filters' ),
-					'type'    => 'checkbox',
-					'default' => false,
+					'tab'      => 'content',
+					'label'    => esc_html__( 'Show apply button', 'jet-smart-filters' ),
+					'type'     => 'checkbox',
+					'default'  => true,
+					'required' => [ 'apply_on', '=', 'submit' ],
 				]
 			);
 
@@ -206,7 +206,10 @@ class Jet_Smart_Filters_Bricks_Base extends \Jet_Engine\Bricks_Views\Elements\Ba
 					'type'           => 'text',
 					'hasDynamicData' => false,
 					'default'        => esc_html__( 'Apply filter', 'jet-smart-filters' ),
-					'required'       => [ 'apply_button', '=', true ],
+					'required'       => [
+						[ 'apply_on', '=', 'submit' ],
+						[ 'apply_button', '=', true ],
+					]
 				]
 			);
 		}
@@ -646,10 +649,6 @@ class Jet_Smart_Filters_Bricks_Base extends \Jet_Engine\Bricks_Views\Elements\Ba
 		$apply_type = ! empty( $settings['apply_type'] ) ? $settings['apply_type'] : 'ajax';
 		$apply_on   = ! empty( $settings['apply_on'] ) ? $settings['apply_on'] : 'value';
 
-		if ( 'submit' === $apply_on && in_array( $apply_type, [ 'ajax', 'mixed' ] ) ) {
-			$apply_type = $apply_type . '-reload';
-		}
-
 		$query_id          = ! empty( $settings['query_id'] ) ? $settings['query_id'] : 'default';
 		$show_label        = ! empty( $settings['show_label'] ) ? filter_var( $settings['show_label'], FILTER_VALIDATE_BOOLEAN ) : false;
 		$show_items_label  = ! empty( $settings['show_items_label'] ) ? $settings['show_items_label'] : false;
@@ -711,10 +710,11 @@ class Jet_Smart_Filters_Bricks_Base extends \Jet_Engine\Bricks_Views\Elements\Ba
 			$filter_template_args = array(
 				'filter_id'            => $filter_id,
 				'content_provider'     => $provider,
-				'additional_providers' => $additional_providers,
-				'apply_type'           => $apply_type,
 				'query_id'             => $query_id,
+				'apply_type'           => $apply_type,
+				'apply_on'             => $apply_on,
 				'show_label'           => $show_label,
+				'additional_providers' => $additional_providers,
 				'display_options'      => array(
 					'show_items_label'  => $show_items_label,
 					'show_decorator'    => $show_decorator,

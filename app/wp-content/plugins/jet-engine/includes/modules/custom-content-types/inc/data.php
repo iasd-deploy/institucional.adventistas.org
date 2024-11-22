@@ -170,7 +170,7 @@ class Data extends \Jet_Engine_Base_Data {
 		$result['args']        = $args;
 		$result['meta_fields'] = $meta_fields;
 
-		return $result;
+		return apply_filters( 'jet-engine/custom-content-types/data/sanitized-request', $result, $request, $this );
 
 	}
 
@@ -352,7 +352,6 @@ class Data extends \Jet_Engine_Base_Data {
 			return $result;
 		}
 
-		$has_date             = false;
 		$skip_types           = array( 'html' );
 		$allowed_object_types = array( 'field', 'service_field' );
 
@@ -383,13 +382,7 @@ class Data extends \Jet_Engine_Base_Data {
 
 				case 'sql-date':
 
-					if ( ! $has_date ) {
-						$result[ $field['name'] ] = 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP';
-						$has_date = true;
-					} else {
-						$result[ $field['name'] ] = 'TIMESTAMP';
-					}
-
+					$result[ $field['name'] ] = 'DATETIME';
 					break;
 
 				case 'number':

@@ -14,6 +14,55 @@ if ( ! class_exists( 'Jet_Smart_Filters_Utils' ) ) {
 	 */
 	class Jet_Smart_Filters_Utils {
 		/**
+		 * Сhecks if the filter exists and that it is published
+		 */
+		public function is_filter_published( $filter_id ) {
+
+			if ( empty( $filter_id ) ) {
+				return false;
+			}
+
+			global $wpdb;
+
+			$filter_id = intval( $filter_id );
+
+			$query = $wpdb->prepare(
+				"SELECT ID FROM {$wpdb->posts} 
+				WHERE post_type = 'jet-smart-filters'
+				AND post_status = 'publish'
+				AND ID = %d",
+				$filter_id
+			);
+
+			$published_filter_id = $wpdb->get_var( $query );
+
+			return $published_filter_id ? true : false;
+		}
+
+		/**
+		 * Returns only published filters from the passed IDs.
+		 */
+		public function select_published_filters( $filter_ids ) {
+
+			if ( ! is_array( $filter_ids ) || empty( $filter_ids ) ) {
+				return array();
+			}
+
+			global $wpdb;
+
+			$filter_ids_string = implode( ',', array_map( 'intval', $filter_ids ) );
+		
+			$query = "SELECT ID FROM {$wpdb->posts}
+					  WHERE post_type = 'jet-smart-filters'
+					  AND post_status = 'publish'
+					  AND ID IN ($filter_ids_string)";
+		
+			$published_filters = $wpdb->get_col( $query );
+		
+			return $published_filters;
+		}
+
+		/**
 		 * Returns HTML as string from file
 		 */
 		public function get_file_html( $path ) {
