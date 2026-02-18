@@ -101,7 +101,7 @@ if ( ! class_exists( 'Jet_Elements_Shortcode_Base' ) ) {
 			$result = vsprintf( $format, $args );
 
 			if ( $echo ) {
-				echo $result;
+				echo $result; // phpcs:ignore
 			} else {
 				return $result;
 			}

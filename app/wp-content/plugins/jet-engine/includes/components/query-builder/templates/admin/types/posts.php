@@ -2,6 +2,8 @@
 /**
  * Posts query component template
  */
+
+// phpcs:disable
 ?>
 <div class="jet-engine-edit-page__fields">
 	<div class="cx-vui-collapse__heading">
@@ -97,8 +99,22 @@
 									:options-list="orderbyOptions"
 									size="fullwidth"
 									:value="query.orderby[ index ].orderby"
-									@input="setFieldProp( order._id, 'orderby', $event, query.orderby )"
+									@input="setFieldProp( order._id, 'orderby', $event, query.orderby );"
 								></cx-vui-select>
+								<div
+									class="cx-vui-component"
+									style="color: darkred; font-size: 1.1em; display: block !important;"
+									v-if="isShowMultipleMetaOrderNotice( order._id )"
+								>
+								<b>NOTE:</b> You selected order by <b>meta value</b> in multiple order clauses. <b>Only the first clause will work.</b> If you need to order by multiple meta values, follow <a href="https://crocoblock.com/knowledge-base/jetengine/how-to-set-up-order-offset-query-by-two-meta-fields/">this tutorial</a>
+								</div>
+								<div
+									class="cx-vui-component"
+									style="color: darkred; font-size: 1.1em; display: block !important;"
+									v-if="query.orderby[ index ].orderby === 'relevance' && query.orderby?.length > 1"
+								>
+								<b>NOTE:</b> Order by search terms relevance works only if there is no more than one order clause.<br/> Please, remove other order clauses if you need to order by search terms relevance.
+								</div>
 								<cx-vui-input
 									label="<?php _e( 'Meta key', 'jet-engine' ); ?>"
 									description="<?php _e( 'Meta field name to order by', 'jet-engine' ); ?>"
@@ -173,9 +189,16 @@
 					<div class="cx-vui-inner-panel query-panel">
 						<div class="cx-vui-component__label"><?php _e( 'Meta Query Clauses', 'jet-engine' ); ?></div>
 						<cx-vui-repeater
-							button-label="<?php _e( 'Add new', 'jet-engine' ); ?>"
+							button-label="<?php _e( 'Add new clause', 'jet-engine' ); ?>"
 							button-style="accent"
 							button-size="mini"
+							:custom-actions="[
+								{
+									buttonLabel: '<?php _e( 'Add new group', 'jet-engine' ); ?>',
+									buttonStyle: 'accent-border',
+									callback: addNewMetaGroup,
+								}
+							]"
 							v-model="query.meta_query"
 							@add-new-item="addNewField( $event, [], query.meta_query, newDynamicMeta )"
 						>
@@ -187,47 +210,13 @@
 								@delete-item="deleteField( $event, clause._id, query.meta_query, deleteDynamicMeta )"
 								:key="clause._id"
 							>
-								<cx-vui-input
-									label="<?php _e( 'Field key/name', 'jet-engine' ); ?>"
-									description="<?php _e( 'You can use `JetEngine meta field` macros to get name of the field created by JetEngine', 'jet-engine' ); ?>"
-									:wrapper-css="[ 'equalwidth', 'has-macros' ]"
-									size="fullwidth"
-									:value="query.meta_query[ index ].key"
-									@input="setFieldProp( clause._id, 'key', $event, query.meta_query )"
-								><jet-query-dynamic-args v-model="dynamicQuery.meta_query[ clause._id ].key"></jet-query-dynamic-args></cx-vui-input>
-								<cx-vui-select
-									label="<?php _e( 'Compare', 'jet-engine' ); ?>"
-									description="<?php _e( 'Operator to test', 'jet-engine' ); ?>"
-									:wrapper-css="[ 'equalwidth' ]"
-									:options-list="operators"
-									size="fullwidth"
-									:value="query.meta_query[ index ].compare"
-									@input="setFieldProp( clause._id, 'compare', $event, query.meta_query )"
-								></cx-vui-select>
-								<cx-vui-input
-									label="<?php _e( 'Value', 'jet-engine' ); ?>"
-									:wrapper-css="[ 'equalwidth', 'has-macros' ]"
-									size="fullwidth"
-									:value="query.meta_query[ index ].value"
-									@input="setFieldProp( clause._id, 'value', $event, query.meta_query )"
-								><jet-query-dynamic-args v-model="dynamicQuery.meta_query[ clause._id ].value"></jet-query-dynamic-args></cx-vui-input>
-								<cx-vui-select
-									label="<?php _e( 'Type', 'jet-engine' ); ?>"
-									description="<?php _e( 'Data type stored in the given field', 'jet-engine' ); ?>"
-									:wrapper-css="[ 'equalwidth' ]"
-									:options-list="dataTypes"
-									size="fullwidth"
-									:value="query.meta_query[ index ].type"
-									@input="setFieldProp( clause._id, 'type', $event, query.meta_query )"
-								></cx-vui-select>
-								<cx-vui-input
-									label="<?php _e( 'Clause name', 'jet-engine' ); ?>"
-									description="<?php _e( 'Set current clause name to used as Order By parameter', 'jet-engine' ); ?>"
-									:wrapper-css="[ 'equalwidth', 'has-macros' ]"
-									size="fullwidth"
-									:value="query.meta_query[ index ].clause_name"
-									@input="setFieldProp( clause._id, 'clause_name', $event, query.meta_query )"
-								></cx-vui-input>
+								<jet-engine-query-meta-field
+									:field="clause"
+									:meta-query="query.meta_query"
+									:dynamic-query="dynamicQuery.meta_query[ clause._id ]"
+									@input="setFieldData( clause._id, $event, query.meta_query )"
+									@dynamic-input="setDynamicMeta( clause._id, $event )"
+								></jet-engine-query-meta-field>
 							</cx-vui-repeater-item>
 						</cx-vui-repeater>
 					</div>
@@ -235,7 +224,7 @@
 				<cx-vui-select
 					v-if="1 < query.meta_query.length"
 					label="<?php _e( 'Relation', 'jet-engine' ); ?>"
-					description="<?php _e( 'The logical relationship between meta query clauses', 'jet-engine' ); ?>"
+					description="<?php _e( 'The logical relationship between meta query clauses and groups', 'jet-engine' ); ?>"
 					:wrapper-css="[ 'equalwidth' ]"
 					:options-list="[
 						{
@@ -265,7 +254,7 @@
 							button-label="<?php _e( 'Add new', 'jet-engine' ); ?>"
 							button-style="accent"
 							button-size="mini"
-							v-model="query.meta_query"
+							v-model="query.tax_query"
 							@add-new-item="addNewField( $event, [], query.tax_query, newDynamicTax )"
 						>
 							<cx-vui-repeater-item
@@ -292,19 +281,19 @@
 									:options-list="[
 										{
 											value: 'term_id',
-											label: '<?php _e( 'Term ID', 'jet-engine' ); ?>',
+											label: '<?php echo esc_js( __( 'Term ID', 'jet-engine' ) ); ?>',
 										},
 										{
 											value: 'name',
-											label: '<?php _e( 'Name', 'jet-engine' ); ?>',
+											label: '<?php echo esc_js( __( 'Name', 'jet-engine' ) ); ?>',
 										},
 										{
 											value: 'slug',
-											label: '<?php _e( 'Slug', 'jet-engine' ); ?>',
+											label: '<?php echo esc_js( __( 'Slug', 'jet-engine' ) ); ?>',
 										},
 										{
 											value: 'term_taxonomy_id',
-											label: '<?php _e( 'Term taxonomy ID', 'jet-engine' ); ?>',
+											label: '<?php echo esc_js( __( 'Term taxonomy ID', 'jet-engine' ) ); ?>',
 										},
 									]"
 									size="fullwidth"
@@ -511,7 +500,7 @@
 			</cx-vui-tabs-panel>
 			<cx-vui-tabs-panel
 				name="post_page"
-				:label="isInUseMark( [ 'post__in', 'post__not_in', 'post_name__in', 'post_parent', 'post_parent__in', 'post_parent__not_in', 'p', 'name', 'page_id', 'pagename' ] ) + '<?php _e( 'Post & Page', 'jet-engine' ); ?>'"
+				:label="isInUseMark( [ 'post__in', 'post__not_in', 'post_name__in', 'post_parent', 'post_parent__in', 'post_parent__not_in', 'p', 'name', 'page_id', 'pagename', 'avoid_duplicates' ] ) + '<?php _e( 'Post & Page', 'jet-engine' ); ?>'"
 				key="category_tag"
 			>
 				<cx-vui-input
@@ -530,6 +519,7 @@
 					name="query_post__not_in"
 					v-model="query.post__not_in"
 				><jet-query-dynamic-args v-model="dynamicQuery.post__not_in"></jet-query-dynamic-args></cx-vui-input>
+				<?php \Jet_Engine\Query_Builder\Avoid_Duplicates::instance()->print_control( 'posts' ); ?>
 				<cx-vui-input
 					label="<?php _e( 'Post Name In', 'jet-engine' ); ?>"
 					description="<?php _e( 'Use post slugs. Specify posts list to retrieve. Comma-separated post slugs list', 'jet-engine' ); ?>"

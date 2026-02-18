@@ -45,7 +45,7 @@
 					v-model="updatePosts"
 				></cx-vui-switcher>
 				<cx-vui-switcher
-					label="<?php _e( 'Custom Meta Storage (Beta)', 'jet-engine' ); ?>"
+					label="<?php _e( 'Custom Meta Storage', 'jet-engine' ); ?>"
 					description="<?php _e( 'Store meta fields added below in the custom DB table instead of default `postmeta` table.', 'jet-engine' ); ?>"
 					:wrapper-css="[ 'equalwidth' ]"
 					v-model="generalSettings.custom_storage"
@@ -57,6 +57,15 @@
 					<div class="cx-vui-component__meta">
 						<div class="cx-vui-component__label"><?php _e( 'Please note:', 'jet-engine' ); ?></div>
 						<div class="cx-vui-component__desc"><?php _e( 'Only new data will be stored in the separate table. All existing meta fields should be migrated manually.', 'jet-engine' ); ?></div>
+					</div>
+				</div>
+				<div
+					v-if="generalSettings.custom_storage && JetEngineCPTConfig?.translation_plugins?.wpml"
+					class="cx-vui-component"
+				>
+					<div class="cx-vui-component__meta">
+						<div class="cx-vui-component__label"><?php _e( 'Please note:', 'jet-engine' ); ?></div>
+						<div class="cx-vui-component__desc"><?php _e( 'Custom fields from custom meta storage cannot be translated with WPML. Also, performance gains that might have had from Custom Storage would be nullified by WPML overhead anyway. Please, disable Custom Storage if you are planning to translate meta fields of this post type', 'jet-engine' ); ?></div>
 					</div>
 				</div>
 				<div
@@ -77,7 +86,7 @@
 				>
 					<div class="cx-vui-component__meta">
 						<div class="cx-vui-component__label"><?php _e( 'Please note:', 'jet-engine' ); ?></div>
-						<div class="cx-vui-component__desc"><?php _e( 'If you change any existing Meta Fields names, all stored data from the updated field will be lost!', 'jet-engine' ); ?></div>
+						<div class="cx-vui-component__desc"><?php _e( 'If you change/delete any existing Meta Fields names, all stored data from the updated field will be lost!', 'jet-engine' ); ?></div>
 					</div>
 				</div>
 				<cx-vui-switcher

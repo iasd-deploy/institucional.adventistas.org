@@ -81,7 +81,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Filter_Base' ) ) {
 				$label = get_the_title( $filter_id );
 			}
 
-			return $label;
+			return esc_attr( wp_strip_all_tags( $label ) );
 		}
 
 		/**
@@ -99,9 +99,62 @@ if ( ! class_exists( 'Jet_Smart_Filters_Filter_Base' ) ) {
 				$this->get_id()
 			);
 
-			return $predefined_value == ''
-				? false
-				: $predefined_value;
+			if ( ! $predefined_value ) {
+				return false;
+			}
+			
+			$dynamic_predefined_value = $this->get_dynamic_predefined_value( $predefined_value );
+
+			return $dynamic_predefined_value === false
+				? $predefined_value
+				: $dynamic_predefined_value;
+		}
+
+		/**
+		 * Get dynamic default filter value
+		 */
+		private function get_dynamic_predefined_value( $value ) {
+
+			$dynamic_default_value_types = array( 'request', 'cookie', 'shortcode' );
+			$pattern = '/^__(' . implode( '|', array_map( 'preg_quote', $dynamic_default_value_types ) ) . ')::(.+)$/';
+
+			if ( ! preg_match( $pattern, $value, $matches ) ) {
+				return false;
+			}
+
+			$type  = $matches[1];
+			$value = $matches[2];
+
+			if ( $value === '' ) {
+				return '';
+			}
+
+			switch ( $type ) {
+				case 'request':
+					if ( isset( $_REQUEST[$value] ) ) { // phpcs:ignore
+						return $_REQUEST[$value]; // phpcs:ignore
+					}
+
+					break;
+				
+				case 'cookie':
+					if ( isset( $_COOKIE[$value] ) ) { // phpcs:ignore
+						return sanitize_text_field( wp_unslash( $_COOKIE[$value] ) ); // phpcs:ignore
+					}
+
+					break;
+
+				case 'shortcode':
+					$shortcode_result = do_shortcode( wp_kses_post( $value ) );
+
+					if ( $shortcode_result && $shortcode_result !== $value ) {
+						return $shortcode_result;
+					}
+
+					break;
+			}
+
+			return '';
 		}
 	}
 }

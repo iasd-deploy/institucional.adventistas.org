@@ -4,6 +4,149 @@ Brand new addon for Elementor Page builder. It provides the set of modules to cr
 
 # ChangeLog
 
+## [2.8.0.2](https://github.com/ZemezLab/jet-elements/archive/2.8.0.2.zip) - 02.02.2026
+* Fixed: restore Masonry layout for Instagram widget after 2.8.0 regression
+
+## [2.8.0.1](https://github.com/ZemezLab/jet-elements/archive/2.8.0.1.zip) - 26.01.2026
+* Fixed: enqueue jet-elements script for section parallax on frontend
+* Fixed: improve section switch scrolling alignment
+
+## [2.8.0](https://github.com/ZemezLab/jet-elements/archive/2.8.0.zip) - 15.01.2026
+* Added: [Crocoblock/suggestions#221](https://github.com/Crocoblock/suggestions/issues/221)
+* Added: [Crocoblock/suggestions#7824](https://github.com/Crocoblock/suggestions/issues/7824)
+* Added: [Crocoblock/suggestions#5679](https://github.com/Crocoblock/suggestions/issues/5679)
+* Added: [Crocoblock/suggestions#6987](https://github.com/Crocoblock/suggestions/issues/6987)
+* Added: [Crocoblock/suggestions#6301](https://github.com/Crocoblock/suggestions/issues/6301)
+* Added: [Crocoblock/suggestions#961](https://github.com/Crocoblock/suggestions/issues/961)
+* Added: [Crocoblock/suggestions#8289](https://github.com/Crocoblock/suggestions/issues/8289)
+* Fixed: removed extra escaping for variable
+
+## [2.7.12.3](https://github.com/ZemezLab/jet-elements/archive/2.7.12.3.zip) - 23.12.2025
+* Fixed: sanitize and escape JSON data-settings attributes in multiple widgets to prevent XSS
+
+## [2.7.12.2](https://github.com/ZemezLab/jet-elements/archive/2.7.12.2.zip) - 15.12.2025
+* Fixed: escape classes in Headline widget to prevent XSS
+* Fixed: minor issue
+
+## [2.7.12.1](https://github.com/ZemezLab/jet-elements/archive/2.7.12.1.zip) - 27.10.2025
+* Fixed: Ensure image URL is properly escaped in Heading widget before print.
+
+## [2.7.12](https://github.com/ZemezLab/jet-elements/archive/2.7.12.zip) - 20.10.2025
+* Added: coordinates (lat/lon) support for Weather widget
+* Fixed: prevent bullet flickering when jumping through multiple sections in Jet Scroll Navigation
+* Fixed: detect dynamic tag values in tooltip check for pricing features
+* Fixed: proper tooltip escaping in pricing features
+* Fixed: improve smooth scroll navigation behavior on mobile devices
+* Update: Changed description field type from TEXTAREA to WYSIWYG in Timeline widgets
+
+## [2.7.11](https://github.com/ZemezLab/jet-elements/archive/2.7.11.zip) - 22.09.2025
+* Added: "Scroll Threshold" setting to jet-scroll-navigation widget
+* Fixed: [Crocoblock/suggestions#7129](https://github.com/Crocoblock/suggestions/issues/7129)
+* Fixed: mobile layout detection in Elementor editor for Horizontal Timeline widget
+* Fixed: pixel transparency detection in Animated Box widget
+* Fixed: Progress bar overflow handling when current value exceeds maximum
+* Fixed: add smooth scroll animation with configurable speed on desktop navigation
+
+## [2.7.10.1](https://github.com/ZemezLab/jet-elements/archive/2.7.10.1.zip) - 09.09.2025
+* Fixed: Countdown Timer widget broken on initial page load
+
+## [2.7.10](https://github.com/ZemezLab/jet-elements/archive/2.7.10.zip) - 21.08.2025
+* Fixed: WP Security Standard warnings
+
+## [2.7.9.1](https://github.com/ZemezLab/jet-elements/archive/2.7.9.1.zip) - 04.08.2025
+* Fixed: XSS vulnerability
+* Fixed: move output buffer cleanup after validation checks
+* Fixed: minor issue
+
+## [2.7.9](https://github.com/ZemezLab/jet-elements/archive/2.7.9.zip) - 28.07.2025
+* Added: [Crocoblock/suggestions#7600](https://github.com/Crocoblock/suggestions/issues/7600)
+* Added: [Crocoblock/suggestions#8176](https://github.com/Crocoblock/suggestions/issues/8176)
+* Update: restrict media control to SVG files
+* Fixed: ignore swipe under 5px to avoid accidental switching in the scroll navigation widgets
+* Fixed: minor issue
+
+## [2.7.8.1](https://github.com/ZemezLab/jet-elements/archive/2.7.8.1.zip) - 10.07.2025
+* Fixed: XSS vulnerability
+
+## [2.7.8](https://github.com/ZemezLab/jet-elements/archive/2.7.8.zip) - 23.06.2025
+* Added: [Crocoblock/suggestions#8144](https://github.com/Crocoblock/suggestions/issues/8144)
+* Added: [Crocoblock/suggestions#2257](https://github.com/Crocoblock/suggestions/issues/2257)
+* Added: [Crocoblock/suggestions#6835](https://github.com/Crocoblock/suggestions/issues/6835)
+* Added: [Crocoblock/suggestions#3992](https://github.com/Crocoblock/suggestions/issues/3992)
+* Added: completed class and styles for full progress bar 
+* Fixed: XSS vulnerability in Button and Download Button widgets
+* Fixed: security vulnerability in AJAX `get_query_control_options` endpoint
+* Fixed: minor issue
+
+## [2.7.7](https://github.com/ZemezLab/jet-elements/archive/2.7.7.zip) - 23.05.2025
+* Added: [Crocoblock/suggestions#1970](https://github.com/Crocoblock/suggestions/issues/1970)
+* Added: [Crocoblock/suggestions#6180](https://github.com/Crocoblock/suggestions/issues/6180)
+* Added: [Crocoblock/suggestions#7239](https://github.com/Crocoblock/suggestions/issues/7239)
+* Added: WPML Media Translation support for image ID replacement
+* Fixed: improve responsive behavior of `Fluid Columns Width` on mobile in the Advanced Carousel widget
+* Fixed: anchor link in the Animated Box widget
+* Fixed: prevent clicks on shuffled slides in the Slider widget
+* Fixed: minor issue
+
+## [2.7.6](https://github.com/ZemezLab/jet-elements/archive/2.7.6.zip) - 02.05.2025
+* Added: [Crocoblock/suggestions#7977](https://github.com/Crocoblock/suggestions/issues/7977)
+* Added: [Crocoblock/suggestions#7456](https://github.com/Crocoblock/suggestions/issues/7456)
+* Added: [Crocoblock/suggestions#4977](https://github.com/Crocoblock/suggestions/issues/4977)
+* Fixed: improve IntersectionObserver handling for scroll navigation widget
+* Fixed: WPML compatibility
+* Fixed: minor issue
+
+## [2.7.5.1](https://github.com/ZemezLab/jet-elements/archive/2.7.5.1.zip) - 08.04.2025
+* Fixed: background setting in the Audio Player widget
+
+## [2.7.5](https://github.com/ZemezLab/jet-elements/archive/2.7.5.zip) - 31.04.2025
+* Update: compatibility with Elementor 3.26
+* Added: optimized Google Maps loading with defer
+* Fixed: compatibility Elementor Loop Carousel with Audio Player widget
+* Fixed: switch scratch type in the Animated Box widget for Jet Popup
+* Fixed: minor issue
+
+## [2.7.4.2](https://github.com/ZemezLab/jet-elements/archive/2.7.4.2.zip) - 14.03.2025
+* Added: validation for widget_id: ensuring it's a string with a valid format
+* Fixed: prevent unauthorized access to templates in REST API.
+
+## [2.7.4.1](https://github.com/ZemezLab/jet-elements/archive/2.7.4.1.zip) - 27.02.2025
+* Fixed: apply correct styles in the Advanced Map widget
+* Fixed: prevents duplicate content rendering in the Dropbar widget
+
+## [2.7.4](https://github.com/ZemezLab/jet-elements/archive/2.7.4.zip) - 21.02.2025
+* Added: [Crocoblock/suggestions#7958](https://github.com/Crocoblock/suggestions/issues/7958)
+* Added: option `Use Ajax Loading for Template` in the Dropbar widget
+* Added: SVG icons for control buttons in the Video Player widget
+* Update: Google Maps AdvancedMarkerElement implementation
+* Update: Instagram Gallery widget 
+* Fixed: centered line in the Vertical Timeline widget
+* Fixed: animate cards for mobile device in the Vertical Timeline widget
+* Fixed: parallax section with Elements caching active
+* Fixed: minor issue
+
+## [2.7.3](https://github.com/ZemezLab/jet-elements/archive/2.7.3.zip) - 17.01.2025
+* Added: [Crocoblock/suggestions#7931](https://github.com/Crocoblock/suggestions/issues/7931)
+* Added: [Crocoblock/suggestions#7936](https://github.com/Crocoblock/suggestions/issues/7936)
+* Fixed:  Audio Player widget formatting in Elementor tabs
+* Fixed:  Instagram post link
+* Fixed:  escaping attribute values
+* Fixed:  compatibility Audio Player widget with Map Listing
+* Fixed:  minor issue
+
+
+## [2.7.2.1](https://github.com/ZemezLab/jet-elements/archive/2.7.2.1.zip) - 18.12.2024
+* Fixed: [compatibility with JetEngine Query Gateway](https://github.com/Crocoblock/issues-tracker/issues/13589)
+
+## [2.7.2](https://github.com/ZemezLab/jet-elements/archive/2.7.2.zip) - 09.12.2024
+* Added: enqueue parallax stylesheets
+* Fixed: Advanced Carousel navigation
+* Fixed: Video Player with fullwidth container
+* Update: migration from deprecated schemes to the new globals & compatibility with Elementor 3.26
+* Update: Instagram API
+* Delete: Waypoints JS
+
+
 ## [2.7.1.1](https://github.com/ZemezLab/jet-elements/archive/2.7.1.1.zip) - 01.11.2024
 * Added: [Crocoblock/suggestions#7831](https://github.com/Crocoblock/suggestions/issues/7831)
 * Added: [Crocoblock/suggestions#7836](https://github.com/Crocoblock/suggestions/issues/7836)

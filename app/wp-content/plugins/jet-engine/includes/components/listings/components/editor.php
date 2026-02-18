@@ -17,7 +17,7 @@ class Editor {
 	 * Constructor for the class
 	 */
 	public function __construct() {
-		
+
 		add_filter( 'jet-engine/templates/localized-settings', [ $this, 'add_button_template' ] );
 		add_filter( 'jet-engine/templates/editor-views-list', [ $this, 'component_view_link' ], 10, 3 );
 		add_filter( 'jet-engine/templates/edit-settings-button', [ $this, 'component_settings_button' ], 10, 2 );
@@ -30,7 +30,7 @@ class Editor {
 
 	/**
 	 * AJAX callback to set component settings
-	 * 
+	 *
 	 * @return [type] [description]
 	 */
 	public function ajax_set_settings() {
@@ -43,11 +43,13 @@ class Editor {
 
 		$nonce_action = jet_engine()->listings->post_type->get_nonce_action();
 
+		// phpcs:disable
 		if ( empty( $_REQUEST['_nonce'] ) || ! wp_verify_nonce( $_REQUEST['_nonce'], $nonce_action ) ) {
 			wp_send_json_error( __( 'Page is expired, please reload it and try again', 'jet-engine' ) );
 		}
+		// phpcs:enable
 
-		$settings = ! empty( $_REQUEST['settings'] ) ? $_REQUEST['settings'] : [];
+		$settings = ! empty( $_REQUEST['settings'] ) ? $_REQUEST['settings'] : []; // phpcs:ignore
 		$component = jet_engine()->listings->components->get( $component_id, 'id' );
 
 		$props  = ! empty( $settings['component_controls_list'] ) ? $settings['component_controls_list'] : [];
@@ -60,7 +62,7 @@ class Editor {
 
 		do_action( 'jet-engine/listings/components/update-settings', $component );
 
-		wp_send_json_success( 
+		wp_send_json_success(
 			jet_engine()->listings->post_type->admin_screen->get_edit_url( $template_view, $component_id )
 		);
 
@@ -68,7 +70,7 @@ class Editor {
 
 	/**
 	 * AJAX callback to get component settings
-	 * 
+	 *
 	 * @return [type] [description]
 	 */
 	public function ajax_get_settings() {
@@ -81,9 +83,11 @@ class Editor {
 
 		$nonce_action = jet_engine()->listings->post_type->get_nonce_action();
 
+		// phpcs:disable
 		if ( empty( $_REQUEST['_nonce'] ) || ! wp_verify_nonce( $_REQUEST['_nonce'], $nonce_action ) ) {
 			wp_send_json_error( __( 'Page is expired, please reload it and try again', 'jet-engine' ) );
 		}
+		// phpcs:enable
 
 		$component = jet_engine()->listings->components->get( $component_id, 'id' );
 
@@ -98,7 +102,7 @@ class Editor {
 
 	/**
 	 * Change edit settings button for the component
-	 * 
+	 *
 	 * @return [type] [description]
 	 */
 	public function component_settings_button( $button, $post_id ) {
@@ -124,14 +128,15 @@ class Editor {
 	}
 
 	public function render_settings_template() {
+		// phpcs:disable
 		?>
 		<script type="text/x-template" id="jet-engine-component-edit-settings-tmpl">
 			<div class="jet-engine-component-settings">
 				<div class="jet-engine-component-settings__nav">
 					<a
 						href="#"
-						:class="{ 
-							'jet-engine-component-settings__nav-link': true, 
+						:class="{
+							'jet-engine-component-settings__nav-link': true,
 							'is-active': 'content' === componentControlsMode
 						}"
 						@click.prevent="componentControlsMode = 'content'"
@@ -139,8 +144,8 @@ class Editor {
 					|
 					<a
 						href="#"
-						:class="{ 
-							'jet-engine-component-settings__nav-link': true, 
+						:class="{
+							'jet-engine-component-settings__nav-link': true,
 							'is-active': 'style' === componentControlsMode
 						}"
 						@click.prevent="componentControlsMode = 'style'"
@@ -305,16 +310,19 @@ class Editor {
 			</div>
 		</script>
 		<?php
+		// phpcs:enable
 	}
 
 	/**
 	 * Add components link to the views tab
-	 * 
+	 *
 	 * @param  [type] $links  [description]
 	 * @param  [type] $counts [description]
 	 * @return [type]         [description]
 	 */
 	public function component_view_link( $links, $counts, $base_url ) {
+
+		// phpcs:disable
 		$links['component'] = sprintf(
 			'<a href="%1$s" %3$s>%2$s <span class="count">(%4$s)</span></a>',
 			add_query_arg( [ 'entry_type' => 'component' ], $base_url ),
@@ -322,16 +330,26 @@ class Editor {
 			( ! empty( $_GET['entry_type'] ) && 'component' === $_GET['entry_type'] ) ? 'class="current" aria-current="page"' : '',
 			isset( $counts['component'] ) ? $counts['component']->posts_count : 0
 		);
+		// phpcs:enable
 
 		return $links;
 	}
 
 	/**
 	 * Editor assets
-	 * 
+	 *
 	 * @return [type] [description]
 	 */
 	public function editor_assets() {
+
+		/**
+		 * Chek we're currently on Listing Items list page.
+		 * Because 'jet-engine/templates/before-listing-assets' hook fires also in Elementor editor
+		 * @see https://github.com/Crocoblock/issues-tracker/issues/13481
+		 */
+		if ( ! jet_engine()->listings->post_type->is_listings_edit_page() ) {
+			return;
+		}
 
 		$module_data = jet_engine()->framework->get_included_module_data( 'cherry-x-vue-ui.php' );
 		$ui          = new \CX_Vue_UI( $module_data );
@@ -360,6 +378,15 @@ class Editor {
 	 */
 	public function add_button_template( $data ) {
 
+		/**
+		 * Chek we're currently on Listing Items list page.
+		 * Because 'jet-engine/templates/before-listing-assets' hook fires also in Elementor editor
+		 * @see https://github.com/Crocoblock/issues-tracker/issues/13481
+		 */
+		if ( ! jet_engine()->listings->post_type->is_listings_edit_page() ) {
+			return $data;
+		}
+
 		$data['addNewComponent'] = sprintf(
 			'<a href="#" class="page-title-action is-new-component">%1$s</a>',
 			__( 'Add New Component', 'jet-engine' )
@@ -373,11 +400,11 @@ class Editor {
 
 	/**
 	 * Render new component popup template in footer
-	 * 
+	 *
 	 * @return [type] [description]
 	 */
 	public function component_popup_template() {
-		
+
 		$action = jet_engine()->listings->post_type->admin_screen->get_listing_popup_action();
 		$views  = jet_engine()->listings->post_type->get_listing_views();
 
@@ -391,7 +418,7 @@ class Editor {
 				<h3 class="jet-listings-popup__heading"><?php
 					esc_html_e( 'Setup Component', 'jet-engine' );
 				?></h3>
-				<form class="jet-listings-popup__form is-component-popup" id="jet_engine_new_component" method="POST" action="<?php echo $action; ?>" >
+				<form class="jet-listings-popup__form is-component-popup" id="jet_engine_new_component" method="POST" action="<?php echo esc_attr( $action ); ?>" >
 					<input type="hidden" name="template_entry_type" value="component">
 					<input type="hidden" name="listing_source" value="post">
 					<div class="jet-listings-popup__form-row">
@@ -402,10 +429,10 @@ class Editor {
 						<label for="component_view_type"><?php esc_html_e( 'Component view:', 'jet-engine' ); ?></label>
 						<select id="component_view_type" name="listing_view_type" class="jet-listings-popup__control"><?php
 							foreach ( $views as $view_key => $view_label ) {
-								printf( 
+								printf(
 									'<option value="%1$s">%2$s</option>',
-									$view_key,
-									$view_label
+									esc_attr( $view_key ),
+									esc_html( $view_label )
 								);
 							}
 						?></select>
@@ -430,10 +457,10 @@ class Editor {
 					?></h3>
 					<div class="jet-engine-component-settings__actions">
 						<button type="button" class="button button-primary jet-engine-component-save"><?php
-							_e( 'Save', 'jet-engine' );
+							esc_html_e( 'Save', 'jet-engine' );
 						?></button>
 						<button type="button" class="button button-secondary jet-engine-component-save open-editor"><?php
-							_e( 'Save & Go To Editor', 'jet-engine' );
+							esc_html_e( 'Save & Go To Editor', 'jet-engine' );
 						?></button>
 					</div>
 				</div>

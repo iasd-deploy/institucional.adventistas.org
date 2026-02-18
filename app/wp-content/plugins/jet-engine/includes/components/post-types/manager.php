@@ -76,7 +76,27 @@ if ( ! class_exists( 'Jet_Engine_CPT' ) ) {
 			add_action( 'jet-engine/meta-boxes/register-instances', array( $this, 'init_meta_boxes' ) );
 			add_action( 'current_screen', array( $this, 'init_edit_links' ) );
 
+			add_action( 'admin_enqueue_scripts', function() {
+				$mime_options = array_map(
+					function( $mime ) {
+						return array(
+							'value' => $mime,
+							'label' => $mime,
+						);
+					}, array_values( get_allowed_mime_types() )
+				);
+				wp_localize_script(
+					'cx-vue-ui',
+					'JetEngineMediaConfig',
+					array(
+						'mime_types' => $mime_options,
+					)
+				);
+			}, 20 );
+
 			require_once $this->component_path( 'custom-tables/manager.php' );
+			require_once jet_engine()->plugin_path( 'includes/components/post-types/mcp/controller.php' );
+			new \Jet_Engine\Post_Types\MCP\Controller();
 
 		}
 
@@ -711,7 +731,7 @@ if ( ! class_exists( 'Jet_Engine_CPT' ) ) {
 					'label'       => __( 'Not found', 'jet-engine' ),
 					'description' => __( 'Default is No posts found/No pages found', 'jet-engine' ),
 					'is_singular' => false,
-					'default'     => _x( 'Parent %s%', 'Default value for parent_item_colon label', 'jet-engine' ),
+					'default'     => _x( 'No %s% found', 'Default value for not_found label', 'jet-engine' ),
 				),
 				array(
 					'name'        => 'not_found_in_trash',

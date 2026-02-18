@@ -38,6 +38,6 @@ $classes = implode( ' ', $class_array );
 $attrs = implode( ' ', $attr_array );
 ?>
 
-<div class="<?php echo $classes; ?>" <?php echo $attrs; ?> <?php echo $data_settings; ?>><?php
+<div class="<?php echo esc_attr( $classes ); ?>" <?php echo $attrs; // phpcs:ignore ?> <?php echo $data_settings; // phpcs:ignore ?>><?php
 	$this->render_gallery();
 ?></div>

@@ -130,6 +130,7 @@
 				
 				control.collapsed = false;
 				control.id        = this.getRandomID();
+				control._id       = 'uid' + control.id;
 
 				this.settings[ where ].push( control );
 
@@ -166,6 +167,7 @@
 				newControl.control_label = newControl.control_label + ' (Copy)';
 				newControl.control_name  = newControl.control_name + '_copy';
 				newControl.id            = this.getRandomID();
+				newControl._id           = 'uid' + newControl.id;
 
 				this.settings[ where ].splice( index + 1, 0, newControl );
 
@@ -285,7 +287,7 @@
 
 		setPopup( $popup, triggerEvent, defaultArgs ) {
 
-			if ( triggerEvent.target.classList.contains( 'is-new-component' ) ) {
+			if ( triggerEvent && triggerEvent.target.classList.contains( 'is-new-component' ) ) {
 				$popup = $( '.jet-listings-popup.is-component-popup' );
 			}
 

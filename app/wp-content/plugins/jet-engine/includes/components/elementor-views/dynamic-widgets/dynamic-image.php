@@ -153,6 +153,47 @@ class Jet_Listing_Dynamic_Image_Widget extends \Jet_Listing_Dynamic_Widget {
 		);
 
 		$this->add_control(
+			'add_image_caption',
+			[
+				'label'   => __( 'Add Image Caption', 'jet-engine' ),
+				'type'    => Controls_Manager::SWITCHER,
+				'default' => '',
+			]
+		);
+
+		$this->add_control(
+			'image_caption_position',
+			[
+				'label'   => __( 'Image Caption Position', 'jet-engine' ),
+				'type'    => Controls_Manager::SELECT,
+				'default' => 'after',
+				'options' => [
+					'after'  => __( 'After', 'jet-engine' ),
+					'before' => __( 'Before', 'jet-engine' ),
+				],
+				'condition'   => [
+					'add_image_caption' => 'yes',
+				],
+			]
+		);
+
+		$this->add_control(
+			'image_caption',
+			[
+				'label'       => __( 'Image Caption Text', 'jet-engine' ),
+				'label_block' => true,
+				'type'        => Controls_Manager::TEXT,
+				'default'     => '',
+				'dynamic'     => [
+					'active' => 'yes',
+				],
+				'condition' => [
+					'add_image_caption' => 'yes',
+				],
+			]
+		);
+
+		$this->add_control(
 			'lazy_load_image',
 			[
 				'label'   => __( 'Lazy Load', 'jet-engine' ),
@@ -306,6 +347,8 @@ class Jet_Listing_Dynamic_Image_Widget extends \Jet_Listing_Dynamic_Widget {
 				],
 				'selectors'  => [
 					$this->css_selector() => 'justify-content: {{VALUE}};',
+					$this->css_selector( '__figure' ) => 'align-items: {{VALUE}};',
+					$this->css_selector( ' a' ) => 'display:flex;justify-content: {{VALUE}};',
 				],
 			]
 		);
@@ -504,6 +547,173 @@ class Jet_Listing_Dynamic_Image_Widget extends \Jet_Listing_Dynamic_Widget {
 					$this->css_selector( ' img' ) => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				],
 			]
+		);
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_caption_style',
+			[
+				'label'      => __( 'Caption', 'jet-engine' ),
+				'tab'        => Controls_Manager::TAB_STYLE,
+				'show_label' => false,
+			]
+		);
+
+		$this->add_control(
+			'caption_color',
+			array(
+				'label' => __( 'Color', 'jet-engine' ),
+				'type' => Controls_Manager::COLOR,
+				'selectors' => array(
+					$this->css_selector( '__caption' ) => 'color: {{VALUE}}',
+				),
+			)
+		);
+
+		$this->add_group_control(
+			Group_Control_Typography::get_type(),
+			array(
+				'name'      => 'caption_typography',
+				'selector'  => $this->css_selector( '__caption' ),
+			)
+		);
+
+		$this->add_responsive_control(
+			'caption_max_width',
+			[
+				'label' => esc_html__( 'Max Width', 'jet-engine' ),
+				'type' => Controls_Manager::SLIDER,
+				'default' => [
+					'unit' => '%',
+				],
+				'separator' => 'before',
+				'tablet_default' => [
+					'unit' => '%',
+				],
+				'mobile_default' => [
+					'unit' => '%',
+				],
+				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( [ 'px', '%', 'em', 'rem', 'custom' ] ),
+				'range' => [
+					'%' => [
+						'min' => 1,
+						'max' => 100,
+					],
+					'px' => [
+						'min' => 1,
+						'max' => 1000,
+					],
+					'vw' => [
+						'min' => 1,
+						'max' => 100,
+					],
+				],
+				'selectors' => [
+					$this->css_selector( '__caption' )   => 'max-width: {{SIZE}}{{UNIT}};',
+				],
+			]
+		);
+
+		$this->add_responsive_control(
+			'caption_alignment',
+			[
+				'label'   => __( 'Caption Alignment', 'jet-engine' ),
+				'type'    => Controls_Manager::CHOOSE,
+				'default' => 'flex-start',
+				'options' => [
+					'flex-start' => [
+						'title' => esc_html__( 'Start', 'jet-engine' ),
+						'icon'  => ! is_rtl() ? 'eicon-h-align-left' : 'eicon-h-align-right',
+					],
+					'center' => [
+						'title' => esc_html__( 'Center', 'jet-engine' ),
+						'icon'  => 'eicon-h-align-center',
+					],
+					'flex-end' => [
+						'title' => esc_html__( 'End', 'jet-engine' ),
+						'icon'  => ! is_rtl() ? 'eicon-h-align-right' : 'eicon-h-align-left',
+					],
+				],
+				'selectors'  => [
+					$this->css_selector( '__caption' ) => 'align-self: {{VALUE}};',
+				],
+				'condition' => [
+					'caption_max_width[size]!' => '',
+				],
+			]
+		);
+
+		$this->add_responsive_control(
+			'caption_text_alignment',
+			array(
+				'label'       => esc_html__( 'Caption Text Alignment', 'jet-engine' ),
+				'type'        => Controls_Manager::CHOOSE,
+				'default'     => 'left',
+				'options'     => array(
+					'left'    => array(
+						'title' => esc_html__( 'Left', 'jet-engine' ),
+						'icon'  => 'eicon-text-align-left',
+					),
+					'center' => array(
+						'title' => esc_html__( 'Center', 'jet-engine' ),
+						'icon'  => 'eicon-text-align-center',
+					),
+					'right' => array(
+						'title' => esc_html__( 'Right', 'jet-engine' ),
+						'icon'  => 'eicon-text-align-right',
+					),
+				),
+				'selectors'  => array(
+					$this->css_selector( '__caption' ) => 'text-align: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'caption_padding',
+			array(
+				'label'      => __( 'Padding', 'jet-engine' ),
+				'type'       => Controls_Manager::DIMENSIONS,
+				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( array( 'px', '%', 'em', 'rem', 'custom' ) ),
+				'selectors'  => array(
+					$this->css_selector( '__caption' ) => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'caption_margin',
+			array(
+				'label'      => __( 'Margin', 'jet-engine' ),
+				'type'       => Controls_Manager::DIMENSIONS,
+				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( array( 'px', '%', 'em', 'rem', 'custom' ) ),
+				'selectors'  => array(
+					$this->css_selector( '__caption' ) => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_group_control(
+			Group_Control_Border::get_type(),
+			array(
+				'name'           => 'caption_border',
+				'label'          => __( 'Border', 'jet-engine' ),
+				'placeholder'    => '1px',
+				'selector'       => $this->css_selector( '__caption' ),
+			)
+		);
+
+		$this->add_responsive_control(
+			'caption_border_radius',
+			array(
+				'label'      => __( 'Border Radius', 'jet-engine' ),
+				'type'       => Controls_Manager::DIMENSIONS,
+				'size_units' => jet_engine()->elementor_views->add_custom_size_unit( array( 'px', '%' ) ),
+				'selectors'  => array( 
+					$this->css_selector( '__caption' ) => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
 		);
 
 		$this->end_controls_section();

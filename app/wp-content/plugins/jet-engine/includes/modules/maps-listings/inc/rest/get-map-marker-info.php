@@ -33,6 +33,27 @@ class Get_Map_Marker_Info extends \Jet_Engine_Base_API_Endpoint {
 			) );
 		}
 
+		// For private listings or posts - also check user permissions.
+		$listing_status = get_post_status( $listing_id );
+		$post_status    = get_post_status( $post_id );
+
+		if ( in_array( $listing_status, array( 'private', 'draft', 'pending' ), true )
+			|| in_array( $post_status, array( 'private', 'draft', 'pending' ), true )
+		) {
+			if ( ! current_user_can( 'edit_post', $post_id )
+				|| ! current_user_can( 'edit_post', $listing_id )
+			) {
+				return rest_ensure_response( array(
+					'success' => false,
+					'html'    => __( 'You do not have permissions to view this content', 'jet-engine' ),
+				) );
+			}
+		}
+
+		if ( false !== strpos( $post_id, '-' ) ) {
+			$this->maybe_apply_jet_smart_filters( $params['jsf'] ?? '' );
+		}
+
 		$queried_id = 0;
 
 		// Set the current queried object.
@@ -91,7 +112,7 @@ class Get_Map_Marker_Info extends \Jet_Engine_Base_API_Endpoint {
 		$additional_attrs = apply_filters( 'jet-engine/maps-listings/map-popup-additional-attrs', $additional_attrs, $params, $post_obj );
 
 		$content = sprintf(
-			'<div class="jet-map-popup-%1$s jet-listing-dynamic-post-%1$s" data-item-object="%1$s" data-additional-map-popup-data="%3$s">%2$s</div>',
+			'<div class="jet-map-popup-%1$s jet-listing-dynamic-post-%1$s" data-item-object="%1$s" data-render-type="jet-engine-maps" data-additional-map-popup-data="%3$s">%2$s</div>',
 			$post_id,
 			$content,
 			! empty( $additional_attrs ) ? htmlspecialchars( json_encode( $additional_attrs ) ) : '{}'
@@ -109,6 +130,34 @@ class Get_Map_Marker_Info extends \Jet_Engine_Base_API_Endpoint {
 
 	}
 
+	public function maybe_apply_jet_smart_filters( string $url ) {
+		if ( empty( $url ) ) {
+			return;
+		}
+
+		if ( ! function_exists( 'jet_smart_filters' ) ) {
+			return;
+		}
+
+		$server_uri = $_SERVER['REQUEST_URI'];
+
+		global $wp;
+
+		$_SERVER['REQUEST_URI'] = preg_replace(
+			site_url(),
+			'',
+			$url
+		);
+
+		$wp->parse_request();
+		$wp->query_posts();
+		wp_reset_postdata();
+
+		jet_smart_filters()->render->apply_filters_from_permalink( $wp );
+
+		$_SERVER['REQUEST_URI'] = $server_uri;
+	}
+
 	/**
 	 * Returns endpoint request method - GET/POST/PUT/DELTE
 	 *
@@ -121,7 +170,7 @@ class Get_Map_Marker_Info extends \Jet_Engine_Base_API_Endpoint {
 	/**
 	 * Check user access to current end-popint
 	 * This is public endpoint so it always accessible
-	 * 
+	 *
 	 * @return bool
 	 */
 	public function permission_callback( $request ) {

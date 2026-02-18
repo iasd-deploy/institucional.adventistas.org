@@ -164,7 +164,12 @@ class Listing_Grid extends Base {
 			'item'        => '> .jet-listing-grid > .jet-listing-grid__items > .jet-listing-grid__item',
 			'loader'      => '.jet-listing-grid__loader',
 			'loader-text' => '.jet-listing-grid__loader-text',
-			'slider-list' => '.jet-listing-grid__slider > .jet-listing-grid__items > .slick-list',
+
+			// This selector format is required for cases after filtering the slick slider,
+			// when the slider fails to initialize properly
+			'slider'      => '> .jet-listing-grid > [data-slider_options] > .jet-listing-grid__items',
+
+			'slider-list' => '.jet-listing-grid__slider > .slick-slider > .slick-list',
 			'slider-icon' => '.jet-listing-grid__slider-icon',
 			'prev-arrow'  => '.jet-listing-grid__slider-icon.prev-arrow',
 			'next-arrow'  => '.jet-listing-grid__slider-icon.next-arrow',
@@ -190,27 +195,35 @@ class Listing_Grid extends Base {
 		);
 
 		$this->register_jet_control(
-			'columns',
+			'list_tags_selection',
 			[
 				'tab'     => 'content',
-				'label'   => esc_html__( 'Columns', 'jet-engine' ),
+				'label'   => esc_html__( 'Wrapper Tag', 'jet-engine' ),
 				'type'    => 'select',
 				'inline'  => true,
-				'default' => 3,
+				'default' => 'div_div',
 				'options' => array(
-					1  => 1,
-					2  => 2,
-					3  => 3,
-					4  => 4,
-					5  => 5,
-					6  => 6,
-					7  => 7,
-					8  => 8,
-					9  => 9,
-					10 => 10,
-					'auto' => __( 'Auto', 'jet-engine' ),
+					'div_div' => __( 'Default (DIV > DIV)', 'jet-engine' ),
+					'ul_li'   => __( 'Unordered list( UL > LI)', 'jet-engine' ),
+					'ol_li'   => __( 'Ordered list (OL > LI)', 'jet-engine' ),
 				),
-				'css'     => [
+			],
+		);
+
+		$this->register_jet_control(
+			'columns',
+			[
+				'tab'          => 'content',
+				'label'        => esc_html__( 'Columns', 'jet-engine' ),
+				'description'  => esc_html__( 'Use "auto" to enable automatic column calculation.', 'jet-engine' ),
+				'type'         => 'number',
+				'units'        => false,
+				'inline'       => true,
+				'hasVariables' => false,
+				'default'      => 3,
+				'min'          => 1,
+				'max'          => 12,
+				'css'          => [
 					[
 						'property' => '--columns',
 						'selector' => $css_scheme['items'],
@@ -474,6 +487,19 @@ class Listing_Grid extends Base {
 		);
 
 		$this->register_jet_control(
+			'carousel_enabled_note',
+			[
+				'tab'      => 'content',
+				'label'    => esc_html__( 'Note: You selected a list tag for the listing. The slider adds wrappers, which make the list markup invalid by W3C standards.', 'jet-engine' ),
+				'type'     => 'info',
+				'required' => [
+					[ 'list_tags_selection', '=', [ 'ul_li', 'ol_li' ] ],
+					[ 'carousel_enabled', '=', true ],
+				],
+			]
+		);
+
+		$this->register_jet_control(
 			'slides_to_scroll',
 			[
 				'tab'      => 'content',
@@ -483,7 +509,6 @@ class Listing_Grid extends Base {
 				'max'      => 6,
 				'default'  => 1,
 				'required' => [
-					[ 'columns', '!=', 1 ],
 					[ 'carousel_enabled', '=', true ],
 				],
 			]
@@ -554,7 +579,7 @@ class Listing_Grid extends Base {
 				'label'    => esc_html__( 'Autoplay Speed', 'jet-engine' ),
 				'type'     => 'number',
 				'min'      => 0,
-				'max'      => 10000,
+				'max'      => 100000,
 				'default'  => 5000,
 				'required' => [
 					[ 'carousel_enabled', '=', true ],
@@ -697,8 +722,8 @@ class Listing_Grid extends Base {
 						'selector' => $css_scheme['items'],
 					],
 					[
-						'property' => 'column-gap',
-						'selector' => $css_scheme['items'],
+						'property' => '--column-gap',
+						'selector' => $css_scheme['slider'],
 					],
 				],
 			]
@@ -718,8 +743,8 @@ class Listing_Grid extends Base {
 						'selector' => $css_scheme['items'],
 					],
 					[
-						'property' => 'row-gap',
-						'selector' => $css_scheme['items'],
+						'property' => '--row-gap',
+						'selector' => $css_scheme['slider'],
 					],
 				]
 			]
@@ -1375,7 +1400,7 @@ class Listing_Grid extends Base {
 		parent::render();
 
 		$settings          = $this->parse_jet_render_attributes( $this->get_jet_settings() );
-		$listing_id        = $settings['lisitng_id'];
+		$listing_id        = absint( $settings['lisitng_id'] );
 		$has_dynamic_value = jet_engine()->bricks_views->listing->has_dynamic_value_in_controls( $listing_id );
 
 		$this->set_attribute( '_root', 'class', 'brxe-' . $this->id );
@@ -1407,12 +1432,21 @@ class Listing_Grid extends Base {
 
 		$render->before_listing_grid();
 
-		echo "<div {$this->render_attributes( '_root' )}>";
+		echo "<div {$this->render_attributes( '_root' )}>"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		jet_engine()->bricks_views->listing->render_assets( $listing_id, $has_dynamic_value );
 		$render->render_content();
 		echo "</div>";
 
 		$render->after_listing_grid();
+	}
+
+	public function get_jet_settings( $setting = null, $default = false ) {
+		// Disable AJAX-based options in the Builder (non-frontend) environment.
+		if ( ! $this->is_frontend ) {
+			$this->settings['lazy_load'] = false;
+		}
+
+		return parent::get_jet_settings( $setting, $default );
 	}
 
 	public function parse_jet_render_attributes( $attrs = [] ) {
@@ -1423,7 +1457,7 @@ class Listing_Grid extends Base {
 		$attrs['not_found_message'] = $attrs['not_found_message'] ?? '';
 		$attrs['_id']               = $this->id;
 
-		return $attrs;
+		return parent::parse_jet_render_attributes( $attrs );
 	}
 
 	public function css_selector( $mod = null ) {

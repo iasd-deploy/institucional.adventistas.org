@@ -21,7 +21,12 @@ class User_Geolocation extends \Elementor\Jet_Smart_Filters_Base_Widget {
 		return 'jet-engine-icon-user-geolocation';
 	}
 
-	public function get_help_url() {}
+	public function get_custom_help_url() {
+		return jet_smart_filters()->widgets->prepare_help_url(
+			'https://crocoblock.com/knowledge-base/jetengine/how-to-set-geo-search-based-on-user-geolocation/',
+			$this->get_name()
+		);	
+	}
 
 	protected function register_controls() {
 
@@ -39,7 +44,7 @@ class User_Geolocation extends \Elementor\Jet_Smart_Filters_Base_Widget {
 			array(
 				'label' => '',
 				'type' => Controls_Manager::RAW_HTML,
-				'raw' => sprintf( __( '<b>Please note!</b><br><div class="elementor-control-field-description">This filter is compatible only with queries from <a href="%s" target="_blank">JetEngine Query Builder</a>. ALso you need to set up <a href="https://crocoblock.com/knowledge-base/jetengine/how-to-set-geo-search-based-on-user-geolocation/" target="_blank">Geo Query</a> in your query settings to meke filter to work correctly.</div>', 'jet-engine' ), $query_builder_link ),
+				'raw' => sprintf( __( '<b>Please note!</b><br><div class="elementor-control-field-description">This filter is compatible only with queries from <a href="%s" target="_blank">JetEngine Query Builder</a>. ALso you need to set up <a href="https://crocoblock.com/knowledge-base/jetengine/how-to-set-geo-search-based-on-user-geolocation/" target="_blank">Geo Query</a> in your query settings to make the filter work correctly.</div>', 'jet-engine' ), $query_builder_link ),
 			)
 		);
 

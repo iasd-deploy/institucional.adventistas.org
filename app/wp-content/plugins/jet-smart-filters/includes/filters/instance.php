@@ -91,10 +91,11 @@ if ( ! class_exists( 'Jet_Smart_Filters_Filter_Instance' ) ) {
 		 */
 		public function get_current_filter_value( $args = array() ) {
 
+			$request   = jet_smart_filters()->data->get_request();
 			$query_var = $this->get_query_var( $args );
 
-			if ( isset( $_REQUEST[$query_var] ) ) {
-				return jet_smart_filters()->utils->stripslashes( $_REQUEST[$query_var] );
+			if ( isset( $request[$query_var] ) ) {
+				return jet_smart_filters()->utils->stripslashes( $request[$query_var] );
 			}
 
 			if ( isset( $args['current_value'] ) ) {
@@ -164,10 +165,15 @@ if ( ! class_exists( 'Jet_Smart_Filters_Filter_Instance' ) ) {
 				$atts['data-inputs-separators'] = $args['inputs_separators_enabled'];
 			}
 
-			if ( isset( $args['predefined_value'] ) ) {
+			if ( ! empty( $args['predefined_value'] ) ) {
 				$atts['data-predefined-value'] = $args['predefined_value'];
 			}
 
+			if ( isset( $args['sm_id'] ) ) {
+				$atts['data-sm-id'] = $args['sm_id'];
+			}
+
+			// phpcs:ignore
 			echo $this->get_atts_string( $atts );
 		}
 
@@ -181,8 +187,10 @@ if ( ! class_exists( 'Jet_Smart_Filters_Filter_Instance' ) ) {
 			foreach ( $atts as $key => $value ) {
 
 				if ( is_array( $value ) ) {
-					$value = htmlspecialchars( json_encode( $value ) );
+					$value = wp_json_encode( $value );
 				}
+
+				$value = esc_attr( $value );
 
 				$result[] = sprintf( '%1$s="%2$s"', $key, $value );
 			}
@@ -200,6 +208,8 @@ if ( ! class_exists( 'Jet_Smart_Filters_Filter_Instance' ) ) {
 			}
 
 			$args = $this->args;
+
+			do_action( 'jet-smart-filters/filters/before-render', $args, $this );
 
 			if ( ! empty( $args['is_hierarchical'] ) ) {
 

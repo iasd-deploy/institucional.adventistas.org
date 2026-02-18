@@ -69,7 +69,7 @@ class Slack extends OpenGraph {
 	 * @return void
 	 */
 	public function enhanced_data_tag( $key, $value ) {
-		self::$data_tag_count++;
+		++self::$data_tag_count;
 
 		$this->tag( sprintf( 'twitter:label%d', self::$data_tag_count ), $key );
 		$this->tag( sprintf( 'twitter:data%d', self::$data_tag_count ), $value );
@@ -294,6 +294,10 @@ class Slack extends OpenGraph {
 
 		/**
 		 * Filter: 'rank_math/frontend/time_to_read_content' - Change the text to calculate the time to read.
+		 *
+		 * Note: Avoid using `do_shortcode()` or `the_content` here, as running complex
+		 * shortcodes (PHP logic, scripts, styles) can break the site. If shortcode
+		 * parsing is needed, handle it via a filter instead.
 		 */
 		$content = $this->do_filter( 'frontend/time_to_read_content', wp_strip_all_tags( $post->post_content ) );
 
@@ -353,7 +357,13 @@ class Slack extends OpenGraph {
 		$data = [];
 
 		$author = $wp_query->get_queried_object();
-		if ( ! $author ) {
+		if ( ! $author || ! is_object( $author ) || ! isset( $author->ID ) ) {
+			return $data;
+		}
+
+		// Check with get_userdata() to avoid issues with guest authors.
+		$userdata = get_userdata( $author->ID );
+		if ( ! $userdata || ! is_object( $userdata ) || ! isset( $userdata->ID ) ) {
 			return $data;
 		}
 
@@ -362,5 +372,4 @@ class Slack extends OpenGraph {
 
 		return $data;
 	}
-
 }

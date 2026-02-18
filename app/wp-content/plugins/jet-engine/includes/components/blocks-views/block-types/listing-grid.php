@@ -35,6 +35,10 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Grid' ) ) {
 					'type' => 'string',
 					'default' => '',
 				),
+				'list_tags_selection' => array(
+					'type' => 'string',
+					'default' => '',
+				),
 				'columns' => array(
 					'default' => 3,
 					'type'    => array( 'string', 'number' ),
@@ -410,6 +414,7 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Grid' ) ) {
 					'type'       => 'toggle',
 					'label'      => esc_html__( 'Correct first/last row gap', 'jet-engine' ),
 					'help'       => esc_html__( 'Correct first/last row Ensure that the first and last rows do not have unnecessary gap on top/bottom.', 'jet-engine' ),
+					'is_legacy'  => true,
 					'return_value' => array(
 						'true'  => 'true',
 						'false' => 'false',
@@ -718,9 +723,11 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Grid' ) ) {
 
 		public function slider_before( $settings = array(), $widget = null ) {
 
+			// phpcs:disable WordPress.Security.NonceVerification
 			if ( empty( $_REQUEST['context'] ) || 'edit' !== $_REQUEST['context'] || empty( $_REQUEST['attributes'] ) ) {
 				return;
 			}
+			// phpcs:enable WordPress.Security.NonceVerification
 
 			if ( ! $widget->is_carousel_enabled( $settings ) ) {
 				return;
@@ -730,39 +737,41 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Grid' ) ) {
 				return;
 			}
 
-			echo $widget->get_arrow_icon( 'prev', $settings, 'slick-arrow' );
-
+			// Sanitized in render class.
+			echo $widget->get_arrow_icon( 'prev', $settings, 'slick-arrow' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
 
 		public function slider_after( $settings = array(), $widget = null ) {
 
+			// phpcs:disable WordPress.Security.NonceVerification
 			if ( empty( $_REQUEST['context'] ) || 'edit' !== $_REQUEST['context'] || empty( $_REQUEST['attributes'] ) ) {
 				return;
 			}
+			// phpcs:enable WordPress.Security.NonceVerification
 
 			if ( ! $widget->is_carousel_enabled( $settings ) ) {
 				return;
 			}
 
 			if ( ! empty( $settings['arrows'] ) ) {
-				echo $widget->get_arrow_icon( 'next', $settings, 'slick-arrow' );
+				// Sanitized in render class.
+				echo $widget->get_arrow_icon( 'next', $settings, 'slick-arrow' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 
 			if ( ! empty( $settings['dots'] ) ) {
 
 				echo '<ul class="jet-slick-dots" style="" role="tablist">';
 
-				$number = $widget->get_posts_num( $settings );
+				// Sanitized in render class.
+				$number = $widget->get_posts_num( $settings ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
 				for ( $i = 1;  $i <= $number;  $i++ ) {
 					$active_class = ( 1 === $i ) ? 'slick-active' : '';
-					echo '<li class="' . $active_class . '" role="presentation"><span>' . $i . '</span></li>';
+					echo '<li class="' . $active_class . '" role="presentation"><span>' . $i . '</span></li>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				}
 
 				echo '</ul>';
-
 			}
-
 		}
 
 		public function render_callback( $attributes = array() ) {
@@ -820,7 +829,6 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Grid' ) ) {
 			$render->after_listing_grid();
 
 			return $result;
-
 		}
 
 	}

@@ -79,6 +79,12 @@ if ( ! class_exists( 'Jet_Engine_Options_Page_Factory' ) ) {
 		 */
 		public function __construct( $page ) {
 
+			if ( ! empty( $page['labels'] ) ) {
+				foreach ( $page['labels'] as $key => $value ) {
+					$page['labels'][ $key ] = apply_filters( 'jet-engine/compatibility/translate-string', $value );
+				}
+			}
+
 			$this->page = $page;
 			$this->slug = $page['slug'];
 
@@ -96,11 +102,11 @@ if ( ! class_exists( 'Jet_Engine_Options_Page_Factory' ) ) {
 			$this->page['fields'] = $this->prepare_meta_fields( $page['fields'] );
 
 			if ( ! empty( $this->show_in_rest ) ) {
-				
+
 				if ( ! class_exists( 'Jet_Engine_Rest_Settings' ) ) {
 					require jet_engine()->options_pages->component_path( 'rest-api/fields/site-settings.php' );
 				}
-				
+
 				foreach ( $this->show_in_rest as $field ) {
 					new Jet_Engine_Rest_Settings( $field, $this->slug, $this );
 				}
@@ -118,7 +124,6 @@ if ( ! class_exists( 'Jet_Engine_Options_Page_Factory' ) ) {
 				add_action( 'admin_init', array( $this, 'save' ), 40 );
 				add_action( 'admin_notices', array( $this, 'saved_notice' ) );
 			}
-
 		}
 
 		/**
@@ -139,7 +144,6 @@ if ( ! class_exists( 'Jet_Engine_Options_Page_Factory' ) ) {
 			}
 
 			return $this->is_page_now;
-
 		}
 
 		/**
@@ -168,7 +172,6 @@ if ( ! class_exists( 'Jet_Engine_Options_Page_Factory' ) ) {
 					$this->page['icon'],
 					$this->page['position']
 				);
-
 			}
 		}
 
@@ -211,7 +214,6 @@ if ( ! class_exists( 'Jet_Engine_Options_Page_Factory' ) ) {
 
 			wp_redirect( $redirect );
 			die();
-
 		}
 
 		/**
@@ -231,6 +233,7 @@ if ( ! class_exists( 'Jet_Engine_Options_Page_Factory' ) ) {
 				$current = get_option( $this->slug, array() );
 			}
 
+			$autoload = $this->page['autoload_option'];
 			$fields = $this->get_prepared_fields();
 
 			if ( ! empty( $fields ) ) {
@@ -255,14 +258,20 @@ if ( ! class_exists( 'Jet_Engine_Options_Page_Factory' ) ) {
 					if ( 'default' === $this->storage_type ) {
 						$current[ $key ] = $value;
 					} elseif ( 'separate' === $this->storage_type ) {
-						update_option( $this->get_separate_option_name( $key ), $value );
+						update_option( $this->get_separate_option_name( $key ), $value, $autoload );
 					}
 				}
 			}
 
 			if ( 'default' === $this->storage_type && isset( $current ) ) {
-				update_option( $this->slug, $current );
+				update_option( $this->slug, $current, $autoload );
 			}
+
+			/**
+			 * Reset internal cache after options update.
+			 * https://github.com/Crocoblock/suggestions/issues/7774
+			 */
+			$this->options = null;
 
 			/**
 			 * Fires after the values of a specific options page has been successfully updated.
@@ -479,6 +488,10 @@ if ( ! class_exists( 'Jet_Engine_Options_Page_Factory' ) ) {
 		public function get( $option = '', $default = false, $field = array() ) {
 
 			if ( 'separate' === $this->storage_type ) {
+
+				if ( null === $this->options ) {
+					$this->options = array();
+				}
 
 				if ( isset( $this->options[ $option ] ) ) {
 					return $this->options[ $option ];

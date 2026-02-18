@@ -10,6 +10,9 @@ if ( ! defined( 'WPINC' ) ) {
 
 class Base_Widget extends \Elementor\Widget_Base {
 
+	/**
+	 * @var \Jet_Engine\Listings\Components\Component
+	 */
 	protected $jet_engine_component;
 	protected $jet_instance_id;
 
@@ -59,6 +62,7 @@ class Base_Widget extends \Elementor\Widget_Base {
 
 		return [
 			'textarea' => Controls_Manager::TEXTAREA,
+			'rich_text' => Controls_Manager::WYSIWYG,
 			'select' => Controls_Manager::SELECT,
 			'media' => Controls_Manager::MEDIA,
 			'media_gallery' => Controls_Manager::GALLERY,
@@ -216,8 +220,6 @@ class Base_Widget extends \Elementor\Widget_Base {
 	 * @return [type] [description]
 	 */
 	public function get_jet_component_instance_class() {
-
-
 		return 'jet-component-instance-' . $this->get_jet_instance_id();
 	}
 
@@ -228,11 +230,20 @@ class Base_Widget extends \Elementor\Widget_Base {
 	 * @return [type]           [description]
 	 */
 	public function apply_component_selector( $selector ) {
-		return '.' . $this->get_jet_component_instance_class() . ' .jet-listing-grid--' . $this->jet_engine_component->get_id();
+		return '.' . $this->get_jet_component_instance_class() . '.jet-listing-grid--' . $this->jet_engine_component->get_id();
 	}
 
 	public function apply_unique_css_id( $unique_id ) {
 		return $this->get_jet_instance_id();
+	}
+
+	/**
+	 * Reset some data when we know that component is hidden
+	 *
+	 * @return void
+	 */
+	public function jet_on_hide() {
+		$this->jet_engine_component->on_hide();
 	}
 
 	protected function render() {
@@ -241,40 +252,23 @@ class Base_Widget extends \Elementor\Widget_Base {
 
 		$this->jet_engine_component->set_component_context( $this->get_settings( 'component_context' ) );
 
-		add_filter(
-			'jet-engine/elementor-views/dynamic-tags/dynamic-css-unique-id',
-			[ $this, 'apply_unique_css_id' ]
-		);
-
-		add_filter(
-			'jet-engine/elementor-views/dynamic-css/unique-listing-selector',
-			[ $this, 'apply_component_selector' ]
-		);
-
-		$content = $this->jet_engine_component->get_content( $settings, false );
-
-		remove_filter(
-			'jet-engine/elementor-views/dynamic-tags/dynamic-css-unique-id',
-			[ $this, 'apply_unique_css_id' ]
-		);
-
-		remove_filter(
-			'jet-engine/elementor-views/dynamic-css/unique-listing-selector',
-			[ $this, 'apply_component_selector' ]
-		);
+		do_action( 'jet-engine/elementor-views/components/current-widget', $this );
 
 		$base_class   = 'jet-listing-grid--' . $this->jet_engine_component->get_id();
 		$unique_class = $this->get_jet_component_instance_class();
 		$classes      = [ $base_class, $unique_class ];
 
-		$this->add_render_attribute( '_wrapper', array(
-			'class' => $unique_class,
-		) );
+		$settings['component_unique_class'] = $unique_class;
+
+		$content = $this->jet_engine_component->get_content( $settings, false );
+
+		do_action( 'jet-engine/elementor-views/components/current-widget', null );
 
 		// If is 'elementor' component - we can just echo content,
 		// for other views we need some additional moves to ensure CSS controls correctly processed
 		if ( 'elementor' === $this->jet_engine_component->get_render_view() ) {
-			echo $content;
+			// Escaped while rendering in component
+			echo $content; // phpcs:ignore
 		} else {
 
 			if ( ! empty( $settings['__globals__'] ) ) {
@@ -285,12 +279,11 @@ class Base_Widget extends \Elementor\Widget_Base {
 
 			printf(
 				'<div class="%1$s" style="%2$s">%3$s</div>',
-				implode( ' ', $classes ),
-				$this->jet_engine_component->css_variables_string( $settings ),
-				$content
+				esc_attr( implode( ' ', $classes ) ),
+				esc_attr( $this->jet_engine_component->css_variables_string( $settings ) ),
+				$content // phpcs:ignore
 			);
 
 		}
-
 	}
 }

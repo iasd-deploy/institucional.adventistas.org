@@ -27,7 +27,10 @@ class Posts_Query extends Base_Query {
 		}
 
 		return $result;
+	}
 
+	public function _set_items_number($number = 0) {
+		$this->final_query['posts_per_page'] = $number;
 	}
 
 	/**
@@ -113,59 +116,64 @@ class Posts_Query extends Base_Query {
 			$raw = $args['orderby'];
 			$args['orderby'] = array();
 
-			foreach ( $raw as $query_row ) {
+			if ( count( $raw ) === 1 && ! empty( $raw[0]['orderby'] ) && $raw[0]['orderby'] === 'relevance' ) {
+				$args['orderby'] = 'relevance';
+				$args['order']   = ( ! empty( $raw[0]['order'] ) && $raw[0]['order'] === 'ASC' ) ? 'ASC' : 'DESC';
+			} else {
+				foreach ( $raw as $query_row ) {
 
-				if ( empty( $query_row ) ) {
-					continue;
-				}
-
-				if ( empty( $query_row['orderby'] ) ) {
-					continue;
-				}
-
-				$order = isset( $query_row['order'] ) ? $query_row['order'] : '';
-
-				if ( 'meta_clause' !== $query_row['orderby'] && isset( $args['orderby'][ $query_row['orderby'] ] ) ) {
-					continue;
-				}
-
-				switch ( $query_row['orderby'] ) {
-					case 'meta_clause':
-
-						$clause_name = ! empty( $query_row['order_meta_clause'] ) ? $query_row['order_meta_clause'] : false;
-
-						if ( $clause_name && isset( $args['orderby'][ $clause_name ] ) ) {
+					if ( empty( $query_row ) ) {
+						continue;
+					}
+	
+					if ( empty( $query_row['orderby'] ) ) {
+						continue;
+					}
+	
+					$order = isset( $query_row['order'] ) ? $query_row['order'] : '';
+	
+					if ( 'meta_clause' !== $query_row['orderby'] && isset( $args['orderby'][ $query_row['orderby'] ] ) ) {
+						continue;
+					}
+	
+					switch ( $query_row['orderby'] ) {
+						case 'meta_clause':
+	
+							$clause_name = ! empty( $query_row['order_meta_clause'] ) ? $query_row['order_meta_clause'] : false;
+	
+							if ( $clause_name && isset( $args['orderby'][ $clause_name ] ) ) {
+								break;
+							}
+	
+							if ( $clause_name ) {
+								$args['orderby'][ $clause_name ] = $order;
+							}
+	
 							break;
-						}
-
-						if ( $clause_name ) {
-							$args['orderby'][ $clause_name ] = $order;
-						}
-
-						break;
-
-					case 'meta_value_num':
-					case 'meta_value':
-						$args['orderby'][ $query_row['orderby'] ] = $order;
-
-						if ( isset( $query_row['meta_key'] ) ) {
-							$args['meta_key'] = $query_row['meta_key'];
-						}
-
-						break;
-
-					case 'rand':
-
-						$rand = sprintf( 'RAND(%s)', $this->get_random_seed() );
-						$args['orderby'][ $rand ] = $order;
-
-						break;
-
-					default:
-						$args['orderby'][ $query_row['orderby'] ] = $order;
-						break;
+	
+						case 'meta_value_num':
+						case 'meta_value':
+							$args['orderby'][ $query_row['orderby'] ] = $order;
+	
+							if ( isset( $query_row['meta_key'] ) ) {
+								$args['meta_key'] = $query_row['meta_key'];
+							}
+	
+							break;
+	
+						case 'rand':
+	
+							$rand = sprintf( 'RAND(%s)', $this->get_random_seed() );
+							$args['orderby'][ $rand ] = $order;
+	
+							break;
+	
+						default:
+							$args['orderby'][ $query_row['orderby'] ] = $order;
+							break;
+					}
+	
 				}
-
 			}
 
 		} elseif ( isset( $args['orderby'] ) ) {
@@ -189,7 +197,6 @@ class Posts_Query extends Base_Query {
 			} else {
 				$args['comment_count'] = $value;
 			}
-
 		}
 
 		return apply_filters( 'jet-engine/query-builder/types/posts-query/args', $args, $this );
@@ -199,7 +206,7 @@ class Posts_Query extends Base_Query {
 	/**
 	 * Returns WP Query object for current query
 	 *
-	 * @return WP_Query
+	 * @return \WP_Query
 	 */
 	public function get_current_wp_query() {
 
@@ -314,6 +321,10 @@ class Posts_Query extends Base_Query {
 				$this->final_query['page']  = $value;
 				break;
 
+			case '_items_per_page':
+				$this->final_query['posts_per_page'] = $value;
+				break;
+
 			case 'orderby':
 			case 'order':
 			case 'meta_key':
@@ -335,7 +346,11 @@ class Posts_Query extends Base_Query {
 			case 'post__in':
 
 				if ( ! empty( $this->final_query['post__in'] ) ) {
-					$this->final_query['post__in'] = array_intersect( $this->final_query['post__in'], $value );
+
+					$this->final_query['post__in'] = array_intersect(
+						$this->final_query['post__in'],
+						$value
+					);
 
 					if ( empty( $this->final_query['post__in'] ) ) {
 						$this->final_query['post__in'] = array( PHP_INT_MAX );
@@ -414,7 +429,7 @@ class Posts_Query extends Base_Query {
 	/**
 	 * Adds date range query arguments to given query parameters.
 	 * Required to allow ech query to ensure compatibility with Dynamic Calendar
-	 * 
+	 *
 	 * @param array $args [description]
 	 */
 	public function add_date_range_args( $args = array(), $dates_range = array(), $settings = array() ) {
@@ -505,4 +520,15 @@ class Posts_Query extends Base_Query {
 		return $this->final_query['_random_seed'];
 	}
 
+	public function _debug_info() {
+		$current_query = $this->get_current_wp_query();
+		$request = is_object( $current_query ) && isset( $current_query->request ) ? $current_query->request : 'Query error';
+
+		$result = array(
+			'request' => $request,
+			'current_query' => $current_query,
+		);
+
+		return $result;
+	}
 }

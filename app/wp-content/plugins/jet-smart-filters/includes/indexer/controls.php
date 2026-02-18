@@ -312,7 +312,9 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Controls' ) ) {
 			$counter_html .= '</span>';
 
 			if ( $options['show_counter'] ) {
-				echo apply_filters( 'jet-smart-filter/templates/counter/format', $counter_html );
+				echo wp_kses_post(
+					apply_filters( 'jet-smart-filter/templates/counter/format', $counter_html )
+				);
 			}
 		}
 	}

@@ -158,6 +158,8 @@ class Repeater_Query extends Base_Query {
 
 		}, $items, array_keys( $items ) ) );
 
+		$this->apply_sorting( $items, $args );
+
 		// Pagination
 		$limit  = $this->get_items_per_page();
 		$offset = ! empty( $this->final_query['offset'] ) ? absint( $this->final_query['offset'] ) : 0;
@@ -178,6 +180,79 @@ class Repeater_Query extends Base_Query {
 		return array_values( $items );
 	}
 
+	/**
+	 * Apply sorting to items array
+	 *
+	 * This function sorts the given items array based on specified criteria.
+	 *
+	 * @param  array &$items The array of items to be sorted.
+	 * @return void
+	 */
+	public function apply_sorting( &$items ) {
+
+		$orderby = ! empty( $this->final_query['orderby'] ) ? $this->final_query['orderby'] : false;
+
+		if ( ! $orderby ) {
+			return;
+		}
+
+		usort( $items, function ( $a, $b ) use ( $orderby ) {
+
+			foreach ( $orderby as $order ) {
+
+				$_by = ! empty( $order['orderby'] ) ? $order['orderby'] : 'index';
+				$field = ! empty( $order['field_name'] ) ? $order['field_name'] : 'index';
+				$type  = ! empty( $order['order_type'] ) ? strtolower( $order['order_type'] ) : 'numeric';
+				$direction = ! empty( $order['order'] ) ? strtolower( $order['order'] ) : 'asc';
+
+				// Retrieve the field values
+				if ( 'index' === $_by ) {
+					$value_a = $a->get_index();
+					$value_b = $b->get_index();
+					$type    = 'numeric'; // Force numeric type for index sorting.
+				} else {
+					$value_a = $a->$field;
+					$value_b = $b->$field;
+				}
+
+				switch ( $type ) {
+					case 'numeric':
+						$value_a = floatval( $value_a );
+						$value_b = floatval( $value_b );
+						break;
+
+					case 'alphabetical':
+						$value_a = strtolower( $value_a );
+						$value_b = strtolower( $value_b );
+						break;
+
+					case 'dates':
+						$value_a = strtotime( $value_a );
+						$value_b = strtotime( $value_b );
+						break;
+				}
+
+				// If the values are different, decide order based on the 'order' property
+				if ( $value_a < $value_b ) {
+					return ( $direction === 'asc' ) ? -1 : 1;
+				} elseif ( $value_a > $value_b ) {
+					return ( $direction === 'asc' ) ? 1 : -1;
+				}
+				// If equal, move to the next order condition
+			}
+
+			// All compared fields are equal
+			return 0;
+		});
+	}
+
+	/**
+	 * Check if item meets requested meta query args
+	 *
+	 * @param  object $item Repeater item.
+	 * @param  array $args Query arguments to check the item against.
+	 * @return array
+	 */
 	public function is_item_met_requested_args( $item, $args ) {
 
 		$result = true;
@@ -265,7 +340,7 @@ class Repeater_Query extends Base_Query {
 							if ( is_array( $item->$key ) ) { // for Checkbox, Select2 ... fields
 								$matched = in_array( $value, $item->$key );
 							} else {
-								$matched = false !== strpos( $item->$key, $value );
+								$matched = false !== stripos( $item->$key, $value );
 							}
 						}
 						break;
@@ -276,7 +351,7 @@ class Repeater_Query extends Base_Query {
 							if ( is_array( $item->$key ) ) { // for Checkbox, Select2 ... fields
 								$matched = ! in_array( $value, $item->$key );
 							} else {
-								$matched = false === strpos( $item->$key, $value );
+								$matched = false === stripos( $item->$key, $value );
 							}
 
 						} else {
@@ -380,7 +455,6 @@ class Repeater_Query extends Base_Query {
 		}
 
 		return $result;
-
 	}
 
 	public function value_to_array( $value ) {
@@ -420,6 +494,14 @@ class Repeater_Query extends Base_Query {
 					}
 
 				}
+
+				if ( ! empty( $field_data['2'] ) && $field_data['2'] === 'user' ) {
+					$user = get_user_by( 'ID', $this->object_id );
+					
+					if ( $user->ID ?? false ) {
+						$object = $user;
+					}
+				}
 			}
 
 			if ( ! is_object( $object )  ) {
@@ -427,6 +509,14 @@ class Repeater_Query extends Base_Query {
 			}
 
 			$object = apply_filters( 'jet-engine/query-builder/repeater-query/object-by-id', $object, $this );
+		}
+
+		/**
+		 * If we get an array - let's assume it's what we need and just convert it to object.
+		 * https://github.com/Crocoblock/issues-tracker/issues/11593
+		 */
+		if ( ! empty( $object ) && is_array( $object ) ) {
+			$object = (object) $object;
 		}
 
 		if ( is_object( $object ) ) {
@@ -661,6 +751,11 @@ class Repeater_Query extends Base_Query {
 		return array();
 	}
 
+	/**
+	 * Sets up the filtered properties of the repeater.
+	 *
+	 * @return void
+	 */
 	public function set_filtered_prop( $prop = '', $value = null ) {
 
 		switch ( $prop ) {
@@ -669,15 +764,50 @@ class Repeater_Query extends Base_Query {
 				$this->final_query['page'] = $value;
 				break;
 
+			case '_items_per_page':
+				$this->final_query['per_page'] = $value;
+				break;
+
 			case 'meta_query':
 				$this->replace_meta_query_row( $value );
 				break;
+
+			case 'orderby':
+			case 'order':
+			case 'meta_key':
+					$this->set_filtered_order( $prop, $value );
+					break;
 
 			default:
 				$this->merge_default_props( $prop, $value );
 				break;
 		}
-
 	}
 
+	/**
+	 * Set filtered order in the similar way like for the posts
+	 *
+	 * @param  [type] $value [description]
+	 * @return [type]        [description]
+	 */
+	public function set_filtered_order( $key, $value ) {
+
+		if (
+			empty( $this->final_query['orderby'] )
+			|| ! isset( $this->final_query['orderby']['custom'] )
+		) {
+			$this->final_query['orderby'] = array( 'custom' => array( 'orderby' => 'field' ) );
+		}
+
+		if ( 'orderby' === $key ) {
+			$key   = 'order_type';
+			$value = ( 'meta_value' === $value ) ? 'alphabetical' : 'numeric';
+		}
+
+		if ( 'meta_key' === $key ) {
+			$key = 'field_name';
+		}
+
+		$this->final_query['orderby']['custom'][ $key ] = $value;
+	}
 }

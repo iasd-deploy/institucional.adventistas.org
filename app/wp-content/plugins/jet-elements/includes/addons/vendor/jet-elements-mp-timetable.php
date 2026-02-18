@@ -31,7 +31,7 @@ class Jet_Elements_Mp_Timetable extends Jet_Elements_Base {
 
 	public function get_script_depends() {
 
-		if ( ! isset( $_GET['elementor-preview'] ) ) {
+		if ( ! isset( $_GET['elementor-preview'] ) ) { // phpcs:ignore
 			return array();
 		}
 

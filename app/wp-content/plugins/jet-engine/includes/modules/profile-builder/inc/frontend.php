@@ -46,6 +46,53 @@ class Frontend {
 
 		// SEO description
 		add_action( 'wp_head', array( $this, 'print_description_meta_tag' ), 1 );
+
+		// Components context compatibility
+		// @see https://github.com/Crocoblock/issues-tracker/issues/11151
+		add_action( 'jet-engine/component/set-object', array( $this, 'set_user_object_for_component' ), 0, 2 );
+		add_action( 'jet-engine/component/reset-object', array( $this, 'reset_user_object_after_component' ), 0, 2 );
+	}
+
+	/**
+	 * Set custom $current_user_obj for components with switched contenxt.
+	 *
+	 * @param object $component_object Component object recieved by context.
+	 * @param object $prev_object      Previous value of JetEngine current object
+	 */
+	public function set_user_object_for_component( $component_object, $prev_object ) {
+
+		if ( 'WP_User' !== get_class( $component_object ) ) {
+			return;
+		}
+
+		// check if we already have $current_user_obj and save it to restore after component.
+		if ( $this->current_user_obj ) {
+			wp_cache_set( 'jet-engine-profile-user', $this->current_user_obj );
+		}
+
+		$this->current_user_obj = $component_object;
+	}
+
+	/**
+	 * Revert custom $current_user_obj for components with switched contenxt.
+	 *
+	 * @param object $component_object Component object recieved by context.
+	 * @param object $prev_object      Previous value of JetEngine current object
+	 */
+	public function reset_user_object_after_component( $component_object, $prev_object ) {
+
+		// If component not has user-related context - it can't set custom $current_user_obj so we need to reset it.
+		if ( 'WP_User' !== get_class( $component_object ) ) {
+			return;
+		}
+
+		// Check - if we have saved $current_user_obj - we most probably reseting component with custom user context.
+		$saved = wp_cache_get( 'jet-engine-profile-user' );
+
+		if ( $saved ) {
+			wp_cache_delete( 'jet-engine-profile-user' );
+			$this->current_user_obj = $saved;
+		}
 	}
 
 	/**
@@ -241,7 +288,12 @@ class Frontend {
 			return false;
 		}
 
-		$slug    = Module::instance()->query->get_queried_user_slug();
+		$slug = Module::instance()->query->get_queried_user_slug();
+
+		if ( empty( $slug ) ) {
+			return false;
+		}
+
 		$rewrite = Module::instance()->settings->get( 'user_page_rewrite', 'login' );
 		$rewrite = ( 'user_nicename' === $rewrite ) ? 'slug' : $rewrite;
 

@@ -141,9 +141,9 @@ class Data extends \Jet_Engine_Base_Data {
 		}
 
 		$regular_args = array(
-			'name'                      => '',
-			'slug'                      => '',
-			'position'                  => null,
+			'name'                      => $name,
+			'slug'                      => $slug,
+			'position'                  => '-1',
 			'icon'                      => 'dashicons-list-view',
 			'capability'                => 'manage_options',
 			'related_post_type'         => '',
@@ -357,6 +357,8 @@ class Data extends \Jet_Engine_Base_Data {
 
 		foreach ( $fields as $field ) {
 
+			$field['name'] = $this->sanitize_slug( $field['name'] );
+
 			if ( ! empty( $field['object_type'] ) && ! in_array( $field['object_type'], $allowed_object_types ) ) {
 				continue;
 			}
@@ -445,7 +447,9 @@ class Data extends \Jet_Engine_Base_Data {
 	}
 
 	public function before_item_update( $item ) {
-		$this->prev_item = $this->get_item_for_edit( $item['id'] );
+		if ( ! empty( $item ) && ! empty( $item['id'] ) ) {
+			$this->prev_item = $this->get_item_for_edit( $item['id'] );
+		}
 	}
 
 	/**
@@ -473,6 +477,18 @@ class Data extends \Jet_Engine_Base_Data {
 			$db->adjusted_fields_map( $old_fields, $new_fields );
 			$db->adjusted_fields_types( $old_schema, $old_fields, $new_fields );
 			$db->adjust_fields_to_schema();
+		}
+
+		if ( ! DB::custom_table_exists( $item['slug'] ) ) {
+			$this->parent->add_notice(
+				'error',
+				esc_html__( 'Couldn\'t create a DB table. Please, check the field names for MySQL reserved words.', 'jet-engine' )
+			);
+		} elseif ( ! $db->has_columns_by_schema() ) {
+			$this->parent->add_notice(
+				'error',
+				esc_html__( 'Couldn\'t update a DB table. Please, check the field names for MySQL reserved words.', 'jet-engine' )
+			);
 		}
 
 	}

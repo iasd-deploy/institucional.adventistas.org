@@ -21,7 +21,7 @@ class Manager {
 	 * A reference to an instance of compatibility package.
 	 *
 	 * @access private
-	 * @var    object
+	 * @var    \Jet_Engine\Compatibility\Packages\Jet_Engine_WPML_Package\Package
 	 */
 	private $package = null;
 
@@ -30,6 +30,18 @@ class Manager {
 
 		// Post meta conditions
 		add_filter( 'jet-engine/meta-boxes/conditions/post-has-terms/check-terms', array( $this, 'set_translated_check_terms' ), 10, 2 );
+
+		add_filter( 'cx-interface-builder/media/media_id', array( $this, 'get_translated_media_id' ) );
+	}
+
+	/**
+	 * Get translated media ID
+	 *
+	 * @param  int $media_id Media ID
+	 * @return int           Translated media ID
+	 */
+	public function get_translated_media_id( $media_id ) {
+		return apply_filters( 'wpml_object_id', $media_id, 'attachment', true );
 	}
 
 	public function set_translated_check_terms( $terms, $tax ) {

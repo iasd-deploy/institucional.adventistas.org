@@ -29,7 +29,7 @@ class Jet_Smart_Filters_Color_Image_Widget extends Jet_Smart_Filters_Base_Widget
 	public function get_help_url() {
 
 		return jet_smart_filters()->widgets->prepare_help_url(
-			'https://crocoblock.com/knowledge-base/articles/jetsmartfilters-how-to-create-visual-filter-with-taxonomies-data-source/',
+			'https://crocoblock.com/knowledge-base/jetsmartfilters/jetsmartfilters-visual-filter-overview/',
 			$this->get_name()
 		);
 	}
@@ -122,7 +122,7 @@ class Jet_Smart_Filters_Color_Image_Widget extends Jet_Smart_Filters_Base_Widget
 				'label_on'     => esc_html__( 'Yes', 'jet-smart-filters' ),
 				'label_off'    => esc_html__( 'No', 'jet-smart-filters' ),
 				'return_value' => 'yes',
-				'default'      => 'yes',
+				'default'      => '',
 				'condition' => array(
 					'apply_on'     => 'submit',
 					'apply_button' => 'yes'

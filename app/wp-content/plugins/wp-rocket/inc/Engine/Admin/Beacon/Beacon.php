@@ -469,8 +469,8 @@ class Beacon extends Abstract_Render implements Subscriber_Interface {
 					'url' => 'https://docs.wp-rocket.me/article/1721-exclude-urls-from-being-preloaded?utm_source=wp_plugin&utm_medium=wp_rocket',
 				],
 				'fr' => [
-					'id'  => '63496d5b8a552811521e52d2',
-					'url' => 'https://fr.docs.wp-rocket.me/article/1722-exclure-url-du-prechargement?utm_source=wp_plugin&utm_medium=wp_rocket',
+					'id'  => '640b30058ca4460845b4a1c4',
+					'url' => 'https://fr.docs.wp-rocket.me/article/1739-comment-exclure-urls-prechargement?utm_source=wp_plugin&utm_medium=wp_rocket',
 				],
 			],
 			'bot'                        => [
@@ -481,16 +481,6 @@ class Beacon extends Abstract_Render implements Subscriber_Interface {
 				'fr' => [
 					'id'  => '5693d582c69791436155d645',
 					'url' => 'https://fr.docs.wp-rocket.me/article/188-comment-est-pre-charge-le-cache/?utm_source=wp_plugin&utm_medium=wp_rocket',
-				],
-			],
-			'dns_prefetch'               => [
-				'en' => [
-					'id'  => '5e055a602c7d3a7e9ae5881c',
-					'url' => 'https://docs.wp-rocket.me/article/1302-prefetch-dns-requests/?utm_source=wp_plugin&utm_medium=wp_rocket',
-				],
-				'fr' => [
-					'id'  => '5e1891892c7d3a7e9ae60983',
-					'url' => 'https://fr.docs.wp-rocket.me/article/1303-prechargement-requetes-dns/?utm_source=wp_plugin&utm_medium=wp_rocket',
 				],
 			],
 			'fonts_preload'              => [
@@ -821,14 +811,34 @@ class Beacon extends Abstract_Render implements Subscriber_Interface {
 					'url' => 'https://fr.docs.wp-rocket.me/article/1833-impossible-creer-table-rucssusedcss/?utm_source=wp_plugin&utm_medium=wp_rocket',
 				],
 			],
-			'lazy_render_content'        => [
+			'host_fonts_locally'         => [
 				'en' => [
-					'id'  => '66b11e26a62a7505fcf339e7',
-					'url' => 'https://docs.wp-rocket.me/article/1835-lazy-render-content/?utm_source=wp_plugin&utm_medium=wp_rocket',
+					'id'  => '673358b02ddbd952f6241b38',
+					'url' => 'https://docs.wp-rocket.me/article/1847-self-host-google-fonts?utm_source=wp_plugin&utm_medium=wp_rocket',
 				],
 				'fr' => [
-					'id'  => '66ba0e8e082392452a0773ea',
-					'url' => 'https://fr.docs.wp-rocket.me/article/1836-rendu-differe-automatique/?utm_source=wp_plugin&utm_medium=wp_rocket',
+					'id'  => '675ab51d46b8d26833b2af82',
+					'url' => 'https://fr.docs.wp-rocket.me/article/1852-auto-heberger-google-fonts?utm_source=wp_plugin&utm_medium=wp_rocket',
+				],
+			],
+			'preconnect_domains'         => [
+				'en' => [
+					'id'  => '681b61d889bd957cd04bd2d9',
+					'url' => 'https://docs.wp-rocket.me/article/1869-preconnect-to-external-domains',
+				],
+				'fr' => [
+					'id'  => '681da5ae11561a04f5de356e',
+					'url' => 'https://fr.docs.wp-rocket.me/article/1870-preconnexion-aux-domaines-externes',
+				],
+			],
+			'rocket_insights'            => [
+				'en' => [
+					'id'  => '68beeaab7f1dbe419d37a71c',
+					'url' => 'https://docs.wp-rocket.me/article/1876-rocket-insights?utm_source=wp_plugin&utm_medium=wp_rocket',
+				],
+				'fr' => [
+					'id'  => '68dfaa989cf81238fa93c753',
+					'url' => 'https://fr.docs.wp-rocket.me/article/1878-rocket-insights?utm_source=wp_plugin&utm_medium=wp_rocket',
 				],
 			],
 		];

@@ -589,7 +589,7 @@ Order details:
 				jet_engine()->admin_page,
 				esc_html__( 'Forms', 'jet-engine' ),
 				esc_html__( 'Forms', 'jet-engine' ),
-				'edit_pages',
+				'manage_options',
 				'edit.php?post_type=' . $this->manager->slug()
 			);
 

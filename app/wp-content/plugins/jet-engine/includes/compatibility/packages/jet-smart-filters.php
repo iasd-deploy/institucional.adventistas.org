@@ -14,7 +14,9 @@ if ( ! class_exists( 'Jet_Engine_Smart_Filters_Package' ) ) {
 	 * Define Jet_Engine_Smart_Filters_Package class
 	 */
 	class Jet_Engine_Smart_Filters_Package {
-
+		
+		const FRONTEND_SCRIPT_HANDLE = 'jet-engine-jet-smart-filters-compatibility';
+		
 		public function __construct() {
 
 			add_filter(
@@ -61,10 +63,36 @@ if ( ! class_exists( 'Jet_Engine_Smart_Filters_Package' ) ) {
 				10, 3
 			);
 
+			add_action(
+				'jet-engine/listings/frontend-scripts',
+				array( $this, 'frontend_scripts' )
+			);
+
+			add_filter(
+				'jet-engine/listings/frontend-scripts/dependencies',
+				array( $this, 'add_frontend_scripts_dependency' )
+			);
+
+		}
+
+		public function add_frontend_scripts_dependency( $deps ) {
+			$deps[] = self::FRONTEND_SCRIPT_HANDLE;
+			return $deps;
+		}
+
+		public function frontend_scripts() {
+			wp_enqueue_script(
+				self::FRONTEND_SCRIPT_HANDLE,
+				jet_engine()->plugin_url( 'assets/js/frontend/modules/jet-smart-filters.js' ),
+				array( 'jquery', 'jet-plugins' ),
+				jet_engine()->get_version(),
+				true
+			);
 		}
 
 		public function is_filters_request() {
 
+			// phpcs:disable
 			if ( ! empty( $_REQUEST['action'] ) && 'jet_smart_filters' === $_REQUEST['action'] && ! empty( $_REQUEST['provider'] ) ) {
 				return true;
 			}
@@ -76,6 +104,7 @@ if ( ! class_exists( 'Jet_Engine_Smart_Filters_Package' ) ) {
 			if ( ! empty( $_REQUEST['jsf'] ) ) {
 				return true;
 			}
+			// phpcs:enable
 
 			return false;
 		}
@@ -97,6 +126,7 @@ if ( ! class_exists( 'Jet_Engine_Smart_Filters_Package' ) ) {
 				$provider_data = $users_query->query_vars['jet_smart_filters'];
 				$provider_data = jet_smart_filters()->query->decode_provider_data( $provider_data );
 
+				// phpcs:disable
 				if ( isset( $_REQUEST['jet_paged'] ) ) {
 					$page = absint( $_REQUEST['jet_paged'] );
 				} elseif ( wp_doing_ajax() && isset( $_REQUEST['paged'] ) ) {
@@ -106,6 +136,7 @@ if ( ! class_exists( 'Jet_Engine_Smart_Filters_Package' ) ) {
 				} else {
 					$page = $widget->query_vars['page'];
 				}
+				// phpcs:enable
 
 				jet_smart_filters()->query->set_props(
 					$provider_data['provider'],
@@ -153,9 +184,16 @@ if ( ! class_exists( 'Jet_Engine_Smart_Filters_Package' ) ) {
 				'props'     => jet_smart_filters()->query->get_query_props(),
 			);
 
+			$verification_enabled = ! empty( jet_smart_filters()->render->use_signature_verification );
+
 			foreach ( $filters_settings as $param => $data ) {
 				if ( ! empty( $data['jet-engine'][ $query_id ] ) ) {
 					$filters_data[ $param ][ $query_id ] = $data['jet-engine'][ $query_id ];
+
+					if ( $param === 'settings' && $verification_enabled ) {
+						$signature = jet_smart_filters()->render->create_signature( $data['jet-engine'][ $query_id ] );
+						$filters_data[ $param ][ $query_id ]['jsf_signature'] = $signature;
+					}
 				}
 			}
 
@@ -210,6 +248,7 @@ if ( ! class_exists( 'Jet_Engine_Smart_Filters_Package' ) ) {
 				return $is_lazy_load;
 			}
 
+			// phpcs:disable
 			if ( ! empty( $_REQUEST['jsf'] ) ) {
 				$request_provider = $_REQUEST['jsf'];
 				$current_provider = 'jet-engine' . ( $settings['_element_id'] ? ':' . $settings['_element_id'] : '' );
@@ -219,6 +258,7 @@ if ( ! class_exists( 'Jet_Engine_Smart_Filters_Package' ) ) {
 			} else {
 				return $is_lazy_load;
 			}
+			// phpcs:enable
 
 			if ( $request_provider !== $current_provider ) {
 				return $is_lazy_load;
@@ -254,6 +294,7 @@ if ( ! class_exists( 'Jet_Engine_Smart_Filters_Package' ) ) {
 
 		public function add_redirect_filter_data( $options ) {
 
+			// phpcs:disable WordPress.Security.NonceVerification
 			if ( empty( $_POST['jet-smart-filters-redirect'] ) ) {
 				return $options;
 			}
@@ -264,8 +305,10 @@ if ( ! class_exists( 'Jet_Engine_Smart_Filters_Package' ) ) {
 					$options['extra_props'] = array();
 				}
 
-				$options['extra_props'] = array_merge( $options['extra_props'], $_POST );
+				// Props escaped in Jet_Engine_Render_Listing_Grid::print_lazy_load_wrapper()
+				$options['extra_props'] = array_merge( $options['extra_props'], $_POST ); // phpcs:ignore
 			}
+			// phpcs:enable WordPress.Security.NonceVerification
 
 			return $options;
 		}
@@ -276,9 +319,11 @@ if ( ! class_exists( 'Jet_Engine_Smart_Filters_Package' ) ) {
 				return $start_from;
 			}
 
+			// phpcs:disable WordPress.Security.NonceVerification
 			if ( empty( $_REQUEST['paged'] ) && empty( $_REQUEST['jet_paged'] ) ) {
 				return $start_from;
 			}
+			// phpcs:enable WordPress.Security.NonceVerification
 
 			$request_provider = jet_smart_filters()->query->get_current_provider( 'raw' );
 
@@ -292,6 +337,7 @@ if ( ! class_exists( 'Jet_Engine_Smart_Filters_Package' ) ) {
 				return $start_from;
 			}
 
+			// phpcs:disable
 			if ( ! empty( $_REQUEST['paged'] ) ) {
 				$page = absint( $_REQUEST['paged'] );
 			} elseif ( ! empty( $_REQUEST['jet_paged'] ) ) {
@@ -299,6 +345,7 @@ if ( ! class_exists( 'Jet_Engine_Smart_Filters_Package' ) ) {
 			} else {
 				$page = 1;
 			}
+			// phpcs:enable
 
 			if ( 1 < $page ) {
 

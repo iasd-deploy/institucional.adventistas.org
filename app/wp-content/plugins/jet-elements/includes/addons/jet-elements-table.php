@@ -44,20 +44,20 @@ class Jet_Elements_Table extends Jet_Elements_Base {
 
 	public function get_script_depends() {
 
-		if ( isset( $_GET['elementor-preview'] ) && 'wp_enqueue_scripts' === current_filter() ) {
-			return array( 'jquery-tablesorter' );
+		if ( isset( $_GET['elementor-preview'] ) && 'wp_enqueue_scripts' === current_filter() ) { // phpcs:ignore
+			return array( 'jquery-tablesorter', 'jet-table');
 		}
 
 		if ( 'yes' === $this->get_settings( 'sorting_table' ) ) {
-			return array( 'jquery-tablesorter' );
+			return array( 'jquery-tablesorter', 'jet-table' );
 		}
 
-		return array();
+		return array( 'jet-table' );
 	}
 
 	public function get_style_depends() {
 
-		if ( isset( $_GET['elementor-preview'] ) && 'wp_enqueue_scripts' === current_filter() ) {
+		if ( isset( $_GET['elementor-preview'] ) && 'wp_enqueue_scripts' === current_filter() ) { // phpcs:ignore
 			return array( 'elementor-icons-fa-solid', 'jet-table' );
 		}
 
@@ -2183,13 +2183,13 @@ class Jet_Elements_Table extends Jet_Elements_Base {
 		}
 		?>
 
-		<div <?php echo $this->get_render_attribute_string( 'wrapper' ); ?>>
-			<table <?php echo $this->get_render_attribute_string( 'table' ); ?>>
-				<thead class="jet-table__head"><?php echo $this->get_table_cells( $table_head, 'head' ); ?></thead>
+		<div <?php echo $this->get_render_attribute_string( 'wrapper' ); // phpcs:ignore ?>>
+			<table <?php echo $this->get_render_attribute_string( 'table' ); // phpcs:ignore ?>>
+				<thead class="jet-table__head"><?php echo $this->get_table_cells( $table_head, 'head' ); // phpcs:ignore ?></thead>
 				<?php if ( ! empty( $table_footer ) ): ?>
-				<tfoot class="jet-table__foot"><?php echo $this->get_table_cells( $table_footer, 'foot' ); ?></tfoot>
+				<tfoot class="jet-table__foot"><?php echo $this->get_table_cells( $table_footer, 'foot' ); // phpcs:ignore ?></tfoot>
 				<?php endif; ?>
-				<tbody class="jet-table__body<?php if ( ! empty( $table_footer ) ): ?> jet-table__body_no-border-radius<?php endif; ?>"><?php echo $this->get_table_cells( $table_body, 'body' ); ?></tbody>
+				<tbody class="jet-table__body<?php if ( ! empty( $table_footer ) ): ?> jet-table__body_no-border-radius<?php endif; ?>"><?php echo $this->get_table_cells( $table_body, 'body' ); // phpcs:ignore ?></tbody>
 			</table>
 		</div>
 

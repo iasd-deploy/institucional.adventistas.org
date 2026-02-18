@@ -45,9 +45,10 @@ class Conditional_Tags {
 		}
 
 		$checker = new \Jet_Engine\Modules\Dynamic_Visibility\Condition_Checker();
+
 		$result  = $checker->check_cond( [
 			'jedv_enabled' => true,
-		], [ 
+		], [
 			'jedv_conditions' => [ $args ]
 		] );
 
@@ -57,42 +58,48 @@ class Conditional_Tags {
 
 	/**
 	 * Enqueue conditions-specific assets
-	 * 
+	 *
 	 * @return [type] [description]
 	 */
 	public function conditions_assets() {
 
 		wp_enqueue_script(
-			'jet-engine-timber-editor-conditions', 
+			'jet-engine-timber-editor-conditions',
 			Package::instance()->package_url( 'assets/js/conditions-editor.js' ),
 			[ 'jquery', 'cx-vue-ui' ],
 			jet_engine()->get_version(),
 			true
 		);
 
-		wp_localize_script( 
-			'jet-engine-timber-editor-conditions', 
+		wp_localize_script(
+			'jet-engine-timber-editor-conditions',
 			'JetEngineDynamicVisibilityData',
 			[
 				'controls'        => $this->get_prepared_controls(),
 				'function_name'   => $this->function_name,
 				'is_enabled'      => jet_engine()->modules->is_module_active( 'dynamic-visibility' ),
-				'disabled_notice' => sprintf( 
+				'disabled_notice' => sprintf(
 					__( 'To use enhanced conditions, you need to activate <a href="%s" target="_blank">Dynamic Visibility</a> module', 'jet-engine' ),
 					jet_engine()->dashboard->dashboard_url( 'modules' ),
 				),
-				'macros_notice'   => sprintf( 
-					__( 'You can use <a href="%s" target="_blank">macros</a> on the any text field', 'jet-engine' ),
+				'macros_notice'   => sprintf(
+					__( 'You can use <a href="%s" target="_blank">macros</a> on any text field', 'jet-engine' ),
 					jet_engine()->dashboard->dashboard_url( 'macros_generator' ),
 				),
 				'twig_notice'     => __( 'More details about the conditional logic in the official <a href="https://twig.symfony.com/doc/2.x/tags/if.html" target="_blank">Twig documentation</a>', 'jet-engine' ),
+				'macros_list'  => $this->get_macros_for_editor(),
+				'context_list' => jet_engine()->listings->allowed_context_list( 'blocks' ),
 			]
 		);
 	}
 
+	public function get_macros_for_editor() {
+		return jet_engine()->listings->macros->get_macros_for_js();
+	}
+
 	public function register_conditional_tags_action() {
 		?>
-		<jet-engine-timber-editor-conditions 
+		<jet-engine-timber-editor-conditions
 			@insert="insertDynamicData"
 		></jet-engine-timber-editor-conditions>
 		<?php
@@ -111,11 +118,25 @@ class Conditional_Tags {
 		$prepared_controls = [];
 
 		foreach ( $controls as $control ) {
-			$prepared_controls[ $control['name'] ] = $control;
+			$prepared_controls[ $control['name'] ] = $this->maybe_adjust_control( $control );
 		}
 
 		return $prepared_controls;
 
+	}
+
+	public function maybe_adjust_control( $control ) {
+		if ( empty( $control['name'] ) ) {
+			return $control;
+		}
+
+		switch ( $control['name'] ) {
+			case 'jedv_field':
+				$control['description'] = esc_html__( 'Enter meta field name or use macro to get value directly.', 'jet-engine' );
+				break;
+		}
+
+		return $control;
 	}
 
 }

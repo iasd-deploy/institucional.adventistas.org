@@ -180,9 +180,14 @@ class Jet_Smart_Filters_Bricks_Rating extends Jet_Smart_Filters_Bricks_Base {
 
 		$filter_id = apply_filters( 'jet-smart-filters/render_filter_template/filter_id', $filter_id );
 
-		echo "<div {$this->render_attributes( '_root' )}>";
+		$attrs = $this->render_attributes( '_root' );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<div ' . $attrs . '>';
 
-		printf( '<div class="%1$s jet-filter">', $base_class );
+		printf(
+			'<div class="%1$s jet-filter">',
+			esc_attr( $base_class )
+		);
 
 		$provider             = ! empty( $settings['content_provider'] ) ? $settings['content_provider'] : '';
 		$query_id             = ! empty( $settings['query_id'] ) ? $settings['query_id'] : 'default';

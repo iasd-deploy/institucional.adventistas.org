@@ -37,7 +37,7 @@ if ( ! class_exists( 'Jet_Engine_Meta_Boxes' ) ) {
 		/**
 		 * Meta fields for object
 		 *
-		 * @var null
+		 * @var null|array
 		 */
 		public $meta_fields = array();
 
@@ -89,6 +89,29 @@ if ( ! class_exists( 'Jet_Engine_Meta_Boxes' ) ) {
 
 			jet_engine_datetime()->convert_meta_fields_dates();
 
+			require_once $this->component_path( 'mcp/controller.php' );
+			new \Jet_Engine\Meta_Boxes\MCP\Controller();
+
+			add_action( 'admin_enqueue_scripts', array( $this, 'before_add_tag_form_script' ) );
+
+		}
+
+		public function before_add_tag_form_script( $suffix ) {
+			if ( $suffix !== 'edit-tags.php' ) {
+				return;
+			}
+
+			wp_add_inline_script(
+				'admin-tags',
+				"jQuery( 'form#addtag #submit' ).on('click', function (e) {
+					if ( ! cxInterfaceBuilderAPI.controlValidation.requiredValidation( true, jQuery( 'form#addtag' ) ) ) {
+						e.preventDefault();
+						e.stopImmediatePropagation();
+						cxInterfaceBuilderAPI.controlValidation.scrollToFirstErrorField();
+					}
+				});",
+				'before'
+			);
 		}
 
 		/**
@@ -238,6 +261,8 @@ if ( ! class_exists( 'Jet_Engine_Meta_Boxes' ) ) {
 						}
 
 						$post_types = ! empty( $args['allowed_post_type'] ) ? $args['allowed_post_type'] : array();
+						$position   = ! empty( $args['position'] ) ? $args['position'] : 'normal';
+						$priority   = ! empty( $args['priority'] ) ? $args['priority'] : 'high';
 						$title      = isset( $args['name'] ) ? $args['name'] : '';
 
 						foreach ( $post_types as $post_type ) {
@@ -256,7 +281,7 @@ if ( ! class_exists( 'Jet_Engine_Meta_Boxes' ) ) {
 								$this->data
 							);
 
-							$meta_instance = new Jet_Engine_CPT_Meta( $post_type, $meta_fields, $title, 'normal', 'high', $args );
+							$meta_instance = new Jet_Engine_CPT_Meta( $post_type, $meta_fields, $title, $position, $priority, $args );
 
 							if ( ! empty( $args['show_edit_link'] ) ) {
 								$meta_instance->add_edit_link( add_query_arg(
@@ -458,13 +483,15 @@ if ( ! class_exists( 'Jet_Engine_Meta_Boxes' ) ) {
 		 */
 		public function get_post_id() {
 
-			$post_id = isset( $_GET['post'] ) ? $_GET['post'] : false;
+			// phpcs:disable WordPress.Security.NonceVerification.Recommended
+			$post_id = isset( $_GET['post'] ) ? absint( wp_unslash( $_GET['post'] ) ) : false;
 
 			if ( ! $post_id && isset( $_REQUEST['post_ID'] ) ) {
-				$post_id = $_REQUEST['post_ID'];
+				$post_id = absint( wp_unslash( $_REQUEST['post_ID'] ) );
 			}
 
 			return $post_id;
+			// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		}
 
@@ -518,7 +545,7 @@ if ( ! class_exists( 'Jet_Engine_Meta_Boxes' ) ) {
 		 *
 		 * @return [type] [description]
 		 */
-		public function get_fields_for_select( $context = 'plain', $where = 'elementor', $for = 'all' ) {
+		public function get_fields_for_select( $context = 'plain', $where = 'elementor', $for = 'all', $add_object_type_to_output = false ) {
 
 			$result = array();
 			$post_types = get_post_types( array(), 'objects' );
@@ -526,31 +553,56 @@ if ( ! class_exists( 'Jet_Engine_Meta_Boxes' ) ) {
 
 			foreach ( $this->meta_fields as $object => $fields ) {
 
-				$group_label = false;
+				$group_args = apply_filters(
+					'jet-engine/meta-boxes/fields-for-select/group-args',
+					array(
+						'group_label' => '',
+						'group_for'   => $for,
+					),
+					$object,
+					$for,
+					$this
+				);
 
-				if ( isset( $post_types[ $object ] ) ) {
+				$group_label = $group_args['group_label'] ?? '';
+				$group_for   = $group_args['group_for'] ?? '';
 
-					if ( ! in_array( $for, array( 'all', 'posts' ) ) ) {
-						continue;
+				//if $group_label is false after the filter that means field group should be skipped
+				if ( $group_label === false ) {
+					continue;
+				}
+
+				if ( ! $group_label ) {
+					if ( isset( $post_types[ $object ] ) ) {
+
+						if ( ! in_array( $for, array( 'all', 'posts' ) ) ) {
+							continue;
+						}
+	
+						$group_label = $post_types[ $object ]->labels->name;
+	
+						$group_for = 'post';
+	
+					} elseif ( isset( $taxonomies[ $object ] ) ) {
+	
+						if ( ! in_array( $for, array( 'all', 'taxonomies' ) ) ) {
+							continue;
+						}
+	
+						$group_label = $taxonomies[ $object ]->labels->name;
+	
+						$group_for = 'taxonomy';
+	
+					} else {
+	
+						if ( ! in_array( $for, array( 'all', 'user' ) ) ) {
+							continue;
+						}
+	
+						$group_label = $object;
+
+						$group_for = 'user';
 					}
-
-					$group_label = $post_types[ $object ]->labels->name;
-
-				} elseif ( isset( $taxonomies[ $object ] ) ) {
-
-					if ( ! in_array( $for, array( 'all', 'taxonomies' ) ) ) {
-						continue;
-					}
-
-					$group_label = $taxonomies[ $object ]->labels->name;
-
-				} else {
-
-					if ( ! in_array( $for, array( 'all', 'user' ) ) ) {
-						continue;
-					}
-
-					$group_label = $object;
 				}
 
 				if ( ! $group_label ) {
@@ -669,17 +721,25 @@ if ( ! class_exists( 'Jet_Engine_Meta_Boxes' ) ) {
 				}
 
 				if ( ! empty( $group ) ) {
+					$new_item = array();
+
 					if ( 'blocks' === $where ) {
-						$result[] = array(
+						$new_item = array(
 							'label'  => $group_label,
 							'values' => $blocks_group,
 						);
 					} else {
-						$result[] = array(
+						$new_item = array(
 							'label'   => $group_label,
 							'options' => $group,
 						);
 					}
+
+					if ( $add_object_type_to_output ) {
+						$new_item['for'] = $group_for;
+					}
+
+					$result[] = $new_item;
 				}
 
 			}
@@ -687,7 +747,8 @@ if ( ! class_exists( 'Jet_Engine_Meta_Boxes' ) ) {
 			if ( 'elementor' === $where ) {
 				$result = array( '' => esc_html__( 'Select...', 'jet-engine' ) ) + $result;
 			}
-
+// echo '<pre>';
+// var_dump( $result )->e();
 			return $result;
 		}
 

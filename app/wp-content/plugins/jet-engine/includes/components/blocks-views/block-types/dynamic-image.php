@@ -25,6 +25,41 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Dynamic_Image' ) ) {
 		}
 
 		/**
+		 * Allow to filter raw attributes from block type instance to adjust JS and PHP attributes format
+		 *
+		 * @param  array $attributes Initial attributes.
+		 * @return array
+		 */
+		public function prepare_attributes( $attributes ) {
+
+			$custom_image_styles = array();
+
+			if ( ! empty( $attributes['custom_image_width'] ) ) {
+				$custom_image_styles['width'] = esc_attr( $attributes['custom_image_width'] );
+				unset( $attributes['custom_image_width'] );
+			}
+
+			if ( ! empty( $attributes['custom_image_height'] ) ) {
+				$custom_image_styles['height'] = esc_attr( $attributes['custom_image_height'] );
+				unset( $attributes['custom_image_height'] );
+			}
+
+			if ( ! empty( $attributes['custom_aspect_ratio'] ) ) {
+				$custom_image_styles['aspect_ratio'] = esc_attr( $attributes['custom_aspect_ratio'] );
+				unset( $attributes['custom_aspect_ratio'] );
+			}
+
+			if ( ! empty( $attributes['custom_scale'] ) ) {
+				$custom_image_styles['custom_scale'] = esc_attr( $attributes['custom_scale'] );
+				unset( $attributes['custom_scale'] );
+			}
+
+			$attributes['custom_image_styles'] = $custom_image_styles;
+
+			return $attributes;
+		}
+
+		/**
 		 * Return attributes array
 		 *
 		 * @return array
@@ -51,6 +86,24 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Dynamic_Image' ) ) {
 					'type' => 'number',
 					'default' => 50,
 				),
+				// Blocks specific attributes - start
+				'custom_aspect_ratio' => array(
+					'type' => 'string',
+					'default' => '',
+				),
+				'custom_image_width' => array(
+					'type' => 'string',
+					'default' => '',
+				),
+				'custom_image_height' => array(
+					'type' => 'string',
+					'default' => '',
+				),
+				'custom_scale' => array(
+					'type' => 'string',
+					'default' => 'cover',
+				),
+				// Blocks specific attributes - end
 				'custom_image_alt' => array(
 					'type' => 'string',
 					'default' => '',
@@ -106,6 +159,18 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Dynamic_Image' ) ) {
 					'type' => 'string',
 					'default' => 'default_object',
 				),
+				'add_image_caption' => array(
+					'type' => 'boolean',
+					'default' => false,
+				),
+				'image_caption_position' => array(
+					'type' => 'string',
+					'default' => 'after',
+				),
+				'image_caption' => array(
+					'type' => 'string',
+					'default' => '',
+				),
 			) );
 		}
 
@@ -146,6 +211,8 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Dynamic_Image' ) ) {
 					),
 					'css_selector' => array(
 						$this->css_selector() => 'justify-content: {{VALUE}};',
+						$this->css_selector( '.jet-listing-dynamic-image' ) => 'justify-content: {{VALUE}};',
+						$this->css_selector( '.jet-listing-dynamic-image__figure' ) => 'align-items: {{VALUE}};',
 					),
 				)
 			);
@@ -184,7 +251,7 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Dynamic_Image' ) ) {
 					'separator'    => 'before',
 					'css_selector' => array(
 						$this->css_selector( ' a' )   => 'width: {{VALUE}}{{UNIT}};',
-						$this->css_selector( ' img' ) => 'width: {{VALUE}}{{UNIT}};',
+						$this->css_selector( ' .jet-listing-dynamic-image__img' ) => 'width: {{VALUE}}{{UNIT}};',
 					),
 				)
 			);
@@ -304,8 +371,130 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Dynamic_Image' ) ) {
 					'label'      => __( 'Border Radius', 'jet-engine' ),
 					'type'         => 'dimensions',
 					'separator'    => 'before',
+					'is_legacy'    => true,
 					'css_selector' => array(
 						$this->css_selector( ' img' ) => 'border-radius: {{TOP}} {{RIGHT}} {{BOTTOM}} {{LEFT}};',
+					),
+				)
+			);
+
+			$this->controls_manager->end_section();
+
+			$this->controls_manager->start_section(
+				'style_controls',
+				array(
+					'id'           => 'section_caption_style',
+					'initial_open' => true,
+					'title'        => esc_html__( 'Caption Style', 'jet-engine' )
+				)
+			);
+
+			$this->controls_manager->add_control(
+				array(
+					'id'           => 'caption_color',
+					'label'        => __( 'Text Color', 'jet-engine' ),
+					'type'         => 'color-picker',
+					'css_selector' => array(
+						$this->css_selector( ' .jet-listing-dynamic-image__caption' ) => 'color: {{VALUE}}',
+					),
+				)
+			);
+
+			$this->controls_manager->add_control(
+				array(
+					'id'           => 'caption_typography',
+					'label'        => __( 'Typography', 'jet-engine' ),
+					'type'         => 'typography',
+					'css_selector' => array(
+						$this->css_selector( ' .jet-listing-dynamic-image__caption' ) => 'font-family: {{FAMILY}}; font-weight: {{WEIGHT}}; text-transform: {{TRANSFORM}}; font-style: {{STYLE}}; text-decoration: {{DECORATION}}; line-height: {{LINEHEIGHT}}{{LH_UNIT}}; letter-spacing: {{LETTERSPACING}}{{LS_UNIT}}; font-size: {{SIZE}}{{S_UNIT}};',
+					),
+				)
+			);
+
+			$this->controls_manager->add_responsive_control(
+				array(
+					'id'    => 'caption_max_width',
+					'label' => esc_html__( 'Max Width', 'jet-engine' ),
+					'type'  => 'range',
+					'separator' => 'before',
+					'units' => array(
+						array(
+							'value'     => 'px',
+							'intervals' => array(
+								'step' => 1,
+								'min'  => 1,
+								'max'  => 1000,
+							),
+						),
+						array(
+							'value'     => '%',
+							'intervals' => array(
+								'step' => 1,
+								'min'  => 1,
+								'max'  => 100,
+							),
+						),
+						array(
+							'value'     => 'vw',
+							'intervals' => array(
+								'step' => 1,
+								'min'  => 1,
+								'max'  => 100,
+							),
+						),
+					),
+					'css_selector' => array(
+						$this->css_selector( '.jet-listing-dynamic-image__caption' )   => 'max-width: {{VALUE}}{{UNIT}};',
+					),
+				)
+			);
+
+			$this->controls_manager->add_control(
+				array(
+					'id'    => 'caption_alignment',
+					'label' => __( 'Self Alignment', 'jet-engine' ),
+					'type'  => 'choose',
+					'options' => array(
+						'flex-start'   => array(
+							'label' => esc_html__( 'Start', 'jet-engine' ),
+							'icon'  => 'dashicons-editor-alignleft',
+						),
+						'center' => array(
+							'label' => esc_html__( 'Center', 'jet-engine' ),
+							'icon'  => 'dashicons-editor-aligncenter',
+						),
+						'flex-end'  => array(
+							'label' => esc_html__( 'End', 'jet-engine' ),
+							'icon'  => 'dashicons-editor-alignright',
+						),
+					),
+					'css_selector' => array(
+						$this->css_selector( '.jet-listing-dynamic-image__caption' ) => 'align-self: {{VALUE}};',
+					),
+				)
+			);
+
+			$this->controls_manager->add_control(
+				array(
+					'id'    => 'caption_text_alignment',
+					'label' => __( 'Text Alignment', 'jet-engine' ),
+					'type'  => 'choose',
+					'options' => array(
+						'start'   => array(
+							'label' => esc_html__( 'Start', 'jet-engine' ),
+							'icon'  => 'dashicons-editor-alignleft',
+						),
+						'center' => array(
+							'label' => esc_html__( 'Center', 'jet-engine' ),
+							'icon'  => 'dashicons-editor-aligncenter',
+						),
+						'end'  => array(
+							'label' => esc_html__( 'End', 'jet-engine' ),
+							'icon'  => 'dashicons-editor-alignright',
+						),
+					),
+					'css_selector' => array(
+						$this->css_selector( '.jet-listing-dynamic-image__caption' ) => 'text-align: {{VALUE}};',
 					),
 				)
 			);

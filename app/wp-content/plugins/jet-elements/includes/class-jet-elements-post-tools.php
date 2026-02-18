@@ -497,7 +497,7 @@ if ( ! class_exists( 'Jet_Elementst_Post_Tools' ) ) {
 			if ( ! filter_var( $echo, FILTER_VALIDATE_BOOLEAN ) ) {
 				return $content;
 			} else {
-				echo $content;
+				echo $content; // phpcs:ignore
 			}
 		}
 

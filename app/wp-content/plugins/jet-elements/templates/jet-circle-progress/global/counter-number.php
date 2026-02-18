@@ -19,4 +19,4 @@ if ( ! empty( $settings['thousand_separator'] ) ) {
 	$this->add_render_attribute( 'circle-counter', 'data-delimiter', ',' );
 }
 ?>
-<span <?php echo $this->get_render_attribute_string( 'circle-counter' ); ?>>0</span>
+<span <?php echo $this->get_render_attribute_string( 'circle-counter' ); // phpcs:ignore ?>>0</span>

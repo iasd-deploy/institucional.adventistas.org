@@ -19,19 +19,20 @@ if ( ! class_exists( 'Jet_Engine_Dynamic_Tags_Manager' ) ) {
 	 */
 	class Jet_Engine_Dynamic_Tags_Manager {
 
+		protected static $initialized = false;
+
 		/**
 		 * Constructor for the class
 		 */
 		function __construct() {
 
-			$init_action = 'elementor/init';
-
-			// Init a module early on Elementor Data Updater
-			if ( is_admin() && ( isset( $_GET['elementor_updater'] ) || isset( $_GET['elementor_pro_updater'] ) ) ) {
-				$init_action = 'elementor/documents/register';
-			}
-
-			add_action( $init_action, array( $this, 'init_module' ) );
+			/**
+			 * Maybe need to find a better hook in the future
+			 * @see https://github.com/Crocoblock/issues-tracker/issues/15583
+			 * @see https://github.com/Crocoblock/issues-tracker/issues/15591
+			 */
+			add_action( 'elementor/documents/register', array( $this, 'init_module' ) );
+			add_action( 'elementor/dynamic_tags/before_render', array( $this, 'init_module' ) );
 
 			add_filter(
 				'jet-engine/elementor-views/frontend/listing-content',
@@ -61,12 +62,18 @@ if ( ! class_exists( 'Jet_Engine_Dynamic_Tags_Manager' ) ) {
 		 */
 		public function init_module() {
 
+			if ( self::$initialized ) {
+				return;
+			}
+
 			require jet_engine()->plugin_path( 'includes/components/elementor-views/dynamic-tags/module.php' );
 			new Jet_Engine_Dynamic_Tags_Module();
 
 			if ( defined( 'ELEMENTOR_VERSION' ) && version_compare( ELEMENTOR_VERSION, '3.0.0-beta4', '>=' ) ) {
 				require jet_engine()->plugin_path( 'includes/components/elementor-views/dynamic-tags/dynamic-css.php' );
 			}
+
+			self::$initialized = true;
 		}
 
 		/**

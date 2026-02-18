@@ -19,6 +19,10 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views' ) ) {
 		public $render;
 		public $block_types;
 		public $dynamic_content;
+		/**
+		 * @var \Crocoblock\Blocks_Style\Manager
+		 */
+		public $style_manager;
 
 		/**
 		 * Constructor for the class
@@ -47,6 +51,8 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views' ) ) {
 			require $this->component_path( 'ajax-handlers.php' );
 			require $this->component_path( 'dynamic-content/manager.php' );
 			require $this->component_path( 'components/register.php' );
+			require $this->component_path( 'content-setter.php' );
+			require $this->component_path( 'core-styles.php' );
 
 			$this->render          = new Jet_Engine_Blocks_Views_Render();
 			$this->block_types     = new Jet_Engine_Blocks_Views_Types();
@@ -54,11 +60,23 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views' ) ) {
 
 			new Jet_Engine_Blocks_Views_Ajax_Handlers();
 			new \Jet_Engine\Blocks_Views\Components\Register();
+			new \Jet_Engine\Blocks_Views\Content_Setter();
+			new \Jet_Engine\Blocks_Views\Core_Styles();
+
+			$module_data = jet_engine()->framework->get_included_module_data( 'style-manager.php' );
+
+			//Enable styles migrator in any of plugins when all be ready
+			//\Crocoblock\Blocks_Style\Manager::$requires_migration = true;
+
+			$this->style_manager = new \Crocoblock\Blocks_Style\Manager( array(
+				'path' => $module_data['path'],
+				'url'  => $module_data['url'],
+			) );
 		}
 
 		/**
 		 * Register listing view
-		 * 
+		 *
 		 * @param [type] $views [description]
 		 */
 		public function add_listing_view( $views ) {
@@ -102,7 +120,7 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views' ) ) {
 		public function is_blocks_listing( $listing_id ) {
 
 			/**
-			 * Do not use get_listing_type() method here 
+			 * Do not use get_listing_type() method here
 			 * because this method itself used inside get_listing_type() to define what listing type was used
 			 */
 			$meta = get_post_meta( $listing_id, '_listing_type', true );
@@ -128,6 +146,7 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views' ) ) {
 		 */
 		public function inject_listing_settings( $template_data ) {
 
+			// phpcs:disable WordPress.Security.NonceVerification
 			if ( empty( $_REQUEST['listing_view_type'] ) || 'blocks' !== $_REQUEST['listing_view_type'] ) {
 				return $template_data;
 			}
@@ -135,6 +154,7 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views' ) ) {
 			if ( ! isset( $_REQUEST['listing_source'] ) ) {
 				return $template_data;
 			}
+			// phpcs:enable WordPress.Security.NonceVerification
 
 			return $template_data;
 

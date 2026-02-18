@@ -27,9 +27,10 @@ if ( ! class_exists( 'Jet_Smart_Filters_Sorting_Filter' ) ) {
 		 */
 		public function sorting_options( $options_list = array() ) {
 
+			$sort_standard_request_val = jet_smart_filters()->data->get_request_var( '_sort_standard' );
 			$options  = array();
-			$currentFromRequest = isset( $_REQUEST['_sort_standard'] )
-				? json_decode( str_replace( '\"', '"', $_REQUEST['_sort_standard'] ), true )
+			$currentFromRequest = $sort_standard_request_val
+				? json_decode( str_replace( '\"', '"', $sort_standard_request_val ), true )
 				: false;
 
 			foreach ( $options_list as $option_data ) {

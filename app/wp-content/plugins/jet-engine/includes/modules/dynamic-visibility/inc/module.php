@@ -39,9 +39,13 @@ class Module {
 		require jet_engine()->modules->modules_path( 'dynamic-visibility/inc/conditions-checker.php' );
 		require jet_engine()->modules->modules_path( 'dynamic-visibility/inc/elementor-integration.php' );
 		require jet_engine()->modules->modules_path( 'dynamic-visibility/inc/blocks-integration.php' );
+		require jet_engine()->modules->modules_path( 'dynamic-visibility/inc/shortcode.php' );
+		require jet_engine()->modules->modules_path( 'dynamic-visibility/inc/bricks-views/conditions.php' );
 
 		new Elementor_Integration();
 		new Blocks_Integration();
+		new Shortcode();
+		new Bricks_Views\Conditions();
 
 		$this->conditions = new Conditions\Manager();
 
@@ -110,7 +114,7 @@ class Module {
 
 		$data['jedv_field'] = array(
 			'label'       => __( 'Field', 'jet-engine' ),
-			'description' => __( 'Enter meta field name or select dynamic tag to compare value against. <br><b>Note!</b> If your meta field contains array, for example JetEngine Checkbox field etc, you need to set meta field name manually (not with dynamic capability)', 'jet-engine' ),
+			'description' => __( 'Enter the name of a meta field or object property, or select dynamic tag to compare value against. <br><b>Note!</b> If your meta field or object property contains an array (for example, JetEngine Checkbox field etc.), you need to set the name manually (not with dynamic capability)', 'jet-engine' ),
 			'type'        => 'text',
 			'label_block' => true,
 			'has_html'    => true,

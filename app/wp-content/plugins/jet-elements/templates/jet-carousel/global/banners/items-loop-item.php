@@ -39,23 +39,23 @@
 						$lightbox_desc = 'data-elementor-lightbox-description="' . wp_strip_all_tags( $this->_loop_item( array( 'item_text' ) ) ) . '"';
 					}
 
-					printf( '<a href="%1$s" class="jet-banner__link" %2$s %3$s %4$s>', $item_settings['item_image']['url'], $lightbox, $lightbox_title, $lightbox_desc );
+					printf( '<a href="%1$s" class="jet-banner__link" %2$s %3$s %4$s>', esc_url( $item_settings['item_image']['url'] ), esc_attr( $lightbox ), esc_html( $lightbox_title ), esc_html( $lightbox_desc ) );
 				} else {
-					echo $this->_loop_item( array( 'item_link' ), '<a href="%s" class="jet-banner__link"' . $target . $rel . '>' );
+					echo $this->_loop_item( array( 'item_link' ), '<a href="%s" class="jet-banner__link"' . $target . $rel . '>' ); // phpcs:ignore
 				}
 			}
 
 			echo '<div class="jet-banner__overlay"></div>';
-			echo $img;
+			echo $img; // phpcs:ignore
 			echo '<figcaption class="jet-banner__content">';
 				echo '<div class="jet-banner__content-wrap">';
 					switch ( $content_type ) {
 						case 'default':
-							echo $this->_loop_item( array( 'item_title' ), '<' . $title_tag . ' class="jet-banner__title">%s</' . $title_tag . '>' );
-							echo $this->_loop_item( array( 'item_text' ), '<div class="jet-banner__text">%s</div>' );
+							echo $this->_loop_item( array( 'item_title' ), '<' . $title_tag . ' class="jet-banner__title">%s</' . $title_tag . '>' );  // phpcs:ignore
+							echo $this->_loop_item( array( 'item_text' ), '<div class="jet-banner__text">%s</div>' );  // phpcs:ignore
 							break;
 						case 'template':
-							echo $this->_loop_item_template_content();
+							echo $this->_loop_item_template_content();  // phpcs:ignore
 							break;
 					}
 				echo '</div>';
@@ -65,7 +65,7 @@
 			if ( $settings['item_link_type'] === 'lightbox' && $img ) {
 				printf( '</a>' );
 			} else {
-				echo $this->_loop_item( array( 'item_link' ), '</a>' );
+				echo $this->_loop_item( array( 'item_link' ), '</a>' );  // phpcs:ignore
 			}
 		}
 	?></figure>

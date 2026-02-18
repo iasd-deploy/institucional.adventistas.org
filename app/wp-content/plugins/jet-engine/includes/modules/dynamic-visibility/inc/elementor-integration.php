@@ -22,7 +22,7 @@ class Elementor_Integration extends Condition_Checker {
 		if ( ! jet_engine()->has_elementor() ) {
 			return;
 		}
-		
+
 		require jet_engine()->modules->modules_path( 'dynamic-visibility/inc/elementor-settings.php' );
 		new Settings();
 
@@ -56,7 +56,7 @@ class Elementor_Integration extends Condition_Checker {
 	 */
 	public function before_element_render( $element ) {
 
-		if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
+		if ( \Elementor\Plugin::$instance->editor->is_edit_mode() || $this->prevent_check() ) {
 			return;
 		}
 
@@ -84,6 +84,10 @@ class Elementor_Integration extends Condition_Checker {
 				}
 			}
 
+			if ( is_callable( array( $element, 'jet_on_hide' ) ) ) {
+				$element->jet_on_hide();
+			}
+
 			$this->hidden_elements_ids[] = $element->get_id();
 		}
 	}
@@ -95,7 +99,7 @@ class Elementor_Integration extends Condition_Checker {
 	 */
 	public function after_element_render( $element ) {
 
-		if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
+		if ( \Elementor\Plugin::$instance->editor->is_edit_mode() || $this->prevent_check() ) {
 			return;
 		}
 

@@ -15,6 +15,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Provider_EPro_Archive_Products' ) ) {
 	 */
 	class Jet_Smart_Filters_Provider_EPro_Archive_Products extends Jet_Smart_Filters_Provider_Base {
 
+		protected $has_container_wrapper = null;
 		public $default_query = null;
 
 		/**
@@ -41,7 +42,8 @@ if ( ! class_exists( 'Jet_Smart_Filters_Provider_EPro_Archive_Products' ) ) {
 
 			$this->default_query = $this->get_default_query( $query );
 
-			if ( isset( $_REQUEST['jsf'] ) && explode( ':', $_REQUEST['jsf'] )[0] === $this->get_id() ) {
+			$jsf_request_val = jet_smart_filters()->data->get_request_var( 'jsf' );
+			if ( $jsf_request_val && explode( ':', $jsf_request_val )[0] === $this->get_id() ) {
 				$query->set( 'jsf', $this->get_id() );
 			}
 		}
@@ -54,7 +56,8 @@ if ( ! class_exists( 'Jet_Smart_Filters_Provider_EPro_Archive_Products' ) ) {
 
 			$this->default_query = $this->get_default_query( $query );
 
-			if ( isset( $_REQUEST['jsf'] ) && explode( ':', $_REQUEST['jsf'] )[0] === $this->get_id() ) {
+			$jsf_request_val = jet_smart_filters()->data->get_request_var( 'jsf' );
+			if ( $jsf_request_val && explode( ':', $jsf_request_val )[0] === $this->get_id() ) {
 				$query->set( 'jsf', $this->get_id() );
 			}
 		}
@@ -73,7 +76,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Provider_EPro_Archive_Products' ) ) {
 				'jet_smart_filters' => $this->get_id(),
 			);
 
-			if ( ! empty( $query->queried_object ) ) {
+			if ( ! empty( $query->queried_object ) && $query->queried_object instanceof WP_Term ) {
 				$default_query['taxonomy'] = $query->queried_object->taxonomy;
 				$default_query['term']     = $query->queried_object->slug;
 			}
@@ -245,9 +248,11 @@ if ( ! class_exists( 'Jet_Smart_Filters_Provider_EPro_Archive_Products' ) ) {
 			$content = ob_get_clean();
 
 			if ( $content ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				echo $content;
 			} else {
-				echo '<div class="elementor-widget-container"></div>';
+				$container_class = $this->has_container_wrapper() ? 'elementor-widget-container' : 'elementor-products';
+				echo '<div class="' . esc_attr( $container_class ) . '"></div>';
 			}
 
 			do_action( 'jet-smart-filters/providers/epro-archive-products/after-ajax-content' );
@@ -277,7 +282,23 @@ if ( ! class_exists( 'Jet_Smart_Filters_Provider_EPro_Archive_Products' ) ) {
 		 */
 		public function get_wrapper_selector() {
 
-			return '.elementor-widget-wc-archive-products .elementor-widget-container';
+			if ( $this->has_container_wrapper() ) {
+				return '.elementor-widget-wc-archive-products .elementor-widget-container';
+			} else {
+				return '.elementor-widget-wc-archive-products';
+			}
+		}
+
+		/**
+		 * Check if provider has .elementor-widget-container wrapper
+		 */
+		public function has_container_wrapper() {
+
+			if ( null === $this->has_container_wrapper ) {
+				$this->has_container_wrapper = ! Elementor\Plugin::$instance->experiments->is_feature_active( 'e_optimized_markup' );
+			}
+
+			return $this->has_container_wrapper;
 		}
 
 		/**
@@ -301,7 +322,9 @@ if ( ! class_exists( 'Jet_Smart_Filters_Provider_EPro_Archive_Products' ) ) {
 		 */
 		public function get_wrapper_action() {
 
-			return 'replace';
+			return $this->has_container_wrapper()
+				? 'replace'
+				: 'insert';
 		}
 
 		/**

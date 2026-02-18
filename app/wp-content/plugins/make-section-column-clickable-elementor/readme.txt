@@ -1,17 +1,17 @@
-﻿===Make Section & Column Clickable Elementor===
-Contributors: saju4wordpress
+﻿===Make Section & Column Clickable For Elementor===
+Contributors: saju4wordpress, wecodexwp
 Donate Link: https://www.buymeacoffee.com/riyadh1734
 Author URI: http://sajuahmed.epizy.com/
 Plugin URI: https://wordpress.org/plugins/make-section-column-clickable-elementor
 Tags: section clickable, column clickable, elementor section, elementor column.
 Requires at least: 5.2
-Tested up to: 6.6
-Elementor tested up to: 3.23.3
-Stable tag: 2.0
+Tested up to: 6.9
+Elementor tested up to: 3.34
+Stable tag: 2.4.1
 License: GPLv2 or later 
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Make Section & Column Clickable Elementor is a WordPress plugin to clickable your elementor column & section in your WordPress website.
+Make Section & Column Clickable For Elementor is a WordPress plugin to clickable your elementor column & section in your WordPress website.
 
 == Description ==
 A plugin that allows users to click in the whole column or section instead of individual elements
@@ -32,7 +32,7 @@ You can make my day by submitting a positive review on <a href="https://wordpres
 This may have bugs and lack of many features. If you want to contribute on this project, you are more than welcome. Please fork the repository from [Github](https://github.com/Riyadh1734/Make-Section-Column-Clickable-Elementor).
 
 ## Privacy Policy 
-Make Section &amp; Column Clickable Elementor uses [Appsero](https://appsero.com) SDK to collect some telemetry data upon user's confirmation. This helps us to troubleshoot problems faster & make product improvements.
+Make Section &amp; Column Clickable For Elementor uses [Appsero](https://appsero.com) SDK to collect some telemetry data upon user's confirmation. This helps us to troubleshoot problems faster & make product improvements.
 
 Appsero SDK **does not gather any data by default.** The SDK only starts gathering basic telemetry data **when a user allows it via the admin notice**. We collect the data to ensure a great user experience for all our users. 
 
@@ -41,7 +41,7 @@ Integrating Appsero SDK **DOES NOT IMMEDIATELY** start gathering data, **without
 Learn more about how [Appsero collects and uses this data](https://appsero.com/privacy-policy/).
 
 == Installation ==
-1. Upload `Make Section & Column Clickable Elementor` to the `/wp-content/plugins/` directory
+1. Upload `Make Section & Column Clickable For Elementor` to the `/wp-content/plugins/` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
 
 == Frequently asked questions ==
@@ -111,6 +111,42 @@ Yes.
 * Compatible with WordPress version
 * Compatible with Elementor version
 * Add Appsero SDK
+
+= 2.1 =
+
+* Compatible with WordPress version
+* Compatible with Elementor version
+
+= 2.2 =
+
+* Compatible with WordPress version
+* Compatible with Elementor version
+
+= 2.3 =
+
+* Compatible with WordPress version
+* Compatible with Elementor version
+
+= 2.4 =
+
+* Compatible with WordPress version
+
+= 2.4.1 =
+
+* Compatible with WordPress version
+* Compatible with Elementor version
+
+* 🔐 Security
+* Fixed a stored XSS vulnerability caused by inline JavaScript usage
+* Removed inline onclick handlers from frontend rendering
+* Implemented secure click handling using external JavaScript
+* Sanitized and escaped all user-provided URLs and attributes
+* Improved compatibility with WordPress Multisite security restrictions
+
+* 🛠️ Improvements
+* Cleaner frontend markup
+* CSP-friendly implementation
+* Improved long-term security hardening
 
 == Upgrade notice ==
 N/A.

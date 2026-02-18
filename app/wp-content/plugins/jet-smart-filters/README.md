@@ -2,6 +2,199 @@
 
 # ChangeLog
 
+## 3.7.4.1
+- FIX: Bricks PHPCS
+
+## 3.7.4
+- ADD: PHPCS Check
+- FIX: fatal error when using Query Builder and tax_query with "Taxonomy term name" => Slug 
+- FIX: issue with Bricks Loop
+
+## 3.7.3
+- ADD: Allow to set dynamic default value for the filters;
+- FIX: Issue with styles for filters inside Bricks popup;
+- FIX: Compatibility Elementor filters widgets with WPML;
+- FIX: Minor issues with new blocks styles manager;
+- FIX: Search Filter. Issue with quotes in the search request when searching by custom fields;
+- FIX: Listing Builder. Correctly handle Additional CSS classes for the blocks.
+
+## 3.7.2
+- ADD: Admin URL Structure Settings URL Aliases warning text
+- FIX: WooCommerce Shortcode sorting
+- FIX: Sort filter with Products
+- FIX: Date Period filter reset with minDate & maxDate
+- FIX: Visual filter Behavior->Radio all option remove indexer count
+- FIX: filter Query Variable = _tax_query:: with Taxonomy term name type in URL = slug
+- FIX: JetProductTable Warnings
+- FIX: Query Variable: _plain_query Warning
+- FIX: WooCommerce Shortcode provider with Apply type Page reload/Mixed 
+- FIX: jet-elementor-extension framework
+
+
+## 3.7.1
+- ADD: compatibility with weglot
+- ADD: filter additional settings text controls to WMPL Advanced Translation Editor
+- ADD: indexer group_concat_max_len hook
+- FIX: rewrite rules for custom taxonomy subposts
+- FIX: Visual filter label XSS
+- FIX: removing tags in active items
+- FIX: WooCommerce Shortcode provider Pagination
+- FIX: Filter is hidden by Indexer after disabling Indexer
+- FIX: increase group_concat_max_len
+- FIX: admin filter wpml taxonomy terms translate
+- FIX: Woocommerce Attributes with JSF Permalinks
+- FIX: Remove custom loop marker logic after Bricks 2.0 update
+
+## 3.7.0
+- ADD: Listing Builder
+- ADD: New style manager
+
+## 3.6.11
+- FIX: Plain query for Date Period/Range
+- FIX: admin settings subtitle font weight
+- FIX: filter predefined value
+- FIX: Active Filters/Tags label with " symbol
+- FIX: If the parent element is excluded, preserve the hierarchy in its descendants
+- FIX: Products Loop with Listing Grid
+- FIX: woocommerce wpml multi currency current
+- FIX: plain_query data with suffix
+
+## 3.6.10
+- UPD: indexer item_id change to BIGINT
+- FIX: for warning after activating the plugin
+- FIX: Date Period with Apply type -> Page reload
+- FIX: Filter Label with HTML
+- FIX: Editor block Search with apply type Mixed
+- FIX: auto re-indexing
+- FIX: add missing styles to enable Hierarchical Select customization for Bricks.
+
+## 3.6.9
+- FIX: Pagination for Products Loop is incorrect in some cases;
+- FIX: Fatal error when submitting form on the page built with Bricks;
+- FIX: PHP error in some cases.
+
+## 3.6.8.2
+
+- FIX: slug name in hierarchical select
+- FIX: rollback if filter is not displayed
+
+## 3.6.8.1
+
+- FIX: active filter not working and breaks all filters on the page
+- FIX: additional providers doesn't work
+- FIX: filter indexer doesn't work properly
+- FIX: Cross-site scripting(XSS) vulnerabilities
+
+## 3.6.8
+
+- FIX: Woocommerce archive pagination
+- FIX: Wrong apply type if there are multiple identical filters on the same page
+- FIX: woocommerse shortcode with query ID
+- FIX: more than one plain query parameter
+- FIX: js uniqueFilters update
+
+## 3.6.7.1
+
+- UPD: JetQuery Control module to the latest secure version
+
+## 3.6.7
+
+- ADD: Default Woo Archive provider
+- ADD: cct checkboxes info
+- FIX: Ensure parent class Jet_Smart_Filters_Provider_WooCommerce_Archive is included
+- FIX: better compatibility with various themes & not found msg
+- FIX: Apply Button Active Button State doesn't recognize Location & Distance filter
+- FIX: Error when receiving cct data when jet engine is disabled
+
+## 3.6.6
+
+- FIX: range filters apply on Enter in Safari browser
+- FIX: Remove dangerous tags from DB values before usage
+- FIX: Elementor Archive & Archive Products providers & optimized DOM
+
+## 3.6.5
+
+- UPD: links in the Need Help button
+- FIX: fixed query variable merging for 'Page Reload' filters in Bricks for more reliable behavior
+- FIX: Deprecated Dynamic Properties
+- FIX: warnings
+
+## 3.6.4
+
+- FIX: sorting filter with meta key containing date
+- FIX: Active button state with Radio filter
+- FIX: other filters changed indexer
+- FIX: Bricks infinite scroll/load more after filtering
+- FIX: Add validation for Bricks to check if selected filters are published
+- FIX: Override the main WordPress query when the 'Is main query' option is enabled for Bricks query loop
+
+## 3.6.3.1
+
+- FIX: rating filter icon esc_attr (XSS)
+
+## 3.6.3
+
+- ADD: date range filter apply on enter
+- ADD: disabling Rank Math SEO integration if there are SEO filter rules on the page
+- FIX: filter styles with grouped items in popup
+- FIX: search filter with _plain_query
+- FIX: options from the postmeta table indexer
+- FIX: Elementor Pro Archive Products provider with experimental optionOptimized Markup
+- FIX: Uncaught TypeError: i.filterGroup.isCurrentProvider is not a function
+- FIX: hierarchical toggle enabled after switching to another filter type
+- FIX: Fatal errors in some cases
+- FIX: indexer in some cases
+- FIX: Added detail object to the bricks/ajax/query_result/displayed event to prevent TypeError on queryId
+- FIX: Add check for window.JetSmartFilters object to prevent console errors
+
+## 3.6.2
+
+- FIX: filters with Elementor Portfolio widget
+- FIX: if taxonomy does not exist
+- FIX: canonical ref link with Yoast SEO
+- FIX: Visual filter labels
+- FIX: missing jQuery dependency in script enqueue
+- FIX: ensured compatibility with Bricks query loop by forcing useQueryFilter to true for correct filtering with JetSmartFilters
+- FIX: resolved issue where taxonomy filter didn't work with Bricks query loop when a parent term was selected in 'Terms (Include)'
+
+## 3.6.1
+
+- ADD: hidden filter
+- ADD: custom URL symbols options
+- ADD: allow to get options from the postmeta table
+- FIX: exclude taxonomy terms options
+- FIX: default filter value with JetEngine Lazy Load
+- FIX: Sanitize the incoming settings using a dedicated method
+- FIX: Disable 'Fixed position' option for Provider Preloader in Bricks query loop
+- FIX: Vertical alignment for Preloader provider in Bricks query loop
+- FIX: Initialize plugin in Bricks popup after JSF filtering
+- FIX: Move inline JS for Bricks query loop and filters to external file
+- FIX: Add '_query_type' property to ensure indexer works correctly
+- FIX: Add updated_query property to AJAX filtering response
+- FIX: Prepare queryUpdatePayload for passing to the handle method
+- FIX: refactor method for updating filtering results using bricks method
+- FIX: Handle auto-scroll option after refactoring for Bricks provider integration
+
+## 3.6.0.1
+
+- FIX: prevent system notices appearing
+
+## 3.6.0
+
+- ADD: SEO Title & Description
+- ADD: taxonomy term name type in URL (ID/Slug)
+- ADD: filters compatibility with the products variation
+- ADD: filter taxonomy terms options sorting
+- UPD: added description for "Apply button" with redirect
+- FIX: re-init Bricks builder scripts after filtering dynamic calendar
+- FIX: add property to store base query variables for "reload" filter type
+
+## 3.5.8
+
+- UPD: Compatibility with Elementor 3.26
+- ADD: Ability to close the dropdown on clicking the Apply button
+- FIX: indexer with `_tax_query`
+
 ## 3.5.7.1
 
 - FIX: hot fix: hierarchical, alphabet, geomap filters
@@ -12,14 +205,14 @@
 - FIX: work of two searches with different types together
 - FIX: Sorting filter WPML
 - FIX: filters are broken on front with "Dynamic Visibility"
-- FIX: indexer with taxonomy source and _tax_query key 
+- FIX: indexer with taxonomy source and _tax_query key
 - FIX: posts disappearing when translating with Polylang
 - FIX: included element section
 - FIX: added props to event ajaxFilters/updated
 
 ## 3.5.6
 
-- ADD: checkboxes list filter relational operator option between items 
+- ADD: checkboxes list filter relational operator option between items
 - ADD: page reload apply type on value change
 - ADD: search filter input focus styles
 - UPD: initialize filter styles before rendering the filters themselves
@@ -128,7 +321,7 @@
 
 - FIX: indexer value with quotation mark
 - FIX: datepicker on mobile devices
-- FIX: ePro archive products pagination on reload 
+- FIX: ePro archive products pagination on reload
 - FIX: epro-archive-products removed the addition of jet_smart_filters argument from the archive query
 - FIX: plain URL aliases with pagination on direct link or reload
 - FIX: Warning after update

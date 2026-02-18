@@ -598,7 +598,10 @@ class Jet_Smart_Filters_Pagination_Widget extends \Jet_Engine\Bricks_Views\Eleme
 			$controls['provider_top_offset'] = ! empty( $settings['provider_top_offset'] ) ? absint( $settings['provider_top_offset'] ) : 0;
 		}
 
-		echo "<div {$this->render_attributes( '_root' )}>";
+		$attrs = $this->render_attributes( '_root' );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<div ' . $attrs . '>';
+
 		printf(
 			'<div
 				class="%1$s"
@@ -608,11 +611,11 @@ class Jet_Smart_Filters_Pagination_Widget extends \Jet_Engine\Bricks_Views\Eleme
 				data-controls="%4$s"
 				data-apply-type="%5$s"
 			>',
-			$base_class,
-			$content_provider,
-			$query_id,
-			htmlspecialchars( json_encode( $controls ) ),
-			$apply_type
+			esc_attr( $base_class ),
+			esc_attr( $content_provider ),
+			esc_attr( $query_id ),
+			esc_attr( wp_json_encode( $controls ) ),
+			esc_attr( $apply_type )
 		);
 
 		if ( ! $this->is_frontend ) {

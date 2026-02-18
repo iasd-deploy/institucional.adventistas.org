@@ -1,3 +1,6 @@
+<?php
+// phpcs:disable
+?>
 <div>
 	<cx-vui-collapse
 		:collapsed="false"
@@ -61,6 +64,19 @@
 				@input="( newValue ) => { setArg( newValue, 'parent_control' ) }"
 			></cx-vui-switcher>
 			<cx-vui-switcher
+				name="children_required"
+				label="<?php _e( 'Require at least one child', 'jet-engine' ); ?>"
+				description="<?php _e( 'If enabled, on edit post screen an error will appear if no children set.', 'jet-engine' ); ?>"
+				:wrapper-css="[ 'equalwidth' ]"
+				:value="args.children_required"
+				:conditions="[ {
+					input: args.parent_control,
+					compare: 'equal',
+					value: true,
+				} ]"
+				@input="( newValue ) => { setArg( newValue, 'children_required' ) }"
+			></cx-vui-switcher>
+			<cx-vui-switcher
 				name="parent_manager"
 				label="<?php _e( 'Allow to create new children from parent', 'jet-engine' ); ?>"
 				description="<?php _e( 'If enabled, allows to create new children items from the related items control for parent object page', 'jet-engine' ); ?>"
@@ -93,6 +109,19 @@
 				:wrapper-css="[ 'equalwidth' ]"
 				:value="args.child_control"
 				@input="( newValue ) => { setArg( newValue, 'child_control' ) }"
+			></cx-vui-switcher>
+			<cx-vui-switcher
+				name="parents_required"
+				label="<?php _e( 'Require at least one parent', 'jet-engine' ); ?>"
+				description="<?php _e( 'If enabled, on edit post screen an error will appear if no parents set.', 'jet-engine' ); ?>"
+				:wrapper-css="[ 'equalwidth' ]"
+				:value="args.parents_required"
+				:conditions="[ {
+					input: args.child_control,
+					compare: 'equal',
+					value: true,
+				} ]"
+				@input="( newValue ) => { setArg( newValue, 'parents_required' ) }"
 			></cx-vui-switcher>
 			<cx-vui-switcher
 				name="child_manager"
@@ -244,6 +273,23 @@
 				} ]"
 			></cx-vui-input>
 			<cx-vui-input
+				label="<?php _e( 'Parent Object: no children error', 'jet-engine' ); ?>"
+				description="<?php _e( 'Error shown when children reqired and no children set', 'jet-engine' ); ?>"
+				:wrapper-css="[ 'equalwidth' ]"
+				size="fullwidth"
+				:value="args.labels.parent_page_control_required_error"
+				@input="( newValue ) => { setLabel( newValue, 'parent_page_control_required_error' ) }"
+				:conditions="[ {
+					input: args.parent_control,
+					compare: 'equal',
+					value: true,
+				}, {
+					input: args.children_required,
+					compare: 'equal',
+					value: true,
+				} ]"
+			></cx-vui-input>
+			<cx-vui-input
 				label="<?php _e( 'Parent Object: label of connect button', 'jet-engine' ); ?>"
 				description="<?php _e( 'Label of button to connect existing related items on parent object page', 'jet-engine' ); ?>"
 				:wrapper-css="[ 'equalwidth' ]"
@@ -295,6 +341,23 @@
 				@input="( newValue ) => { setLabel( newValue, 'child_page_control_title' ) }"
 				:conditions="[ {
 					input: args.child_control,
+					compare: 'equal',
+					value: true,
+				} ]"
+			></cx-vui-input>
+			<cx-vui-input
+				label="<?php _e( 'Child Object: no parents error', 'jet-engine' ); ?>"
+				description="<?php _e( 'Error shown when parents reqired and no parents set', 'jet-engine' ); ?>"
+				:wrapper-css="[ 'equalwidth' ]"
+				size="fullwidth"
+				:value="args.labels.child_page_control_required_error"
+				@input="( newValue ) => { setLabel( newValue, 'child_page_control_required_error' ) }"
+				:conditions="[ {
+					input: args.child_control,
+					compare: 'equal',
+					value: true,
+				}, {
+					input: args.parents_required,
 					compare: 'equal',
 					value: true,
 				} ]"

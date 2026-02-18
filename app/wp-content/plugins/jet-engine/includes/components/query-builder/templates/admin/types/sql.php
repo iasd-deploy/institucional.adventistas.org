@@ -2,6 +2,8 @@
 /**
  * Posts query component template
  */
+
+// phpcs:disable
 ?>
 <div class="jet-engine-edit-page__fields">
 	<div class="cx-vui-collapse__heading">
@@ -11,9 +13,10 @@
 		<cx-vui-switcher
 			label="<?php _e( 'Advanced/AI mode', 'jet-engine' ); ?>"
 			description="<?php _e( 'Enable this to reset all settings and write SQL query manually or with help of AI.', 'jet-engine' ); ?>"
-			:wrapper-css="[ 'equalwidth' ]"
+			:wrapper-css="isFetchingControl( 'query_manual_query' ) ? [ 'equalwidth', 'disabled' ] : [ 'equalwidth' ]"
 			name="query_advanced_mode"
 			v-model="query.advanced_mode"
+			@input="maybeConvertToAdvanced( 'query_manual_query' )"
 		></cx-vui-switcher>
 		<template v-if="!query.advanced_mode">
 			<cx-vui-select
@@ -122,6 +125,13 @@
 						button-size="mini"
 						v-model="query.where"
 						@add-new-item="addNewField( $event, [], query.where, newDynamicWhere )"
+						:custom-actions="[
+							{
+								buttonLabel: '<?php _e( 'Add new group', 'jet-engine' ); ?>',
+								buttonStyle: 'accent-border',
+								callback: addNewWhereGroup,
+							}
+						]"
 					>
 						<cx-vui-repeater-item
 							v-for="( whereClause, index ) in query.where"
@@ -131,40 +141,14 @@
 							@delete-item="deleteField( $event, whereClause._id, query.where, deleteDynamicWhere )"
 							:key="whereClause._id"
 						>
-							<cx-vui-select
-								label="<?php _e( 'Column', 'jet-engine' ); ?>"
-								description="<?php _e( 'Select column to query results by', 'jet-engine' ); ?>"
-								:wrapper-css="[ 'equalwidth' ]"
-								:options-list="availableColumns"
-								size="fullwidth"
-								:value="query.where[ index ].column"
-								@input="setFieldProp( whereClause._id, 'column', $event, query.where )"
-							></cx-vui-select>
-							<cx-vui-select
-								label="<?php _e( 'Compare', 'jet-engine' ); ?>"
-								description="<?php _e( 'Operator to test', 'jet-engine' ); ?>"
-								:wrapper-css="[ 'equalwidth' ]"
-								:options-list="operators"
-								size="fullwidth"
-								:value="query.where[ index ].compare"
-								@input="setFieldProp( whereClause._id, 'compare', $event, query.where )"
-							></cx-vui-select>
-							<cx-vui-input
-								label="<?php _e( 'Value', 'jet-engine' ); ?>"
-								:wrapper-css="[ 'equalwidth', 'has-macros' ]"
-								size="fullwidth"
-								:value="query.where[ index ].value"
-								@input="setFieldProp( whereClause._id, 'value', $event, query.where )"
-							><jet-query-dynamic-args v-model="dynamicQuery.where[ whereClause._id ].value"></jet-query-dynamic-args></cx-vui-input>
-							<cx-vui-select
-								label="<?php _e( 'Type', 'jet-engine' ); ?>"
-								description="<?php _e( 'Data type stored in the given column', 'jet-engine' ); ?>"
-								:wrapper-css="[ 'equalwidth' ]"
-								:options-list="dataTypes"
-								size="fullwidth"
-								:value="query.where[ index ].type"
-								@input="setFieldProp( whereClause._id, 'type', $event, query.where )"
-							></cx-vui-select>
+							<jet-engine-sql-query-field
+								:field="whereClause"
+								:meta-query="query.where"
+								:dynamic-query="dynamicQuery.where[ whereClause._id ]"
+								:available-columns="availableColumns"
+								@input="setFieldData( whereClause._id, $event, query.where )"
+								@dynamic-input="setDynamicWhere( whereClause._id, $event )"
+							></jet-engine-sql-query-field>
 						</cx-vui-repeater-item>
 					</cx-vui-repeater>
 				</div>
@@ -299,6 +283,55 @@
 				v-model="query.include_columns"
 			></cx-vui-f-select>
 			<cx-vui-switcher
+				label="<?php _e( 'Set Column Aliases', 'jet-engine' ); ?>"
+				description="<?php _e( 'You may set aliases for some columns - names under which they will appear in the results. Be sure not to override existing column names.', 'jet-engine' ); ?>"
+				:wrapper-css="[ 'equalwidth' ]"
+				name="query_group_results"
+				v-model="query.set_column_aliases"
+			></cx-vui-switcher>
+			<cx-vui-component-wrapper
+				:wrapper-css="[ 'fullwidth-control' ]"
+				v-if="query.set_column_aliases"
+			>
+				<div class="cx-vui-inner-panel query-panel">
+					<div class="cx-vui-component__label"><?php _e( 'Column Aliases', 'jet-engine' ); ?></div>
+					<cx-vui-repeater
+						button-label="<?php _e( 'Add new', 'jet-engine' ); ?>"
+						button-style="accent"
+						button-size="mini"
+						v-model="query.calc_cols"
+						@add-new-item="addNewField( $event, [], query.column_aliases )"
+					>
+						<cx-vui-repeater-item
+							v-for="( colClause, index ) in query.column_aliases"
+							:collapsed="isCollapsed( colClause )"
+							:index="index"
+							@clone-item="cloneField( $event, colClause._id, query.column_aliases )"
+							@delete-item="deleteField( $event, colClause._id, query.column_aliases )"
+							:key="colClause._id"
+						>
+						<div style="display: grid; grid-template-columns: 1fr 2fr;">
+							<cx-vui-select
+								label="<?php _e( 'Column', 'jet-engine' ); ?>"
+								:wrapper-css="[ 'in-row' ]"
+								:options-list="availableColumnsForAlias"
+								size="fullwidth"
+								:value="query.column_aliases[ index ].column"
+								@input="setFieldProp( colClause._id, 'column', $event, query.column_aliases )"
+							></cx-vui-select>
+							<cx-vui-input
+								label="<?php _e( 'Alias', 'jet-engine' ); ?>"
+								:wrapper-css="[ 'in-row' ]"
+								size="fullwidth"
+								:value="query.column_aliases[ index ].column_alias"
+								@input="setFieldProp( colClause._id, 'column_alias', $event, query.column_aliases )"
+							></cx-vui-input>
+						</div>
+						</cx-vui-repeater-item>
+					</cx-vui-repeater>
+				</div>
+			</cx-vui-component-wrapper>
+			<cx-vui-switcher
 				label="<?php _e( 'Include Calculated Columns', 'jet-engine' ); ?>"
 				description="<?php _e( 'Add columns with calculated results. Such columns could be usable when you grouping query results by some column.', 'jet-engine' ); ?>"
 				:wrapper-css="[ 'equalwidth' ]"
@@ -369,7 +402,7 @@
 								:value="query.calc_cols[ index ].function"
 								@input="setFieldProp( colClause._id, 'function', $event, query.calc_cols )"
 							></cx-vui-select>
-							<cx-vui-input
+							<cx-vui-textarea
 								v-if="'custom' === query.calc_cols[ index ].function"
 								label="<?php _e( 'Define custom column', 'jet-engine' ); ?>"
 								description="<?php _e( 'SQL definition of custom calculated column. Use %1$s to pass selected table column name. Also you can use macros as part of custom column definition.', 'jet-engine' ); ?>"
@@ -377,6 +410,15 @@
 								size="fullwidth"
 								:value="query.calc_cols[ index ].custom_col"
 								@input="setFieldProp( colClause._id, 'custom_col', $event, query.calc_cols )"
+								rows="3"
+							></cx-vui-textarea>
+							<cx-vui-input
+								label="<?php _e( 'Alias', 'jet-engine' ); ?>"
+								description="<?php _e( 'You may set an alias for the column, a name under which it will appear in the results. Be sure not to set it to the already existing column, as it will then override its value.', 'jet-engine' ); ?>"
+								:wrapper-css="[ 'equalwidth' ]"
+								size="fullwidth"
+								:value="query.calc_cols[ index ].column_alias"
+								@input="setFieldProp( colClause._id, 'column_alias', $event, query.calc_cols )"
 							></cx-vui-input>
 						</cx-vui-repeater-item>
 					</cx-vui-repeater>
@@ -401,22 +443,31 @@
 		<cx-vui-textarea
 			label="<?php _e( 'SQL Query', 'jet-engine' ); ?>"
 			name="query_manual_query"
+			ref="query_manual_query"
 			description="<?php _e( 'Write your SQL query here. You can use JetEngine macros inside you query.', 'jet-engine' ); ?>"
-			:wrapper-css="[ 'equalwidth', 'has-ai-popup' ]"
+			:wrapper-css="isFetchingControl( 'query_manual_query' ) ? [ 'equalwidth', 'has-ai-popup', 'disabled' ] : [ 'equalwidth', 'has-ai-popup' ]"
 			v-if="query.advanced_mode"
 			size="fullwidth"
 			rows="10"
 			v-model="query.manual_query"
-		><jet-query-ai-popup v-model="query.manual_query"></jet-query-ai-popup></cx-vui-textarea>
+			v-on:hook:mounted="initEditor( 'query_manual_query', 'manual_query' )"
+		>
+			<jet-query-ai-popup
+				v-model="query.manual_query"
+				v-on:input="setEditorValue( $event, 'query_manual_query' )"
+			></jet-query-ai-popup>
+		</cx-vui-textarea>
 		<cx-vui-textarea
 			label="<?php _e( 'Count SQL Query', 'jet-engine' ); ?>"
 			name="query_count_query"
+			ref="query_count_query"
 			description="<?php _e( 'Optional. Additional SQL query to count all available result. If not set, count will be get by initial query items count. In this case this query can`t be used with JetSmartFilters pagination', 'jet-engine' ); ?>"
 			:wrapper-css="[ 'equalwidth' ]"
 			v-if="query.advanced_mode"
 			size="fullwidth"
 			rows="10"
 			v-model="query.count_query"
+			v-on:hook:mounted="initEditor( 'query_count_query', 'count_query' )"
 		></cx-vui-textarea>
 		<cx-vui-select
 			label="<?php _e( 'Cast result to instance of object', 'jet-engine' ); ?>"

@@ -240,7 +240,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Provider_Jet_Woo_List' ) ) {
 
 			$shortcode->set_settings( $attributes );
 
-			echo $shortcode->do_shortcode( $attributes );
+			echo wp_kses_post( $shortcode->do_shortcode( $attributes ) );
 		}
 
 		/**

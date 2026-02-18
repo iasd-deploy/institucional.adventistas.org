@@ -24,11 +24,14 @@ $current = $this->get_current_filter_value( $args );
 
 	include jet_smart_filters()->get_template( 'common/filter-items-search.php' );
 
-	if ( $scroll_height_style ) {echo '<div class="jet-filter-items-scroll" ' . $scroll_height_style . '><div class="jet-filter-items-scroll-container">'; }
+	if ( $scroll_height_style ) {
+		echo '<div class="jet-filter-items-scroll" ' . esc_attr( $scroll_height_style ) . '><div class="jet-filter-items-scroll-container">';
+	}
 
 	echo '<form class="jet-radio-list-wrapper">';
 	echo '<fieldset>';
-	echo '<legend style="display:none;">' . $accessibility_label . '</legend>';
+	echo '<legend style="display:none;">' . esc_html( $accessibility_label ) . '</legend>';
+
 	if ( $by_parents ) {
 		if ( ! class_exists( 'Jet_Smart_Filters_Terms_Walker' ) ) {
 			require_once jet_smart_filters()->plugin_path( 'includes/walkers/terms-walker.php' );
@@ -48,13 +51,15 @@ $current = $this->get_current_filter_value( $args );
 			$container_classes .= " jet-list-collapsible";
 		}
 
-		echo '<div class="' . $container_classes . '">';
+		echo '<div class="' . esc_attr( $container_classes ) . '">';
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo $walker->walk( $options, 0, $args );
 		echo '</div>';
-	} else {
-		foreach ( $options as $value => $label ) {
 
+	} else {
+		foreach ( $options as $optionKey => $optionData ) {
 			$checked = '';
+			extract( jet_smart_filters()->utils->сreate_option_data( $optionKey, $optionData ), EXTR_OVERWRITE );
 
 			if ( $current ) {
 
@@ -71,6 +76,7 @@ $current = $this->get_current_filter_value( $args );
 			include jet_smart_filters()->get_template( 'filters/radio-item.php' );
 		}
 	}
+
 	echo '</fieldset>';
 	echo '</form>';
 

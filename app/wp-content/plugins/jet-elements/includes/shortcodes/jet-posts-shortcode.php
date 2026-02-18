@@ -335,6 +335,43 @@ class Jet_Posts_Shortcode extends Jet_Elements_Shortcode_Base {
 					'show_image_as' => array( 'image' ),
 				),
 			),
+			'thumb_ratio' => array(
+				'type'       => 'slider',
+				'label'      => esc_html__( 'Image Ratio', 'jet-elements' ),
+				'range' => [
+					'px' => [
+						'min'        => 0.1,
+						'max'        => 3,
+						'step'       => 0.1,
+					],
+				],
+				'responsive' => true,
+				'condition' => array(
+					'show_image'    => array( 'yes' ),
+					'show_image_as' => array( 'image' ),
+				),
+				'selectors' => array(
+					'{{WRAPPER}} .post-thumbnail__img' => 'aspect-ratio: {{SIZE}};',
+				),
+			),
+			'thumb_fit' => array(
+				'type'       => 'select',
+				'label'      => esc_html__( 'Image Fit', 'jet-elements' ),
+				'default'    => '',
+				'options'    => array(
+					''  => 'Default',
+					'contain'  => esc_html__( 'Contain', 'jet-elements' ),
+					'cover'    => esc_html__( 'Cover', 'jet-elements' ),
+				),
+				'condition' => array(
+					'show_image'    => array( 'yes' ),
+					'show_image_as' => array( 'image' ),
+					'thumb_ratio[size]!' => '',
+				),
+				'selectors' => array(
+					'{{WRAPPER}} .post-thumbnail__img' => 'object-fit: {{VALUE}};',
+				),
+			),
 			'show_excerpt' => array(
 				'type'         => 'switcher',
 				'label'        => esc_html__( 'Show Posts Excerpt', 'jet-elements' ),
@@ -742,9 +779,9 @@ class Jet_Posts_Shortcode extends Jet_Elements_Shortcode_Base {
 
 		printf(
 			' style="background-image: url(\'%1$s\'); background-repeat: no-repeat; background-size: %2$s; background-position: %3$s;"',
-			$thumb_url,
-			$this->get_attr( 'bg_size' ),
-			$this->get_attr( 'bg_position' )
+			esc_url( $thumb_url ),
+			$this->get_attr( 'bg_size' ), // phpcs:ignore
+			$this->get_attr( 'bg_position' ) // phpcs:ignore
 		);
 
 	}
@@ -852,7 +889,7 @@ class Jet_Posts_Shortcode extends Jet_Elements_Shortcode_Base {
 			return;
 		}
 
-		printf( '<div class="%1$s">%2$s</div>', $base, $result );
+		printf( '<div class="%1$s">%2$s</div>', $base, $result ); // phpcs:ignore
 
 	}
 
@@ -894,7 +931,7 @@ class Jet_Posts_Shortcode extends Jet_Elements_Shortcode_Base {
 			$result .= sprintf( $format, $term->name, get_term_link( (int) $term->term_id, $tax ) );
 		}
 
-		printf( '<div class="jet-posts__terms">%s</div>', $result );
+		printf( '<div class="jet-posts__terms">%s</div>', $result ); // phpcs:ignore
 
 	}
 

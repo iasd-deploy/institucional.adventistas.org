@@ -66,6 +66,14 @@ class Open_Map_Popup extends \Elementor\Core\DynamicTags\Tag {
 				'type'  => \Elementor\Controls_Manager::NUMBER,
 			)
 		);
+
+		$this->add_control(
+			'scroll_to_map',
+			array(
+				'label' => __( 'Scroll to Map', 'jet-engine' ),
+				'type'  => \Elementor\Controls_Manager::SWITCHER,
+			)
+		);
 	}
 
 	public function render() {
@@ -77,6 +85,13 @@ class Open_Map_Popup extends \Elementor\Core\DynamicTags\Tag {
 
 		if ( ! empty( $zoom ) ) {
 			$params['zoom'] = $zoom;
+		}
+
+		$scroll_to_map = $this->get_settings( 'scroll_to_map' );
+		$scroll_to_map = filter_var( $scroll_to_map, FILTER_VALIDATE_BOOLEAN );
+
+		if ( $scroll_to_map ) {
+			$params['scroll_to_map'] = 'yes';
 		}
 
 		echo Module::instance()->get_action_url( $specific_post_id, $event, $params );

@@ -526,6 +526,10 @@ Vue.component( 'jet-meta-field', {
 			return fields;
 		},
 		repeaterFieldConditionsInvalid( object, repeater ) {
+			if ( ! this.hasConditions( object ) ) {
+				return false;
+			}
+
 			if ( ! Array.isArray( object?.conditions ) ) {
 				return false;
 			}
@@ -778,6 +782,10 @@ Vue.component( 'jet-meta-fields', {
 			return object.conditional_logic && object.conditions && object.conditions.length;
 		},
 		conditionsInvalid( object ) {
+			if ( ! this.hasConditions( object ) ) {
+				return false;
+			}
+			
 			if ( ! Array.isArray( object?.conditions ) ) {
 				return false;
 			}

@@ -3,7 +3,7 @@
 namespace Elementor;
 
 use Elementor\Group_Control_Border;
-use Elementor\Core\Schemes\Typography as Scheme_Typography;
+use Elementor\Core\Kits\Documents\Tabs\Global_Typography as Global_Typography;
 
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
@@ -530,7 +530,9 @@ class Jet_Smart_Filters_Search_Widget extends Jet_Smart_Filters_Base_Widget {
 			Group_Control_Typography::get_type(),
 			array(
 				'name'     => 'filter_apply_button_typography',
-				'scheme'   => Scheme_Typography::TYPOGRAPHY_1,
+				'global'   => array(
+					'default' => Global_Typography::TYPOGRAPHY_PRIMARY,
+				),
 				'selector' => '{{WRAPPER}} ' . $css_scheme['apply-filters-button'],
 			)
 		);
@@ -936,12 +938,15 @@ class Jet_Smart_Filters_Search_Widget extends Jet_Smart_Filters_Base_Widget {
 		$show_label           = ! empty( $settings['show_label'] ) ? filter_var( $settings['show_label'], FILTER_VALIDATE_BOOLEAN ) : false;
 		$additional_providers = jet_smart_filters()->utils->get_additional_providers( $settings );
 		$format               = '<i class="%s"></i>';
-		$icon                 = $settings['apply_button_icon'] ? sprintf( $format, $settings['apply_button_icon'] ) : '';
+		$icon                 = $settings['apply_button_icon'] ? sprintf( $format, esc_attr( $settings['apply_button_icon'] ) ) : '';
 		$hide_apply_button    = ! empty( $settings['hide_apply_button'] ) ? filter_var( $settings['hide_apply_button'], FILTER_VALIDATE_BOOLEAN ) : false;
 
 		jet_smart_filters()->admin_bar_register_item( $filter_id );
 
-		printf( '<div class="%1$s jet-filter">', $base_class );
+		printf(
+			'<div class="%1$s jet-filter">',
+			esc_attr( $base_class )
+		);
 
 		include jet_smart_filters()->get_template( 'common/filter-label.php' );
 

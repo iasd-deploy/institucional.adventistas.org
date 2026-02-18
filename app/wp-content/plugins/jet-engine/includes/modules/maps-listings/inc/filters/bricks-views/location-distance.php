@@ -5,6 +5,7 @@ namespace Jet_Engine\Modules\Maps_Listings\Filters\Bricks;
 use Jet_Engine\Bricks_Views\Helpers;
 use Jet_Engine\Modules\Maps_Listings\Filters\Types\Location_Distance_Render;
 use Jet_Smart_Filters\Bricks_Views\Elements\Jet_Smart_Filters_Bricks_Base;
+use Jet_Smart_Filters\Bricks_Views\Manager;
 
 class Location_Distance extends Jet_Smart_Filters_Bricks_Base {
 	// Element properties
@@ -48,7 +49,7 @@ class Location_Distance extends Jet_Smart_Filters_Bricks_Base {
 		$this->register_jet_control(
 			'query_notice',
 			[
-				'content' => sprintf( __( 'This filter is compatible only with queries from <a href="%s" target="_blank">JetEngine Query Builder</a>. ALso you need to set up <a href="https://crocoblock.com/knowledge-base/jetsmartfilters/location-distance-filter-overview/" target="_blank">Geo Query</a> in your query settings to meke filter to work correctly.', 'jet-engine' ), $query_builder_link ),
+				'content' => sprintf( __( 'This filter is compatible only with queries from <a href="%s" target="_blank">JetEngine Query Builder</a>. ALso you need to set up <a href="https://crocoblock.com/knowledge-base/jetsmartfilters/location-distance-filter-overview/" target="_blank">Geo Query</a> in your query settings to make the filter work correctly.', 'jet-engine' ), $query_builder_link ),
 				'type' => 'info',
 			]
 		);
@@ -65,15 +66,7 @@ class Location_Distance extends Jet_Smart_Filters_Bricks_Base {
 			]
 		);
 
-		if ( jet_smart_filters()->get_version() > '3.0.4' ) {
-			$provider_allowed = \Jet_Smart_Filters\Bricks_Views\Manager::get_allowed_providers();
-		} else {
-			$provider_allowed = [
-				'jet-engine'          => true,
-				'jet-engine-calendar' => true,
-				'jet-engine-maps'     => true,
-			];
-		}
+		$provider_allowed = Manager::get_allowed_providers();
 
 		$this->register_jet_control(
 			'content_provider',
@@ -123,6 +116,16 @@ class Location_Distance extends Jet_Smart_Filters_Bricks_Base {
 				],
 				'default'  => 'value',
 				'required' => [ 'apply_type', '=', [ 'ajax', 'mixed' ] ],
+			]
+		);
+
+		$this->register_jet_control(
+			'show_label',
+			[
+				'tab'     => 'content',
+				'label'   => esc_html__( 'Show filter label', 'jet-engine' ),
+				'type'    => 'checkbox',
+				'default' => false,
 			]
 		);
 
@@ -208,7 +211,7 @@ class Location_Distance extends Jet_Smart_Filters_Bricks_Base {
 				'label'   => esc_html__( 'Distance', 'jet-engine' ),
 				'type'    => 'number',
 				'min'     => 1,
-				'max'     => 1000,
+				'max'     => 20000,
 				'default' => 50
 			]
 		);
@@ -447,7 +450,7 @@ class Location_Distance extends Jet_Smart_Filters_Bricks_Base {
 		$settings        = $this->parse_jet_render_attributes( $this->get_jet_settings() );
 		$render_instance = new Location_Distance_Render();
 
-		echo "<div {$this->render_attributes( '_root' )}>";
+		echo "<div {$this->render_attributes( '_root' )}>"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
 		$render_instance->render( $settings, $this->name );
 

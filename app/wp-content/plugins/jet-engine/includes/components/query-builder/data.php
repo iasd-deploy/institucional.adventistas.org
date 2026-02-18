@@ -91,7 +91,11 @@ class Data extends \Jet_Engine_Base_Data {
 		$args          = array();
 		$request_args  = ! empty( $request['args'] ) ? $request['args'] : array();
 		$q_type        = ! empty( $request_args['query_type'] ) ? $request_args['query_type'] : false;
-		$allowed_types = array_keys( Manager::instance()->editor->get_types() );
+		$allowed_types = apply_filters(
+			'jet-engine/query-builder/data/allowed-query-types',
+			array_keys( Manager::instance()->editor->get_types() ),
+			$request
+		);
 
 		if ( in_array( $q_type, $allowed_types ) ) {
 			$dynamic = '__dynamic_';
@@ -104,6 +108,7 @@ class Data extends \Jet_Engine_Base_Data {
 			'show_preview',
 			'cache_query',
 			'api_endpoint',
+			'avoid_duplicates',
 		);
 
 		foreach ( $bool_args as $key ) {

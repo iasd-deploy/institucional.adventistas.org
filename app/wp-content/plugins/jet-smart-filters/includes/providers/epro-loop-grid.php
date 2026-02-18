@@ -98,7 +98,11 @@ class Jet_Smart_Filters_Provider_EPro_Loop_Grid extends Jet_Smart_Filters_Provid
 					'text'      => 'jet-smart-filters-elementor-loop-no-result'
 				));
 
-				echo '<div class="' . $classes['container'] . '"><div class="' . $classes['text'] . '">' . do_shortcode( $no_result_text ) . '</div></div>';
+				echo '<div class="' . esc_attr( $classes['container'] ) . '">
+					<div class="' . esc_attr( $classes['text'] ) . '">'
+					. wp_kses_post( do_shortcode( $no_result_text ) ) .
+					'</div>
+				</div>';
 			}
 		}
 	}
@@ -295,12 +299,14 @@ class Jet_Smart_Filters_Provider_EPro_Loop_Grid extends Jet_Smart_Filters_Provid
 	 */
 	public function ajax_get_content() {
 
-		$settings  = ! empty( $_REQUEST['settings'] ) ? $_REQUEST['settings'] : [];
+		$settings_request_val = jet_smart_filters()->data->get_request_var( 'settings' );
+		$settings  = ! empty( $settings_request_val ) ? $settings_request_val : [];
 		$post_id   = ! empty( $settings['filtered_post_id'] ) ? absint( $settings['filtered_post_id'] ) : false;
 		$widget_id = ! empty( $settings['widget_id'] ) ? $settings['widget_id'] : false;
 
 		if ( ! $post_id || ! $widget_id ) {
-			_e( 'Error. Incomplete request', 'jet-smart-filters' );
+			esc_html_e( 'Error. Incomplete request', 'jet-smart-filters' );
+
 			return;
 		}
 
@@ -331,6 +337,7 @@ class Jet_Smart_Filters_Provider_EPro_Loop_Grid extends Jet_Smart_Filters_Provid
 			$content = ob_get_clean();
 
 			if ( $content ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				echo $content;
 			} else {
 				echo '<div class="elementor-loop-container"></div>';

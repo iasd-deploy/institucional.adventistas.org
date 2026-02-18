@@ -9,7 +9,7 @@
 
 	$this->_html( 'banner_link', '<a href="%s" class="jet-banner__link"' . $target . $rel . '>' );
 		echo '<div class="jet-banner__overlay"></div>';
-		echo $this->_get_banner_image();
+		echo $this->_get_banner_image(); // phpcs:ignore
 		echo '<figcaption class="jet-banner__content">';
 			echo '<div class="jet-banner__content-wrap">';
 				$title_tag = $this->_get_html( 'banner_title_html_tag', '%s' );

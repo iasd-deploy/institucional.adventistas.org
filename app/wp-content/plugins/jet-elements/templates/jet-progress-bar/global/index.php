@@ -36,12 +36,16 @@ if ( 'percent' === $settings['values_type'] ) {
 	$this->add_render_attribute( 'main-container', 'data-percent', $percent );
 	$this->add_render_attribute( 'main-container', 'data-current-value', $current_value );
 	$this->add_render_attribute( 'main-container', 'data-max-value', $max_value );
+
+	if ( $current_value >= $max_value ) {
+		$this->add_render_attribute( 'main-container', 'class', 'jet-progress-bar--completed' );
+	}
 }
 
 $this->add_render_attribute( 'main-container', 'data-type', $progress_type );
 
 ?>
-<div <?php echo $this->get_render_attribute_string( 'main-container' ); ?>>
+<div <?php echo $this->get_render_attribute_string( 'main-container' ); // phpcs:ignore ?>>
 	<?php include $this->_get_type_template( sanitize_file_name( $progress_type ) ); ?>
 </div>
 

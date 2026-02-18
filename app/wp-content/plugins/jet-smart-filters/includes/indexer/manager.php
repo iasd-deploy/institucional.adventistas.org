@@ -42,7 +42,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Manager' ) ) {
 			require jet_smart_filters()->plugin_path( 'includes/indexer/controls.php' );
 
 			if ( $this->has_bricks() ) {
-				require jet_smart_filters()->plugin_path( 'includes/indexer/bricks/controls.php' );
+				require_once jet_smart_filters()->plugin_path( 'includes/indexer/bricks/controls.php' );
 				$this->controls = new Jet_Smart_Filters_Bricks_Indexer_Controls();
 			}
 
@@ -82,12 +82,16 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Manager' ) ) {
 		 */
 		public function ajax_filter_indexing() {
 
+			$nonce = isset( $_REQUEST['nonce'] )
+				? sanitize_text_field( wp_unslash( $_REQUEST['nonce'] ) )
+				: '';
+
 			if (
-				empty( $_REQUEST['nonce'] )
-				|| ! wp_verify_nonce( $_REQUEST['nonce'], 'wp_rest' )
+				! $nonce
+				|| ! wp_verify_nonce( $nonce, 'wp_rest' )
 				|| ! current_user_can( 'edit_posts' )
 			) {
-				die( 'Permission denied' );
+				wp_die( esc_html__( 'Permission denied', 'jet-smart-filters' ) );
 			}
 
 			$this->index_filters();
@@ -217,7 +221,10 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Manager' ) ) {
 			$filters_data = $this->filters_data();
 
 			if ( ! empty( $filters_data['tax_query'] ) && $type === 'post' ) {
-				foreach ( wp_get_post_terms( $id, $filters_data['tax_query'] ) as $term ) {
+				// keep only existing taxonomies
+				$taxonomies = array_filter( (array) $filters_data['tax_query'], 'taxonomy_exists' );
+
+				foreach ( wp_get_post_terms( $id, $taxonomies ) as $term ) {
 					if ( is_object( $term ) && ! is_wp_error( $term ) ) {
 
 						array_push( $new_rows, array(
@@ -515,7 +522,10 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Manager' ) ) {
 			);
 
 			global $wpdb;
-			$wpdb->query( 'SET SESSION group_concat_max_len = 131072;' );
+
+			$max_len = intval( apply_filters( 'jet-smart-filters/indexer/group_concat_max_len', 262144 ) );
+
+			$wpdb->query( "SET SESSION group_concat_max_len = {$max_len};" );
 			$sql = "
 			SELECT $wpdb->posts.ID, $wpdb->posts.post_title, GROUP_CONCAT($wpdb->postmeta.meta_key SEPARATOR '<-nv->') as meta_key, GROUP_CONCAT($wpdb->postmeta.meta_value SEPARATOR '<-nv->') as meta_value
 				FROM $wpdb->posts, $wpdb->postmeta
@@ -656,21 +666,30 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Manager' ) ) {
 						break;
 
 					case 'custom_fields':
-						$query_var           = $data['_query_var'];
-						$get_from_field_data = isset( $data['_source_get_from_field_data'] ) ? filter_var( $data['_source_get_from_field_data'], FILTER_VALIDATE_BOOLEAN ) : false;
+						$query_var    = $data['_query_var'];
+						$custom_field = $data['_source_custom_field'];
 
-						if ( ! $query_var || ! $get_from_field_data ) {
+						if ( ! $query_var || ! $custom_field ) {
 							break;
 						}
 
-						$is_serialized_data   = filter_var( $data['_is_custom_checkbox'], FILTER_VALIDATE_BOOLEAN );
-						$data_type            = $is_serialized_data ? 'serialized' : 'normal';
-						$custom_field         =  $data['_source_custom_field'];
-						$custom_field_source  =  $data['_custom_field_source_plugin'];
-						$custom_field_options = jet_smart_filters()->data->get_choices_from_field_data( array(
-							'field_key' => $custom_field,
-							'source'    => $custom_field_source,
-						) );
+						$get_from_field_data = isset( $data['_source_get_from_field_data'] ) ? filter_var( $data['_source_get_from_field_data'], FILTER_VALIDATE_BOOLEAN ) : false;
+						$is_serialized_data  = filter_var( $data['_is_custom_checkbox'], FILTER_VALIDATE_BOOLEAN );
+						$data_type           = $is_serialized_data ? 'serialized' : 'normal';
+						$custom_field_source = isset( $data['_custom_field_source_plugin'] ) ? $data['_custom_field_source_plugin'] : 'jet_engine';
+
+						if ( $get_from_field_data ) {
+							$custom_field_options = jet_smart_filters()->data->get_choices_from_field_data( array(
+								'field_key' => $custom_field,
+								'source'    => $custom_field_source,
+							) );
+						} else {
+							$custom_field_options = jet_smart_filters()->data->get_options_by_field_key( $custom_field );
+						}
+
+						if ( empty( $custom_field_options ) ) {
+							break;
+						}
 
 						if ( ! isset( $filters_data['meta_query'][$data_type][$query_var] ) ) {
 							$filters_data['meta_query'][$data_type][$query_var] = array();

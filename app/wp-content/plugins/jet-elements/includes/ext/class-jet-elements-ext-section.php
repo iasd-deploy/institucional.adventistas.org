@@ -159,11 +159,11 @@ if ( ! class_exists( 'Jet_Elements_Ext_Section' ) ) {
 					'type'    => Elementor\Controls_Manager::SELECT,
 					'default' => '1',
 					'options' => array(
-						'1'  => esc_html__( 'To Right', 'jet-elements' ),
-						'-1' => esc_html__( 'To Left', 'jet-elements' ),
+						'1'  => esc_html__( 'Down / To Right', 'jet-elements' ),
+						'-1' => esc_html__( 'Up / To Left', 'jet-elements' ),
 					),
 					'condition' => array(
-						'jet_parallax_layout_type' => array( 'h-scroll', 'rotate' ),
+						'jet_parallax_layout_type' => array( 'scroll', 'h-scroll', 'rotate' ),
 					),
 				)
 			);
@@ -334,6 +334,7 @@ if ( ! class_exists( 'Jet_Elements_Ext_Section' ) ) {
 		public function enqueue_scripts() {
 
 			$has_mouse_type = false;
+			$is_element_cache_active = \Elementor\Plugin::$instance->experiments->is_feature_active( 'e_element_cache' );
 
 			if ( ! empty( $this->parallax_sections ) ) {
 
@@ -348,10 +349,13 @@ if ( ! class_exists( 'Jet_Elements_Ext_Section' ) ) {
 				//jet_elements_assets()->localize_data['jetParallaxSections'] = $this->parallax_sections;
 			}
 
-			if ( $has_mouse_type || jet_elements()->elementor()->preview->is_preview_mode() ) {
+			//Register and enqueue parallax stylesheets
+			wp_enqueue_style( 'jet-elements' );
+			wp_enqueue_script( 'jet-elements' );
+
+			if ( $has_mouse_type || jet_elements()->elementor()->preview->is_preview_mode() || $is_element_cache_active ) {
 				wp_enqueue_script( 'jet-tween-js' );
 			}
-
 		}
 
 		/**

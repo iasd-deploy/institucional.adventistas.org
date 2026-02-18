@@ -82,3 +82,9 @@
 .jet-smart-filters-icon-color-image-filter:before {
   content: "\e911";
 }
+.jet-smart-filters-icon-hidden:before {
+  content: "\e901";
+}
+.jet-smart-filters-icon-listing-builder:before {
+  content: "\e910";
+}

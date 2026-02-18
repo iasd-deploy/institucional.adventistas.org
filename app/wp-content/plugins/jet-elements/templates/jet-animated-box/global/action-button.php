@@ -44,11 +44,11 @@ if ( is_array( $button_url ) ) {
 }
 
 ?>
-<a <?php echo $this->get_render_attribute_string( 'url' ); ?>><?php
-	echo $this->_html( 'back_side_button_text', '<span class="jet-animated-box__button-text">%s</span>' );
+<a <?php echo $this->get_render_attribute_string( 'url' ); // phpcs:ignore ?>><?php
+	echo $this->_html( 'back_side_button_text', '<span class="jet-animated-box__button-text">%s</span>' ); // phpcs:ignore
 
 	if ( filter_var( $use_icon, FILTER_VALIDATE_BOOLEAN ) ) {
-		echo $this->_icon( 'button_icon', '<span class="jet-animated-box__button-icon jet-elements-icon">%s</span>' );
+		echo $this->_icon( 'button_icon', '<span class="jet-animated-box__button-icon jet-elements-icon">%s</span>' ); // phpcs:ignore
 	}
 ?></a>
 

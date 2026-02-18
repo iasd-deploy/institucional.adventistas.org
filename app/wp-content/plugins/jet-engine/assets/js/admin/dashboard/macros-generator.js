@@ -248,35 +248,16 @@ Vue.component( 'jet-engine-macros-generator', {
 		formatForBricksBuilder: function( input ) {
 			// Map of replacements for characters in the part before the curly braces
 			const replacements = {
-				':': '==',
-				'"': '++',
-				'[': '<~',
-				']': '~>',
-				'{': '<<',
-				'}': '>>',
+				'"': "'",
+				'{': '~#',
+				'}': '#~',
+				'[': '&@',
+				']': '@&',
+				'%2C': ',',
 			};
 
-			// Split input into prefix (part1) and JSON-like part (part2)
-			let [prefixPart, jsonPart] = this.splitInput(input);
-
-			// Apply replacements to the prefix part
-			const transformedPrefix = '%' + this.applyReplacements(prefixPart, replacements) + '%';
-
-			// Transform the JSON-like part if present
-			const transformedJson = jsonPart ? this.formatJsonPart(jsonPart) : '';
-
-			// Return the concatenated result
-			return transformedPrefix + transformedJson;
-		},
-		splitInput: function( input ) {
-			// Use a regular expression to match two parts:
-			// 1. Everything up to and including the first "%" (non-greedy)
-			// 2. Everything within curly braces "{}" if present
-			const match = input.match(/^(.*?%)({.*})$/);
-
-			// If a match is found, return an array with the two parts.
-			// Otherwise, return the entire input as the first part and an empty string as the second part.
-			return match ? [match[1], match[2]] : [input, ''];
+			// Return the result
+			return this.applyReplacements(input, replacements);
 		},
 		applyReplacements: function(text, replacements) {
 			// Function to apply character replacements to the prefix part
@@ -285,12 +266,6 @@ Vue.component( 'jet-engine-macros-generator', {
 				modifiedText = modifiedText.replaceAll(original, replacement);
 			}
 			return modifiedText;
-		},
-		formatJsonPart: function(jsonString) {
-			const jsonObject = JSON.parse(jsonString);
-			return `<<${Object.entries(jsonObject)
-				.map(([key, value]) => `${key}==${value}`)
-				.join(';;')}>>`;
 		},
 	},
 } );

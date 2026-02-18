@@ -31,7 +31,8 @@ class Save extends Preview {
 
 		$listing = jet_engine()->listings->get_new_doc( [], $listing_id );
 
-		$listing->update_listing_html( $html );
+		//https://github.com/Crocoblock/issues-tracker/issues/12437 slash HTML before saving to ensure JSON
+		$listing->update_listing_html( wp_slash( $html ) );
 		$listing->update_listing_css( $css );
 
 		/**

@@ -28,7 +28,7 @@ if ( 'masonry' == $layout || 'grid' == $layout ) {
 $this->add_render_attribute( 'main-container', 'data-settings', $this->generate_setting_json() );
 ?>
 
-<div <?php echo $this->get_render_attribute_string( 'main-container' ); ?>><?php
+<div <?php echo $this->get_render_attribute_string( 'main-container' ); // phpcs:ignore ?>><?php
 	$this->render_filters();
 
 	if ( isset( $settings['items_order'] ) && 'true' === $settings['items_order'] ) {

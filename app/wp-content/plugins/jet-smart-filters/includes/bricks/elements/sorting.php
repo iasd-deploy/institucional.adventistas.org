@@ -268,9 +268,14 @@ class Jet_Smart_Filters_Bricks_Sorting extends Jet_Smart_Filters_Bricks_Base {
 			$settings['apply_button_text'] = '';
 		}
 
-		echo "<div {$this->render_attributes( '_root' )}>";
+		$attrs = $this->render_attributes( '_root' );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<div ' . $attrs . '>';
 
-		printf( '<div class="%1$s jet-filter">', $this->name );
+		printf(
+			'<div class="%1$s jet-filter">',
+			esc_attr( $this->name )
+		);
 		include jet_smart_filters()->get_template( 'filters/sorting.php' );
 		echo '</div>';
 

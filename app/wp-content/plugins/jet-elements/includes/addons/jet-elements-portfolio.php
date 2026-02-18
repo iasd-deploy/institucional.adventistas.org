@@ -52,7 +52,7 @@ class Jet_Elements_Portfolio extends Jet_Elements_Base {
 	}
 
 	public function get_script_depends() {
-		return array( 'imagesloaded', 'jet-masonry-js', 'jet-anime-js' );
+		return array( 'imagesloaded', 'jet-masonry-js', 'jet-anime-js', 'jet-portfolio' );
 	}
 
 	protected function register_controls() {
@@ -2062,11 +2062,14 @@ class Jet_Elements_Portfolio extends Jet_Elements_Base {
 		$module_settings = $this->get_settings();
 
 		$settings = array(
-			'layoutType' => $module_settings['layout_type'],
-			'perPage'    => $module_settings['per_page'],
+			'layoutType' => $this->ensure_allowed_value( $module_settings['layout_type'], array( 'masonry', 'grid', 'justify', 'list' ) ),
+			'perPage'    => absint( $module_settings['per_page'] ),
 		);
 
-		$settings = json_encode( $settings );
+		$settings = wp_json_encode( $settings );
+
+		// Escape the JSON string for safe use in HTML attributes
+		$settings = esc_attr( $settings );
 
 		return $settings;
 	}
@@ -2200,7 +2203,7 @@ class Jet_Elements_Portfolio extends Jet_Elements_Base {
 			$html .= sprintf( '%3$s<div class="jet-portfolio__filter-item" data-slug="%1$s"><span>%2$s</span></div>', $slug, $category_name, $separator_html );
 		}
 
-		echo sprintf( '<div class="jet-portfolio__filter"><div class="jet-portfolio__filter-list">%s</div></div>', $html );
+		echo sprintf( '<div class="jet-portfolio__filter"><div class="jet-portfolio__filter-list">%s</div></div>', wp_kses_post( $html ) );
 	}
 
 	/**
@@ -2275,7 +2278,7 @@ class Jet_Elements_Portfolio extends Jet_Elements_Base {
 
 		$format = apply_filters( 'jet-elements/portfolio/more-button-format', '<div class="jet-portfolio__view-more hidden-status"><div %1$s>%2$s</div></div>' );
 
-		echo sprintf( $format, $this->get_render_attribute_string( 'view_more_button' ), $button_text );
+		echo sprintf( $format, $this->get_render_attribute_string( 'view_more_button' ), wp_kses_post( $button_text ) ); // phpcs:ignore
 	}
 
 	/**
@@ -2365,7 +2368,7 @@ class Jet_Elements_Portfolio extends Jet_Elements_Base {
 	}
 
 	public function trp_edit_mode() {
-		return ! empty( $_GET['trp-edit-translation'] ) ? true : false;
+		return ! empty( $_GET['trp-edit-translation'] ) ? true : false; // phpcs:ignore
 	}
 
 	/**

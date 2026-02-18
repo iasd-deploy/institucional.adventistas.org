@@ -3,7 +3,7 @@
 namespace Elementor;
 
 use Elementor\Group_Control_Border;
-use Elementor\Core\Schemes\Typography as Scheme_Typography;
+use Elementor\Core\Kits\Documents\Tabs\Global_Typography as Global_Typography;
 
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
@@ -119,7 +119,7 @@ class Jet_Smart_Filters_Base_Widget extends Widget_Base {
 				'label_on'     => esc_html__( 'Yes', 'jet-smart-filters' ),
 				'label_off'    => esc_html__( 'No', 'jet-smart-filters' ),
 				'return_value' => 'yes',
-				'default'      => 'yes',
+				'default'      => '',
 				'condition'    => array(
 					'apply_on' => 'submit'
 				)
@@ -162,6 +162,17 @@ class Jet_Smart_Filters_Base_Widget extends Widget_Base {
 			)
 		);
 
+		$this->add_control(
+			'query_id_wc_shortcode_notice',
+			array(
+				'type' => Controls_Manager::RAW_HTML,
+				'raw'  => __( '<b>Query ID</b> for <b>WooCommerce Shortcode</b> must be specified as attribute class: [products class="query_id"]', 'jet-smart-filters' ),
+				'condition' => array(
+					'content_provider' => array( 'woocommerce-shortcode' ),
+				),
+			)
+		);
+
 		// Include Additional Providers Settings
 		include jet_smart_filters()->plugin_path( 'includes/widgets/common-controls/additional-providers.php' );
 
@@ -199,6 +210,38 @@ class Jet_Smart_Filters_Base_Widget extends Widget_Base {
 				'show_label' => false,
 			)
 		);
+
+		if ( $this->get_name() === 'jet-smart-filters-select' ) {
+			$this->add_responsive_control(
+				'content_position',
+				array(
+					'label'       => esc_html__( 'Label Position', 'jet-smart-filters' ),
+					'type'        => Controls_Manager::CHOOSE,
+					'toggle'      => false,
+					'label_block' => false,
+					'default'     => 'column',
+					'options'     => array(
+						'line' => array(
+							'title' => esc_html__( 'Line', 'jet-smart-filters' ),
+							'icon'  => 'eicon-ellipsis-h',
+						),
+						'column' => array(
+							'title' => esc_html__( 'Columns', 'jet-smart-filters' ),
+							'icon'  => 'eicon-menu-bar',
+						),
+					),
+					'selectors_dictionary' => array(
+						'line'   => 'display:flex;',
+						'column' => 'display:block;',
+					),
+					'selectors' => array(
+						'{{WRAPPER}} .jet-smart-filters-select' . $css_scheme['filter']                     => '{{VALUE}}',
+						'{{WRAPPER}} .jet-smart-filters-hierarchy' . $css_scheme['filter'] . ' .jet-select' => '{{VALUE}}',
+					),
+					'prefix_class' => 'jet-smart-filter-content-position-'
+				)
+			);
+		}
 
 		$this->add_group_control(
 			Group_Control_Typography::get_type(),
@@ -311,7 +354,9 @@ class Jet_Smart_Filters_Base_Widget extends Widget_Base {
 			Group_Control_Typography::get_type(),
 			array(
 				'name'     => 'filter_apply_button_typography',
-				'scheme'   => Scheme_Typography::TYPOGRAPHY_1,
+				'global'   => array(
+					'default' => Global_Typography::TYPOGRAPHY_PRIMARY,
+				),
 				'selector' => '{{WRAPPER}} ' . $css_scheme['apply-filters-button'] . ', {{WRAPPER}} ' . $css_scheme['dropdown-apply-button'],
 			)
 		);
@@ -718,7 +763,7 @@ class Jet_Smart_Filters_Base_Widget extends Widget_Base {
 		$show_counter    = false;
 		$show_items_rule = 'show';
 
-		if ( $apply_indexer ){
+		if ( jet_smart_filters()->indexer->is_indexer_enabled && $apply_indexer ){
 			$indexer_class   = 'jet-filter-indexed';
 			$show_counter    = 'yes' === $settings['show_counter'] ? $settings['show_counter'] : false;
 			$show_items_rule = ! empty( $settings['show_items_rule'] ) ? $settings['show_items_rule'] : 'show';
@@ -741,11 +786,17 @@ class Jet_Smart_Filters_Base_Widget extends Widget_Base {
 
 			printf(
 				'<div class="%1$s jet-filter %2$s" data-indexer-rule="%3$s" data-show-counter="%4$s" data-change-counter="%5$s">',
-				apply_filters( 'jet-smart-filters/render_filter_template/base_class', $base_class, $filter_id ),
-				$indexer_class,
-				$show_items_rule,
-				$show_counter,
-				$change_items_rule
+				esc_attr(
+					apply_filters(
+						'jet-smart-filters/render_filter_template/base_class',
+						$base_class,
+						$filter_id
+					)
+				),
+				esc_attr( $indexer_class ),
+				esc_attr( $show_items_rule ),
+				esc_attr( $show_counter ),
+				esc_attr( $change_items_rule )
 			);
 
 			$filter_template_args =  array(

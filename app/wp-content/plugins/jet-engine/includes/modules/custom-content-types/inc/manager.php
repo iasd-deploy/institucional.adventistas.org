@@ -8,6 +8,8 @@ if ( ! defined( 'WPINC' ) ) {
 
 /**
  * Define Manager class
+ * 
+ * @property Data $data
  */
 class Manager extends \Jet_Engine_Base_WP_Intance {
 
@@ -258,9 +260,9 @@ class Manager extends \Jet_Engine_Base_WP_Intance {
 	}
 
 	/**
-	 * Retuns registered content types list
+	 * Get registered content types list or single instance by slug
 	 *
-	 * @return [type] [description]
+	 * @return Factory|Factory[]|false Registered CCT instance or all instances if passed empty value for slug; false if not found
 	 */
 	public function get_content_types( $type = null ) {
 		if ( ! $type ) {
@@ -271,9 +273,9 @@ class Manager extends \Jet_Engine_Base_WP_Intance {
 	}
 
 	/**
-	 * Retuns registered content types list
+	 * Get registered content type by ID
 	 *
-	 * @return [type] [description]
+	 * @return Factory|false Registered CCT instance or false if not found
 	 */
 	public function get_content_type_by_id( $type_id = null ) {
 
@@ -413,6 +415,7 @@ class Manager extends \Jet_Engine_Base_WP_Intance {
 		$result  = array();
 		$options = array(
 			'random_order' => __( 'Random order', 'jet-engine' ),
+			'preserve_ids' => __( 'Preserve item ID order given in the query arguments', 'jet-engine' ),
 		);
 
 		if ( $for_js ) {

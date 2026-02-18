@@ -23,7 +23,7 @@ class Dynamic_Image extends Base {
 	public $category = 'jetengine'; // Use predefined element category 'general'
 	public $name = 'jet-engine-listing-dynamic-image'; // Make sure to prefix your elements
 	public $icon = 'jet-engine-icon-dynamic-image'; // Themify icon font class
-	public $css_selector = '.jet-listing-dynamic-image > *'; // Default CSS selector
+	public $css_selector = ''; // Default CSS selector
 	public $scripts = [ 'jetEngineBricks' ]; // Script(s) run when element is rendered on frontend or updated in builder
 
 	public $jet_element_render = 'dynamic-image';
@@ -48,6 +48,15 @@ class Dynamic_Image extends Base {
 			[
 				'title' => esc_html__( 'Image', 'jet-engine' ),
 				'tab'   => 'style',
+			]
+		);
+
+		$this->register_jet_control_group(
+			'section_caption_style',
+			[
+				'title'    => esc_html__( 'Caption', 'jet-engine' ),
+				'tab'      => 'style',
+				'required' => [ 'add_image_caption', '!=', '' ],
 			]
 		);
 	}
@@ -95,6 +104,9 @@ class Dynamic_Image extends Base {
 
 		}
 
+		$hooks = new Controls_Hook_Bridge( $this );
+		$hooks->do_action( 'jet-engine/listings/dynamic-image/source-controls' );
+
 		$this->register_jet_control(
 			'dynamic_image_source_custom',
 			[
@@ -136,6 +148,41 @@ class Dynamic_Image extends Base {
 				'default'     => '100px',
 				'description' => esc_html__( 'Note: this option will work only if image stored as attachment ID', 'jet-engine' ),
 				'required'    => [ 'dynamic_image_source', '=', 'user_avatar' ],
+			]
+		);
+
+		$this->register_jet_control(
+			'add_image_caption',
+			[
+				'tab'      => 'content',
+				'label'    => esc_html__( 'Add image caption', 'jet-engine' ),
+				'type'     => 'checkbox',
+				'default'  => false,
+			]
+		);
+
+		$this->register_jet_control(
+			'image_caption_position',
+			[
+				'tab'      => 'content',
+				'label'    => esc_html__( 'Image Caption Position', 'jet-engine' ),
+				'type'     => 'select',
+				'options'  => [
+					'after'  => esc_html__( 'After' ),
+					'before' => esc_html__( 'Before' ),
+				],
+				'default'  => 'after',
+				'required' => [ 'add_image_caption', '=', true ],
+			]
+		);
+
+		$this->register_jet_control(
+			'image_caption',
+			[
+				'tab'         => 'content',
+				'label'       => esc_html__( 'Image Caption Text', 'jet-engine' ),
+				'type'        => 'text',
+				'required'    => [ 'add_image_caption', '=', true ],
 			]
 		);
 
@@ -276,6 +323,38 @@ class Dynamic_Image extends Base {
 		$this->start_jet_control_group( 'section_image_style' );
 
 		$this->register_jet_control(
+			'image_width',
+			[
+				'tab'   => 'style',
+				'label' => esc_html__( 'Width', 'jet-engine' ),
+				'type'  => 'number',
+				'units' => true,
+				'css'   => [
+					[
+						'property' => 'width',
+						'selector' => $this->css_selector( '__img' ),
+					],
+				],
+			]
+		);
+
+		$this->register_jet_control(
+			'image_height',
+			[
+				'tab'   => 'style',
+				'label' => esc_html__( 'Height', 'jet-engine' ),
+				'type'  => 'number',
+				'units' => true,
+				'css'   => [
+					[
+						'property' => 'height',
+						'selector' => $this->css_selector( '__img' ),
+					],
+				],
+			]
+		);
+
+		$this->register_jet_control(
 			'image_object_fit',
 			[
 				'tab'      => 'style',
@@ -290,6 +369,85 @@ class Dynamic_Image extends Base {
 					[
 						'property' => 'object-fit',
 						'selector' => $this->css_selector('__img'),
+					],
+				],
+			]
+		);
+
+		$this->register_jet_control(
+			'image_border',
+			[
+				'tab'   => 'style',
+				'label' => esc_html__( 'Border', 'jet-engine' ),
+				'type'  => 'border',
+				'css'   => [
+					[
+						'property' => 'border',
+						'selector' => $this->css_selector('__img'),
+					],
+				],
+			]
+		);
+
+		$this->register_jet_control(
+			'image_box_shadow',
+			[
+				'tab'   => 'style',
+				'label' => esc_html__( 'Box shadow', 'jet-smart-filters' ),
+				'type'  => 'box-shadow',
+				'css'   => [
+					[
+						'property' => 'box-shadow',
+						'selector' => $this->css_selector('__img'),
+					],
+				],
+			]
+		);
+
+		$this->end_jet_control_group();
+
+		$this->start_jet_control_group( 'section_caption_style' );
+
+		$this->register_jet_control(
+			'caption_typography',
+			[
+				'tab'      => 'style',
+				'label'    => esc_html__( 'Typography', 'jet-engine' ),
+				'type'     => 'typography',
+				'css'      => [
+					[
+						'selector' => $this->css_selector('__caption'),
+					],
+				],
+			]
+		);
+
+		$this->register_jet_control(
+			'caption_max_width',
+			[
+				'tab'      => 'style',
+				'label'    => esc_html__( 'Max Width', 'jet-engine' ),
+				'type'     => 'number',
+				'units'    => true,
+				'css'      => [
+					[
+						'property' => 'max-width',
+						'selector' => $this->css_selector('__caption'),
+					],
+				],
+			]
+		);
+
+		$this->register_jet_control(
+			'caption_margin',
+			[
+				'tab'   => 'style',
+				'label' => esc_html__( 'Margin', 'jet-engine' ),
+				'type'  => 'spacing',
+				'css'   => [
+					[
+						'property' => 'margin',
+						'selector' => $this->css_selector( '__caption' ),
 					],
 				],
 			]
@@ -322,7 +480,7 @@ class Dynamic_Image extends Base {
 			);
 		}
 
-		echo "<div {$this->render_attributes( '_root' )}>";
+		echo "<div {$this->render_attributes( '_root' )}>";  // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		$render->render_content();
 		echo "</div>";
 	}

@@ -2,6 +2,8 @@
 /**
  * Posts query component template
  */
+
+// phpcs:disable
 ?>
 <div class="jet-engine-edit-page__fields">
 	<div class="cx-vui-collapse__heading">
@@ -62,6 +64,100 @@
 			:wrapper-css="[ 'fullwidth-control' ]"
 		>
 			<div class="cx-vui-inner-panel query-panel">
+				<div class="cx-vui-component__label"><?php _e( 'Order & Order By', 'jet-engine' ); ?></div>
+				<cx-vui-repeater
+					button-label="<?php _e( 'Add new sorting parameter', 'jet-engine' ); ?>"
+					button-style="accent"
+					button-size="mini"
+					v-model="query.orderby"
+					@add-new-item="addNewField( $event, [ { prop: 'orderby', value: 'index' }, { prop: 'order_type', value: 'numeric' }, { prop: 'order', value: 'ASC' } ], query.orderby )"
+				>
+					<cx-vui-repeater-item
+						v-for="( order, index ) in query.orderby"
+						:title="query.orderby[ index ].orderby"
+						:subtitle="query.orderby[ index ].order"
+						:collapsed="isCollapsed( order )"
+						:index="index"
+						@clone-item="cloneField( $event, order._id, query.orderby )"
+						@delete-item="deleteField( $event, order._id, query.orderby )"
+						:key="order._id"
+					>
+						<cx-vui-select
+							label="<?php _e( 'Order By', 'jet-engine' ); ?>"
+							description="<?php _e( 'Sort retrieved posts by selected parameter.', 'jet-engine' ); ?>"
+							:wrapper-css="[ 'equalwidth' ]"
+							:options-list="[
+								{
+									value: 'index',
+									label: 'Repeater Index',
+								},
+								{
+									value: 'field',
+									label: 'Repeater Field',
+								},
+							]"
+							size="fullwidth"
+							:value="query.orderby[ index ].orderby"
+							@input="setFieldProp( order._id, 'orderby', $event, query.orderby )"
+						></cx-vui-select>
+						<cx-vui-input
+							label="<?php _e( 'Field Name/ID', 'jet-engine' ); ?>"
+							description="<?php _e( 'Repeater field name to order by. Please use name of the field, not the visual label.', 'jet-engine' ); ?>"
+							v-if="'field' === query.orderby[ index ].orderby"
+							:wrapper-css="[ 'equalwidth' ]"
+							size="fullwidth"
+							:value="query.orderby[ index ].field_name"
+							@input="setFieldProp( order._id, 'field_name', $event, query.orderby )"
+						></cx-vui-input>
+						<cx-vui-select
+							v-if="'field' === query.orderby[ index ].orderby"
+							label="<?php _e( 'Ordering Type', 'jet-engine' ); ?>"
+							description="<?php _e( 'Depending on the type of the data stored in the field, select apropriate ordering type.', 'jet-engine' ); ?>"
+							:wrapper-css="[ 'equalwidth' ]"
+							:options-list="[
+								{
+									value: 'numeric',
+									label: 'Numeric (1, 2, 3)',
+								},
+								{
+									value: 'alphabetical',
+									label: 'Alphabetical (a, b, c)',
+								},
+								{
+									value: 'dates',
+									label: 'Dates',
+								},
+							]"
+							size="fullwidth"
+							:value="query.orderby[ index ].order_type"
+							@input="setFieldProp( order._id, 'order_type', $event, query.orderby )"
+						></cx-vui-select>
+						<cx-vui-select
+							label="<?php _e( 'Order', 'jet-engine' ); ?>"
+							description="<?php _e( 'Designates the ascending or descending order of the `Order By` parameter', 'jet-engine' ); ?>"
+							:wrapper-css="[ 'equalwidth' ]"
+							:options-list="[
+								{
+									value: 'ASC',
+									label: 'From lowest to highest values (1, 2, 3; a, b, c)',
+								},
+								{
+									value: 'DESC',
+									label: 'From highest to lowest values (3, 2, 1; c, b, a)',
+								},
+							]"
+							size="fullwidth"
+							:value="query.orderby[ index ].order"
+							@input="setFieldProp( order._id, 'order', $event, query.orderby )"
+						></cx-vui-select>
+					</cx-vui-repeater-item>
+				</cx-vui-repeater>
+			</div>
+		</cx-vui-component-wrapper>
+		<cx-vui-component-wrapper
+			:wrapper-css="[ 'fullwidth-control' ]"
+		>
+			<div class="cx-vui-inner-panel query-panel">
 				<div class="cx-vui-component__label"><?php _e( 'Query Arguments', 'jet-engine' ); ?></div>
 				<div class="cx-vui-component__desc"><?php _e( 'If you want to select only specific items from repeater field, set appropriate query arguments here', 'jet-engine' ); ?></div>
 				<cx-vui-repeater
@@ -98,11 +194,28 @@
 						></cx-vui-select>
 						<cx-vui-input
 							label="<?php _e( 'Value', 'jet-engine' ); ?>"
-							:wrapper-css="[ 'equalwidth', 'has-macros' ]"
+							:wrapper-css="[ 'equalwidth', 'has-macros', 'has-empty-toggle' ]"
 							size="fullwidth"
 							:value="query.meta_query[ index ].value"
 							@input="setFieldProp( clause._id, 'value', $event, query.meta_query )"
-						><jet-query-dynamic-args v-model="dynamicQuery.meta_query[ clause._id ].value"></jet-query-dynamic-args></cx-vui-input>
+						>
+							<jet-query-dynamic-args
+								v-model="dynamicQuery.meta_query[ clause._id ].value"
+								@on-delete="setFieldProp( clause._id, 'exclude_empty', false, query.meta_query )"
+							></jet-query-dynamic-args>
+							<label
+								class="jet-engine-exclude-empty-toggle"
+								v-if="dynamicQuery.meta_query[ clause._id ].value"
+							>
+								<input
+									type="checkbox"
+									:value="query.meta_query[ index ].exclude_empty"
+									:checked="query.meta_query[ index ].exclude_empty"
+									@input="setFieldProp( clause._id, 'exclude_empty', $event.target.checked, query.meta_query )"
+								>
+								<?php _e( 'Exclude this clause from the query if the dynamic value is empty', 'jet-engine' ) ?>
+							</label>
+						</cx-vui-input>
 						<cx-vui-select
 							label="<?php _e( 'Type', 'jet-engine' ); ?>"
 							description="<?php _e( 'Data type stored in the given field', 'jet-engine' ); ?>"

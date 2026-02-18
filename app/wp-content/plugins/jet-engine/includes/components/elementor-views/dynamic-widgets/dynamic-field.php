@@ -528,7 +528,7 @@ class Jet_Listing_Dynamic_Field_Widget extends \Jet_Listing_Dynamic_Widget {
 	 * @return [type] [description]
 	 */
 	public function dom_default_styles() {
-		
+
 		if ( $this->prevent_wrap() ) {
 			return;
 		}
@@ -726,6 +726,10 @@ class Jet_Listing_Dynamic_Field_Widget extends \Jet_Listing_Dynamic_Widget {
 	protected function render() {
 		$render = jet_engine()->listings->get_render_instance( 'dynamic-field', $this->get_settings_for_display() );
 		$render->render_content();
+	}
+
+	public function get_style_depends() {
+		return array( 'e-swiper' );
 	}
 
 }

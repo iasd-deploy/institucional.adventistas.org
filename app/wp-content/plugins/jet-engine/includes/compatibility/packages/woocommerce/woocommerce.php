@@ -21,6 +21,14 @@ if ( ! class_exists( 'Jet_Engine_Woo_Package' ) ) {
 	 */
 	class Jet_Engine_Woo_Package {
 
+		private $order_slug   = 'shop_order';
+		private $order_fields = null;
+
+		/**
+		 * @var \Cherry_X_Post_Meta
+		 */
+		private $post_meta_instance = null;
+
 		/**
 		 * Constructor for the class
 		 */
@@ -47,13 +55,122 @@ if ( ! class_exists( 'Jet_Engine_Woo_Package' ) ) {
 				add_filter( 'cx_post_meta/args',            array( $this, 'modify_order_meta_args' ) );
 				add_filter( 'cx_post_meta/get_fields/post', array( $this, 'modify_order_post_object' ), 10, 2 );
 
+				/**
+				 * properly save meta, and get meta for JetEngine metaboxes when HPOS enabled 
+				 * and orders not synchronized to posts
+				 */
+				add_action( 'woocommerce_process_shop_order_meta', [ $this, 'update_hpos_fields' ] );
+				add_filter( 'cx_post_meta/pre_get_meta', [ $this, 'get_hpos_field_value' ], 10, 3 );
+
 				add_filter(
 					'jet-engine/meta-boxes/is-allowed-on-current-admin-hook',
 					array( $this, 'is_allowed_on_current_admin_hook' ),
 					10, 3
 				);
+
+				$this->post_meta_instance = new \Cherry_X_Post_Meta();
 			}
 
+		}
+
+		public function get_hpos_field_value( $value, $order, $key ) {
+			if ( empty( $this->order_fields()[ $key ] ) ) {
+				return $value;
+			}
+
+			if ( is_a( $order, '\WP_Post' ) ) {
+				$order = wc_get_order( $order->ID );
+			}
+
+			if ( empty( $order ) ) {
+				return $value;
+			}
+
+			if ( ! is_a( $order, '\WC_Order' ) && ! is_a( $order, '\WC_Order_Refund' ) ) {
+				return $value;
+			}
+
+			$result = $order->get_meta( $key );
+
+			if ( empty( $result ) ) {
+				return $value;
+			}
+
+			return $result;
+		}
+
+		public function update_hpos_fields( $post_id ) {
+			$order = wc_get_order( $post_id );
+
+			if ( empty( $order ) ) {
+				return;
+			}
+
+			if ( ! is_a( $order, '\WC_Order' ) && ! is_a( $order, '\WC_Order_Refund' ) ) {
+				return;
+			}
+	
+			foreach ( $_REQUEST as $key => $value ) {
+				$this->update_meta_data( $order, $key, $value );
+			}
+
+			$order->save();
+		}
+
+		public function update_meta_data( \WC_Order $order, $key, $value ) {
+			$field = $this->order_fields( $key );
+			
+			if ( ! $field ) {
+				return;
+			}
+
+			switch ( $field['type'] ) {
+				case 'advanced-date':
+					break;
+				default:
+					$order->update_meta_data(
+						$key,
+						$this->post_meta_instance->sanitize_meta( $key, $value, $this->order_fields() )
+					);
+			}
+		}
+
+		public function order_fields( $key = '' ) {
+			if ( isset( $this->order_fields ) ) {
+				return empty( $key ) ? $this->order_fields : $this->order_fields[ $key ];
+			}
+	
+			$fields = jet_engine()->meta_boxes->get_meta_fields_for_object( $this->order_slug );
+	
+			if ( empty( $fields ) ) {
+				$this->order_fields = array();
+				return empty( $key ) ? array() : null;
+			}
+	
+			$this->order_fields = array();
+	
+			foreach ( $fields as $field ) {
+				$field['sanitize_callback'] = array( $this, 'sanitize_callback' );
+				$this->order_fields[ $field['name'] ] = $field;
+			}
+	
+			return empty( $key ) ? $this->order_fields : $this->order_fields[ $key ];
+		}
+
+		public function sanitize_callback( $value, $key, $field ) {
+			switch ( $field['type'] ) {
+				case 'media':
+				case 'gallery':
+					if ( $field['value_format'] !== 'both' || empty( $value ) || is_array( $value ) ) {
+						return $value;
+					}
+					
+					return json_decode( wp_unslash( $value ), true );
+				default:
+					return $this->post_meta_instance->sanitize_deafult( $value );
+			}
+
+			return $value;
 		}
 
 		/**
@@ -264,10 +381,11 @@ if ( ! class_exists( 'Jet_Engine_Woo_Package' ) ) {
 		 * @return bool
 		 */
 		public function add_inline_css( $add_inline_css ) {
-
+			// phpcs:disable
 			if ( isset( $_REQUEST['removed_item'] ) && $_REQUEST['removed_item'] ) {
 				return true;
 			}
+			// phpcs:enable
 
 			return $add_inline_css;
 		}
@@ -331,6 +449,7 @@ if ( ! class_exists( 'Jet_Engine_Woo_Package' ) ) {
 
 		public function modify_order_post_object( $post, $post_meta ) {
 
+			// phpcs:disable WordPress.Security.NonceVerification
 			if ( is_object( $post ) ) {
 				return $post;
 			}
@@ -351,7 +470,8 @@ if ( ! class_exists( 'Jet_Engine_Woo_Package' ) ) {
 				return $post;
 			}
 
-			$id = esc_attr( $_GET['id'] );
+			$id = absint( $_GET['id'] );
+			// phpcs:enable WordPress.Security.NonceVerification
 
 			return get_post( $id );
 		}

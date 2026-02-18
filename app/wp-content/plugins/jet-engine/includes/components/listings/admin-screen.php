@@ -13,13 +13,13 @@ class Jet_Engine_Listing_Admin_Screen {
 	protected $post_type = null;
 
 	public function __construct( $post_type ) {
-	
+
 		$this->post_type = $post_type;
 
 		add_action( 'wp_ajax_jet_engine_get_edit_listing_popup', array( $this, 'get_edit_listing_popup' ) );
 		add_action( 'wp_ajax_jet_engine_save_listing_settings', array( $this, 'save_template' ) );
 		add_action( 'admin_action_jet_create_new_listing', array( $this, 'save_template' ) );
-		
+
 		add_filter( 'views_edit-' . $this->post_type, array( $this, 'set_listing_list_views' ), 999 );
 
 		if ( is_admin() ) {
@@ -31,13 +31,13 @@ class Jet_Engine_Listing_Admin_Screen {
 
 	/**
 	 * Update listing items views
-	 * 
+	 *
 	 * @param [type] $views [description]
 	 */
 	public function set_listing_list_views( $views ) {
 
 		if ( ! get_option( 'jet_engine_set_entry_types' ) ) {
-			
+
 			$posts = get_posts( [
 				'post_type' => $this->post_type,
 				'posts_per_page' => -1,
@@ -61,48 +61,52 @@ class Jet_Engine_Listing_Admin_Screen {
 		global $wpdb;
 
 		$counts = $wpdb->get_results( "SELECT pm.meta_value AS entry_type, COUNT(*) AS posts_count FROM {$wpdb->posts} AS p LEFT JOIN {$wpdb->postmeta} AS pm ON p.ID = pm.post_id OR pm.post_id = NULL WHERE p.post_type = '{$this->post_type}' AND p.post_status <> 'trash' AND pm.meta_key = '_entry_type' GROUP BY entry_type;", OBJECT_K );
-		
+
 		$all_link = $views['all'];
-		
+
 		unset( $views['all'] );
 		unset( $views['publish'] );
 
 		$base_url = remove_query_arg( 'post_status' );
 
+		// phpcs:disable
 		$views = array_merge( [ 'all' => $all_link ], apply_filters(
 			'jet-engine/templates/editor-views-list',
 			array(
 				'listing_items' => sprintf(
 					'<a href="%1$s" %3$s>%2$s <span class="count">(%4$s)</span></a>',
-					add_query_arg( [ 'entry_type' => 'listing' ], $base_url ),
+					add_query_arg( [ 'entry_type' => 'listing' ], esc_url( $base_url ) ),
 					esc_html__( 'Listing Items', 'jet-engine' ),
 					( ! empty( $_GET['entry_type'] ) && 'listing' === $_GET['entry_type'] ) ? 'class="current" aria-current="page"' : '',
 					isset( $counts['listing'] ) ? $counts['listing']->posts_count : 0
 				),
 			),
 			$counts,
-			$base_url
-		) ,$views );
-		
+			esc_url( $base_url )
+		), $views );
+		// phpcs:enable
+
 		return $views;
 	}
 
 	/**
 	 * Apply views arguments to the query
-	 * 
+	 *
 	 * @return [type] [description]
 	 */
 	public function apply_views_args( $query ) {
-		if ( 
+		// phpcs:disable
+		if (
 			empty( $_GET['entry_type'] )
 			|| empty( $_GET['post_type'] )
 			|| $this->post_type !== $_GET['post_type']
-			|| $this->post_type !== $query->get( 'post_type' ) 
+			|| $this->post_type !== $query->get( 'post_type' )
 		) {
 			return;
 		}
 
-		$entry_type = sanitize_text_field( $_GET['entry_type'] );
+		$entry_type = sanitize_text_field( wp_unslash( $_GET['entry_type'] ) );
+		// phpcs:enable
 
 		$meta_query = array(
 			array(
@@ -146,15 +150,17 @@ class Jet_Engine_Listing_Admin_Screen {
 	public function send_request_error( $message = '' ) {
 
 		if ( $this->is_ajax_request() ) {
-			wp_send_json_error( $message );
+			wp_send_json_error( wp_kses_post( $message ) );
 		} else {
-			wp_die( $message, esc_html__( 'Error', 'jet-engine' ) );
+			wp_die( wp_kses_post( $message ), esc_html__( 'Error', 'jet-engine' ) );
 		}
 
 	}
 
 	public function is_ajax_request() {
+		// phpcs:disable
 		return $is_ajax_request = ! empty( $_REQUEST['_is_ajax_form'] ) ? filter_var( $_REQUEST['_is_ajax_form'], FILTER_VALIDATE_BOOLEAN ) : false;
+		// phpcs:enable
 	}
 
 	/**
@@ -202,6 +208,7 @@ class Jet_Engine_Listing_Admin_Screen {
 
 		$nonce_action = $this->get_nonce_action();
 
+		// phpcs:disable
 		if ( empty( $_REQUEST['_nonce'] ) || ! wp_verify_nonce( $_REQUEST['_nonce'], $nonce_action ) ) {
 			$this->send_request_error( __( 'Nonce validation failed', 'jet-engine' ) );
 		}
@@ -209,6 +216,61 @@ class Jet_Engine_Listing_Admin_Screen {
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			$this->send_request_error( esc_html__( 'You don\'t have permissions to do this', 'jet-engine' ) );
 		}
+		// phpcs:enable
+
+		$is_edit = false;
+		$listing_id = ! empty( $_REQUEST['_listing_id'] ) ? absint( wp_unslash( $_REQUEST['_listing_id'] ) ) : false;
+
+		if ( $listing_id ) {
+
+			if ( ! current_user_can( 'edit_post', $listing_id ) ) {
+				$this->send_request_error( esc_html__( 'You don\'t have permissions to do this', 'jet-engine' ) );
+			}
+
+			$is_edit = true;
+		}
+
+		$template_data = $this->create_listing_template( $_REQUEST, $is_edit );
+		$template_id   = isset( $template_data['template_id'] ) ? $template_data['template_id'] : false;
+		$view_type     = isset( $template_data['view_type'] ) ? $template_data['view_type'] : 'elementor';
+		$title         = isset( $template_data['title'] ) ? $template_data['title'] : '';
+
+		if ( ! $template_id ) {
+			$this->send_request_error( esc_html__( 'Can\'t create template. Please try again', 'jet-engine' ) );
+		}
+
+		$redirect = ! empty( $template_data['edit_url'] ) ? $template_data['edit_url'] : false;
+
+		if ( ! $redirect ) {
+			$this->send_request_error( __( 'Listing view instance is not found', 'jet-engine' ) );
+		}
+
+		if ( $this->is_ajax_request() ) {
+			wp_send_json_success( array(
+				'id'    => $template_id,
+				'title' => $title,
+			) );
+		} elseif ( $is_edit ) {
+
+			$response    = array();
+			$open_editor = ! empty( $_REQUEST['_open_editor'] ) ? filter_var( $_REQUEST['_open_editor'], FILTER_VALIDATE_BOOLEAN ) : false; // phpcs:ignore
+
+			if ( $open_editor ) {
+				$response['redirect'] = $redirect;
+			}
+
+			wp_send_json_success( $response );
+
+		} else {
+			wp_safe_redirect( $redirect ); // phpcs:ignore
+			die();
+		}
+
+	}
+
+	public function create_listing_template( $request = [], $is_edit = false ) {
+
+		$request = ! empty( $request ) ? $request : $_REQUEST; // phpcs:ignore
 
 		$post_data = array(
 			'post_type'   => $this->post_type,
@@ -216,39 +278,31 @@ class Jet_Engine_Listing_Admin_Screen {
 			'meta_input'  => array(),
 		);
 
-		$entry_type   = 'listing';
-		$is_edit      = false;
 		$default_view = 'elementor';
+		$entry_type   = 'listing';
 
-		if ( ! empty( $_REQUEST['template_entry_type'] ) ) {
-			$entry_type = esc_attr( $_REQUEST['template_entry_type'] );
+		if ( ! empty( $request['template_entry_type'] ) ) {
+			$entry_type = esc_attr( $request['template_entry_type'] );
 		}
 
-		if ( ! empty( $_REQUEST['_listing_id'] ) ) {
-
-			if ( ! current_user_can( 'edit_post', $_REQUEST['_listing_id'] ) ) {
-				$this->send_request_error( esc_html__( 'You don\'t have permissions to do this', 'jet-engine' ) );
-			}
-
-			$is_edit         = true;
-			$post_data['ID'] = absint( $_REQUEST['_listing_id'] );
-			$default_view    = get_post_meta( $_REQUEST['_listing_id'], '_listing_type', true );
-
+		if ( ! empty( $request['_listing_id'] ) ) {
+			$post_data['ID'] = absint( $request['_listing_id'] );
+			$default_view = get_post_meta( $request['_listing_id'], '_listing_type', true );
 		}
 
-		$title = isset( $_REQUEST['template_name'] ) ? esc_attr( $_REQUEST['template_name'] ) : '';
+		$title = isset( $request['template_name'] ) ? esc_attr( $request['template_name'] ) : '';
 
 		if ( $title ) {
 			$post_data['post_title'] = $title;
 		}
 
-		$source     = ! empty( $_REQUEST['listing_source'] ) ? esc_attr( $_REQUEST['listing_source'] ) : 'posts';
-		$post_type  = ! empty( $_REQUEST['listing_post_type'] ) ? esc_attr( $_REQUEST['listing_post_type'] ) : '';
-		$tax        = ! empty( $_REQUEST['listing_tax'] ) ? esc_attr( $_REQUEST['listing_tax'] ) : '';
-		$rep_source = ! empty( $_REQUEST['repeater_source'] ) ? esc_attr( $_REQUEST['repeater_source'] ) : '';
-		$rep_field  = ! empty( $_REQUEST['repeater_field'] ) ? esc_attr( $_REQUEST['repeater_field'] ) : '';
-		$rep_option = ! empty( $_REQUEST['repeater_option'] ) ? esc_attr( $_REQUEST['repeater_option'] ) : '';
-		$view_type  = ! empty( $_REQUEST['listing_view_type'] ) ? $_REQUEST['listing_view_type'] : $default_view;
+		$source     = ! empty( $request['listing_source'] ) ? esc_attr( $request['listing_source'] ) : 'posts';
+		$post_type  = ! empty( $request['listing_post_type'] ) ? esc_attr( $request['listing_post_type'] ) : '';
+		$tax        = ! empty( $request['listing_tax'] ) ? esc_attr( $request['listing_tax'] ) : '';
+		$rep_source = ! empty( $request['repeater_source'] ) ? esc_attr( $request['repeater_source'] ) : '';
+		$rep_field  = ! empty( $request['repeater_field'] ) ? esc_attr( $request['repeater_field'] ) : '';
+		$rep_option = ! empty( $request['repeater_option'] ) ? esc_attr( $request['repeater_option'] ) : '';
+		$view_type  = ! empty( $request['listing_view_type'] ) ? $request['listing_view_type'] : $default_view;
 
 		$listing = array(
 			'source'    => $source,
@@ -271,38 +325,14 @@ class Jet_Engine_Listing_Admin_Screen {
 		}
 
 		$template_id = $this->update_template( $post_data, $view_type );
+		$edit_url    = $template_id ? $this->get_edit_url( $view_type, $template_id ) : false;
 
-		if ( ! $template_id ) {
-			$this->send_request_error( esc_html__( 'Can\'t create template. Please try again', 'jet-engine' ) );
-		}
-
-		$redirect = $this->get_edit_url( $view_type, $template_id );
-
-		if ( ! $redirect ) {
-			$this->send_request_error( __( 'Listing view instance is not found', 'jet-engine' ) );
-		}
-
-		if ( $this->is_ajax_request() ) {
-			wp_send_json_success( array(
-				'id'    => $template_id,
-				'title' => $title,
-			) );
-		} elseif ( $is_edit ) {
-			
-			$response    = array();
-			$open_editor = ! empty( $_REQUEST['_open_editor'] ) ? filter_var( $_REQUEST['_open_editor'], FILTER_VALIDATE_BOOLEAN ) : false;
-
-			if ( $open_editor ) {
-				$response['redirect'] = $redirect;
-			}
-
-			wp_send_json_success( $response );
-
-		} else {
-			wp_redirect( $redirect );
-			die();
-		}
-
+		return [
+			'template_id' => $template_id,
+			'view_type'   => $view_type,
+			'title'       => $title,
+			'edit_url'    => $edit_url,
+		];
 	}
 
 	public function get_edit_url( $view_type, $template_id ) {
@@ -387,7 +417,7 @@ class Jet_Engine_Listing_Admin_Screen {
 
 			default:
 				$result = apply_filters(
-					'jet-engine/templates/admin-columns/type/' . $source, 
+					'jet-engine/templates/admin-columns/type/' . $source,
 					$result, $settings, $post_id
 				);
 				break;
@@ -410,7 +440,7 @@ class Jet_Engine_Listing_Admin_Screen {
 
 	/**
 	 * Get URL of form action to create new listing/component
-	 * 
+	 *
 	 * @return [type] [description]
 	 */
 	public function get_listing_popup_action() {
@@ -425,12 +455,12 @@ class Jet_Engine_Listing_Admin_Screen {
 
 	/**
 	 * Get listing popup content
-	 * 
+	 *
 	 * @param  boolean $listing_id [description]
 	 * @return [type]              [description]
 	 */
 	public function get_listing_popup( $listing_id = false ) {
-		
+
 		$action = $this->get_listing_popup_action();
 
 		$sources = jet_engine()->listings->post_type->get_listing_item_sources();
@@ -452,11 +482,13 @@ class Jet_Engine_Listing_Admin_Screen {
 
 		$nonce_action = $this->get_nonce_action();
 
+		// phpcs:disable
 		if ( empty( $_REQUEST['_nonce'] ) || ! wp_verify_nonce( $_REQUEST['_nonce'], $nonce_action ) ) {
 			wp_send_json_error( __( 'Nonce validation failed', 'jet-engine' ) );
 		}
 
 		$listing_id = ! empty( $_REQUEST['listing_id'] ) ? absint( $_REQUEST['listing_id'] ) : false;
+		// phpcs:enable
 
 		if ( ! $listing_id ) {
 			wp_send_json_error( 'Listing ID not found in the request' );

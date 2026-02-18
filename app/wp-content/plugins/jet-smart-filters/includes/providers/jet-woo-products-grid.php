@@ -281,9 +281,11 @@ if ( ! class_exists( 'Jet_Smart_Filters_Provider_Jet_Woo_Grid' ) ) {
 
 			$shortcode->set_settings( $attributes );
 
-			echo jet_woo_builder_tools()->get_carousel_wrapper_atts(
-				$shortcode->do_shortcode( $attributes ),
-				$this->sanitize_settings( $settings )
+			echo wp_kses_post(
+				jet_woo_builder_tools()->get_carousel_wrapper_atts(
+					$shortcode->do_shortcode( $attributes ),
+					$this->sanitize_settings( $settings )
+				)
 			);
 		}
 

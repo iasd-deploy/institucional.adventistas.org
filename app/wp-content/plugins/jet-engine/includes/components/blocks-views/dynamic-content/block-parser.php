@@ -6,6 +6,9 @@ namespace Jet_Engine\Blocks_Views\Dynamic_Content;
  */
 class Dynamic_Block_Parser {
 
+	/**
+	 * @var Blocks\Base
+	 */
 	public $block;
 	public $attrs;
 	public $data;

@@ -10,24 +10,54 @@ class Manager {
 
 	private $_controls_map = array();
 
-	private $processing_item = null;
-
 	//$depth and $object_stack added to fix https://github.com/Crocoblock/issues-tracker/issues/10536
 	private $depth = 0;
+	private $initial_object = null;
 
 	private $object_stack = array();
+	private $processing_item = null;
+
+	private $new_hooks = true;
+
+	private $current_widget = null;
 
 	public function __construct() {
 
 		add_action( 'jet-engine-query-gateway/control', array( $this, 'register_controls' ), 10, 2 );
 		add_action( 'jet-engine-query-gateway/do-item', array( $this, 'set_item_object' ) );
+		add_action( 'jet-engine-query-gateway/reset-item', array( $this, 'reset_item_object' ) );
 		add_filter( 'jet-engine-query-gateway/query', array( $this, 'query_items' ), 10, 3 );
+		add_filter( 'jet-tabs/widgets/template_content', array( $this, 'maybe_add_inline_styles' ), 10, 4 );
+
+		//remove version checks and old methods after a few updates of JetElements/JetTabs
+		if ( function_exists( 'jet_elements' ) && version_compare( jet_elements()->get_version(), '2.7.2', '<=' ) ) {
+			$this->new_hooks = false;
+		}
+		
+		if ( $this->new_hooks && function_exists( 'jet_tabs' ) && version_compare( jet_tabs()->get_version(), '2.2.6.1', '<=' ) ) {
+			$this->new_hooks = false;
+		}
+		
+		if ( $this->new_hooks ) {
+			add_action( 'jet-engine-query-gateway/before-loop', array( $this, 'before_loop' ) );
+			add_action( 'jet-engine-query-gateway/reset-item', array( $this, 'after_loop' ), 11 );
+		}
 
 		// Native Jet-plugins compatibility
 		foreach ( array( 'jet-tabs', 'jet-elements' ) as $plugin_slug ) {
 			add_filter( $plugin_slug . '/widget/loop-items', array( $this, 'jet_plugins_compatibility' ), 10, 3 );
 		}
 
+	}
+
+	public function before_loop() {
+		$current_object = jet_engine()->listings->data->get_current_object();
+		$this->add_to_stack( $current_object );
+	}
+
+	public function after_loop() {
+		jet_engine()->listings->data->set_current_object( $this->get_from_stack() );
+		$this->remove_from_stack();
 	}
 
 	public function increase_stack_depth() {
@@ -39,18 +69,88 @@ class Manager {
 	}
 
 	public function get_from_stack() {
-		return $this->object_stack[ $this->depth ] ?? false;
+		if ( ! $this->new_hooks ) {
+			return $this->object_stack[ $this->depth ] ?? false;
+		}
+
+		$i = array_key_last( $this->object_stack );
+		return ! empty( $this->object_stack ) ? $this->object_stack[ $i ] : false;
 	}
 
 	public function add_to_stack( $object ) {
-		$this->object_stack[ $this->depth ] = $object;
+		if ( ! $this->new_hooks ) {
+			$this->object_stack[ $this->depth ] = $object;
+			return;
+		}
+
+		$this->object_stack[] = $object;
 	}
 
 	public function remove_from_stack() {
-		unset( $this->object_stack[ $this->depth ] );
+		if ( ! $this->new_hooks ) {
+			unset( $this->object_stack[ $this->depth ] );
+			return;
+		}
+
+		array_pop( $this->object_stack );
 	}
 
+	public function maybe_add_inline_styles( $content, $item, $css_id, $widget ) {
+		if ( empty( $item['_jet_engine_queried_object'] ) || empty( $item['item_template_id'] ) ) {
+			return $content;
+		}
+
+		$template_id = apply_filters( 'jet-tabs/widgets/template_id', $item['item_template_id'] );
+
+		$dcss = new \Jet_Engine_Elementor_Dynamic_CSS( $template_id, $template_id );
+		$dcss->set_listing_unique_selector(
+			sprintf(
+				'%s #%s',
+				$widget->get_unique_selector(),
+				$css_id
+			)
+		);
+
+		$css = $dcss->get_content();
+
+		if ( empty( $css ) ) {
+			return $content;
+		}
+
+		return sprintf( '<style>%s</style>', $css ) . $content;
+	}
+	
 	public function set_item_object( $item ) {
+		if ( ! $this->new_hooks ) {
+			$this->old_set_item_object( $item );
+			return;
+		}
+		
+		if ( ! empty( $item['_jet_engine_queried_object'] ) ) {
+
+			// Store initial object
+			if ( ! $this->initial_object ) {
+				$this->initial_object = jet_engine()->listings->data->get_current_object();
+			} else {
+				// Remove prevent item from stack.
+				$prev_item = jet_engine()->listings->data->get_current_object();
+
+				if ( $prev_item !== $this->initial_object ) {
+					do_action( 'jet-engine/object-stack/decrease', $prev_item );
+				}
+			}
+
+			$this->processing_item = $item['_jet_engine_queried_object'];
+
+			jet_engine()->listings->data->set_current_object( $item['_jet_engine_queried_object'] );
+
+			// Add item to stack.
+			do_action( 'jet-engine/object-stack/increase', $item['_jet_engine_queried_object'] );
+			add_action( 'jet-engine/listings/frontend/object-done', array( $this, 'add_processing_item_to_stack' ), 20 );
+		}
+	}
+
+	public function old_set_item_object( $item ) {
 		
 		if ( ! empty( $item['_jet_engine_queried_object'] ) ) {
 
@@ -83,6 +183,34 @@ class Manager {
 	}
 
 	public function reset_item_object() {
+
+		if ( ! $this->new_hooks ) {
+			$this->old_reset_item_object();
+			return;
+		}
+
+		$this->processing_item = null;
+		remove_action( 'jet-engine/listings/frontend/object-done', array( $this, 'add_processing_item_to_stack' ), 20 );
+
+		if ( ! $this->initial_object ) {
+			return;
+		}
+
+		if ( $this->initial_object === jet_engine()->listings->data->get_current_object() ) {
+			$this->initial_object = null;
+			return;
+		}
+
+		// Remove last item from stack.
+		$last_item = jet_engine()->listings->data->get_current_object();
+		do_action( 'jet-engine/object-stack/decrease', $last_item );
+
+		jet_engine()->listings->data->set_current_object( $this->initial_object );
+
+		$this->initial_object = null;
+	}
+
+	public function old_reset_item_object() {
 		
 		$this->processing_item = null;
 
@@ -134,6 +262,8 @@ class Manager {
 
 		$query_id = $widget->get_settings( 'jet_engine_query_id_' . $control_name );
 
+		$this->current_widget = $widget;
+
 		$items = array();
 
 		$query = Query_Builder_Manager::instance()->get_query_by_id( $query_id );
@@ -158,6 +288,8 @@ class Manager {
 
 		$fields_map = $fields_map[0];
 
+		$this->initial_object = jet_engine()->listings->data->get_current_object();
+
 		foreach ( $query_items as $index => $item ) {
 			jet_engine()->listings->data->set_current_object( $item );
 			$control = $widget->get_controls( $control_name );
@@ -181,6 +313,14 @@ class Manager {
 	}
 
 	public function jet_plugins_compatibility( $items, $control_name, $widget ) {
+		if ( ! $this->new_hooks ) {
+			return $this->old_jet_plugins_compatibility( $items, $control_name, $widget );
+		}
+
+		return apply_filters( 'jet-engine-query-gateway/query', $items, $control_name, $widget );
+	}
+
+	public function old_jet_plugins_compatibility( $items, $control_name, $widget ) {
 		$current_object = jet_engine()->listings->data->get_current_object();
 		
 		$items = apply_filters( 'jet-engine-query-gateway/query', $items, $control_name, $widget );

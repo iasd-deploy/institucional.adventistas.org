@@ -1,3 +1,6 @@
+<?php
+// Silence is golden.
+?>
 <div class="jsf_repeater">
 	<div class="jsf_repeater-label"
 		 v-if="label"

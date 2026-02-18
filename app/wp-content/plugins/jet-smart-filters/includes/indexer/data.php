@@ -36,12 +36,16 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Data' ) ) {
 
 			foreach ( jet_smart_filters()->query->get_default_queries() as $provider => $queries ) {
 				foreach ( $queries as $query_id => $query_args ) {
-					$query_args   = jet_smart_filters()->utils->merge_query_args( $query_args, jet_smart_filters()->query->get_query_args() );
 					$provider_key = $provider . '/' . $query_id;
 
 					if ( empty( $this->indexing_data[$provider_key] ) ) {
 						continue;
 					}
+
+					$query_args = jet_smart_filters()->utils->merge_query_args(
+						$query_args,
+						jet_smart_filters()->query->get_query_args()
+					);
 
 					$provider_indexed_data = $this->get_indexed_data( $provider_key, $query_args );
 
@@ -52,7 +56,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Data' ) ) {
 			}
 
 			if ( ! empty( $indexed_data ) ) {
-				$args['jetFiltersIndexedData'] = apply_filters( 'jet-smart-filters/filters/indexed-data', $indexed_data );
+				$args['jetFiltersIndexedData'] = $indexed_data;
 			}
 
 			do_action( 'jet-smart-filters/indexer/after-prepare-data' );
@@ -67,8 +71,24 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Data' ) ) {
 
 			do_action( 'jet-smart-filters/indexer/before-prepare-data' );
 
-			$provider_key     = isset( $_REQUEST['provider'] ) ? $_REQUEST['provider'] : false;
-			$indexing_filters = isset( $_REQUEST['indexing_filters'] ) ? json_decode( stripcslashes( $_REQUEST['indexing_filters'] ), true ) : false;
+			$request = jet_smart_filters()->data->get_request();
+
+			// Provider
+			$provider_key = isset( $request['provider'] )
+				? sanitize_text_field( wp_unslash( $request['provider'] ) )
+				: false;
+
+			// Indexing filters
+			$indexing_filters = false;
+
+			if ( isset( $request['indexing_filters'] ) ) {
+				$indexing_filters = json_decode(
+					sanitize_textarea_field(
+						wp_unslash( $request['indexing_filters'] )
+					),
+					true
+				);
+			}
 
 			if ( ! ( $provider_key && $indexing_filters ) ) {
 				return $args;
@@ -89,9 +109,9 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Data' ) ) {
 				$indexed_data = $this->get_indexed_data( $provider_key, $query_args );
 			}
 
-			$args['jetFiltersIndexedData'] = apply_filters( 'jet-smart-filters/filters/indexed-data', array(
+			$args['jetFiltersIndexedData'] = array(
 				$provider_key => $indexed_data
-			) );
+			);
 
 			do_action( 'jet-smart-filters/indexer/after-prepare-data' );
 
@@ -124,6 +144,10 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Data' ) ) {
 
 					case 'meta_query':
 						foreach ( $query_data as $meta_key => $meta_data ) {
+							if ( ! $meta_data ) {
+								continue;
+							}
+
 							$sql_and .= $sql_and ? ' OR ' : '';
 
 							if ( strpos( $meta_key, '|' ) ) {
@@ -155,13 +179,12 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Data' ) ) {
 								$item_key_condition = strpos( $meta_key, ',' )
 									? "item_key IN ('" . str_replace( [",",' '], ["','". ''], $meta_key ) . "')"
 									: "item_key = '$meta_key'";
-								if ( $meta_data ) {
-									foreach ( $meta_data as &$value ) {
-										$value = addslashes( $value );
-									}
 
-									$sql_and .= "(item_query = '$query_type' AND $item_key_condition AND item_value IN ('" . implode( "','", $meta_data ) . "'))";
+								foreach ( $meta_data as &$value ) {
+									$value = addslashes( $value );
 								}
+
+								$sql_and .= "(item_query = '$query_type' AND $item_key_condition AND item_value IN ('" . implode( "','", $meta_data ) . "'))";
 							}
 						}
 
@@ -251,7 +274,13 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Data' ) ) {
 				}
 			}
 
-			return $indexed_data;
+			return apply_filters( 'jet-smart-filters/filters/indexed-data', $indexed_data, array(
+				'provider_key'  => $provider_key,
+				'query_args'    => $query_args,
+				'type'          => $type,
+				'queried_ids'   => $queried_ids,
+				'indexing_data' => $indexing_data
+			) );
 		}
 
 		/**
@@ -382,12 +411,20 @@ if ( ! class_exists( 'Jet_Smart_Filters_Indexer_Data' ) ) {
 						break;
 
 					case 'custom_fields':
-						$query_type = 'meta_query';
-						$query_var  = $source['_query_var'][0];
-						$custom_field_options = jet_smart_filters()->data->get_choices_from_field_data( array(
-							'field_key' => $source['_source_custom_field'][0],
-							'source'    => $source['_custom_field_source_plugin'][0],
-						) );
+						$query_type          = 'meta_query';
+						$query_var           = $source['_query_var'][0];
+						$custom_field        = $source['_source_custom_field'][0];
+						$custom_field_source = $source['_custom_field_source_plugin'][0];
+						$get_from_field_data = isset( $source['_source_get_from_field_data'][0] ) ? filter_var( $source['_source_get_from_field_data'][0], FILTER_VALIDATE_BOOLEAN ) : false;
+
+						if ( $get_from_field_data ) {
+							$custom_field_options = jet_smart_filters()->data->get_choices_from_field_data( array(
+								'field_key' => $custom_field,
+								'source'    => $custom_field_source,
+							) );
+						} else {
+							$custom_field_options = jet_smart_filters()->data->get_options_by_field_key( $custom_field );
+						}
 
 						$data[$query_var] = array_keys( $custom_field_options );
 

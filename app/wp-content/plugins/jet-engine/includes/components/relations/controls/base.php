@@ -1,6 +1,8 @@
 <?php
 namespace Jet_Engine\Relations\Controls;
 
+use Jet_Engine\Relations\Storage\Ordering;
+
 // If this file is called directly, abort.
 if ( ! defined( 'WPINC' ) ) {
 	die;
@@ -9,6 +11,9 @@ if ( ! defined( 'WPINC' ) ) {
 class Base {
 
 	public $args         = array();
+	/**
+	 * @var \Jet_Engine\Relations\Relation
+	 */
 	public $relation     = null;
 	public $control_type = null;
 
@@ -207,14 +212,17 @@ class Base {
 
 		if ( $this->_is( 'parent_object' ) ) {
 			$key = 'child_page_control_';
+			$required_error = __( 'Should have at least one related parent.', 'jet-engine' );
 		} else {
 			$key = 'parent_page_control_';
+			$required_error = __( 'Should have at least one related child.', 'jet-engine' );
 		}
 
 		return array(
 			'select'        => $this->get_label( $key . 'select', sprintf( __( 'Select %s', 'jet-engine' ), $single_label ) ),
 			'createButton'  => $this->get_label( $key . 'create', sprintf( __( 'Add New %s', 'jet-engine' ), $single_label ) ),
 			'connectButton' => $this->get_label( $key . 'connect', sprintf( __( 'Connect %s', 'jet-engine' ), $single_label ) ),
+			'requiredError' => $this->get_label( $key . 'required_error', $required_error ),
 		);
 	}
 
@@ -246,11 +254,9 @@ class Base {
 
 		$label = $this->get_label( $key );
 
-		if ( $label ) {
-			return $label;
-		} else {
-			$args = $this->get_args();
-			return jet_engine()->relations->types_helper->get_relation_label( 
+		if ( ! $label ) {
+			$args  = $this->get_args();
+			$label = jet_engine()->relations->types_helper->get_relation_label( 
 				$this->relation, 
 				$args['object_type'], 
 				$args['object_name'],
@@ -259,6 +265,20 @@ class Base {
 			);
 		}
 
+		$add_debug_info = jet_engine()->misc_settings->get_settings( 'enable_relation_control_prefix' );
+
+		if ( $add_debug_info ) {
+			$labels = $this->relation->get_args( 'labels', array() );
+
+			$label = sprintf(
+				'%s - %s (%s)',
+				$label,
+				$labels['name'],
+				$this->relation->get_id()
+			);
+		}
+
+		return $label;
 	}
 
 	/**
@@ -297,10 +317,12 @@ class Base {
 
 		if ( 'parent_object' === $this->get_control_type() ) {
 			$allowed = $this->relation->get_args( 'child_manager' );
+			$js_data['isRequired'] = $this->relation->get_args( 'parents_required' );
 		} else {
 			$allowed = $this->relation->get_args( 'parent_manager' );
+			$js_data['isRequired'] = $this->relation->get_args( 'children_required' );
 		}
-
+		
 		if ( $allowed ) {
 			$js_data['createFields'] = $this->relation->get_create_control_fields( $this->get_control_type() );
 		}
@@ -311,8 +333,9 @@ class Base {
 		);
 
 		$js_common = array(
-			'_nonce' => wp_create_nonce( 'jet-engine-relations-control' ),
-			'help'   => array(
+			'_nonce'    => wp_create_nonce( 'jet-engine-relations-control' ),
+			'orderMode' => Ordering::instance()->get_mode(),
+			'help'      => array(
 				'emptyObject' => $this->get_empty_object_help(),
 			),
 			'i18n' => array(
@@ -324,6 +347,7 @@ class Base {
 				'deleteItem'    => esc_html__( 'Delete Item', 'jet-engine' ),
 				'confirmText'   => esc_html__( 'Are you sure?', 'jet-engine' ),
 				'confirmDelete' => esc_html__( 'Are you sure? This item will be removed from your website.', 'jet-engine' ),
+				'removeInvalid' => esc_html__( 'Remove invalid records', 'jet-engine' ),
 			),
 		);
 

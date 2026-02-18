@@ -3,7 +3,7 @@
  * Plugin Name: JetSmartFilters
  * Plugin URI:  https://crocoblock.com/plugins/jetsmartfilters/
  * Description: Adds easy-to-use AJAX filters to the pages built with Elementor which contain the dynamic listings.
- * Version:     3.5.7.1
+ * Version:     3.7.4.1
  * Author:      Crocoblock
  * Author URI:  https://crocoblock.com/
  * Text Domain: jet-smart-filters
@@ -27,7 +27,7 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 		/**
 		 * Plugin version
 		 */
-		private $version = '3.5.7.1';
+		private $version = '3.7.4.1';
 
 		/**
 		 * Holder for base plugin URL
@@ -69,7 +69,7 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 		public $services;
 		public $settings;
 		public $indexer;
-		public $seo_sitemap;
+		public $seo;
 		public $URL_aliases;
 		public $rest_api;
 		public $blocks;
@@ -122,7 +122,6 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 		 * Returns plugin version
 		 */
 		public function get_version() {
-
 			return $this->version;
 		}
 
@@ -141,6 +140,7 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 					$this->plugin_path( 'framework/jet-dashboard/jet-dashboard.php' ),
 					$this->plugin_path( 'framework/jet-elementor-extension/jet-elementor-extension.php' ),
 					$this->plugin_path( 'framework/admin-bar/jet-admin-bar.php' ),
+					$this->plugin_path( 'framework/blocks-style-manager/style-manager.php' ),
 				)
 			);
 		}
@@ -152,12 +152,14 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 
 			$this->load_files();
 
+			Jet_Smart_Filters\Listing\Controller::instance();
+
 			$this->services           = new Jet_Smart_Filters_Services();
 			$this->settings           = new Jet_Smart_Filters_Settings();
+			$this->data               = new Jet_Smart_Filters_Data();
 			$this->post_type          = new Jet_Smart_Filters_Post_Type();
 			$this->query              = new Jet_Smart_Filters_Query_Manager();
 			$this->render             = new Jet_Smart_Filters_Render();
-			$this->data               = new Jet_Smart_Filters_Data();
 			$this->utils              = new Jet_Smart_Filters_Utils();
 			$this->filter_types       = new Jet_Smart_Filters_Filter_Manager();
 			$this->providers          = new Jet_Smart_Filters_Providers_Manager();
@@ -165,7 +167,7 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 			$this->blocks             = new Jet_Smart_Filters_Blocks_Manager();
 			$this->bricks             = new \Jet_Smart_Filters\Bricks_Views\Manager();
 			$this->indexer            = new Jet_Smart_Filters_Indexer_Manager();
-			$this->seo_sitemap        = new Jet_Smart_Filters_Seo_Sitemap();
+			$this->seo                = new Jet_Smart_Filters_SEO();
 			$this->URL_aliases        = new Jet_Smart_Filters_URL_Aliases();
 			$this->admin_bar          = Jet_Admin_Bar::get_instance();
 
@@ -210,10 +212,11 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 			require $this->plugin_path( 'includes/url-aliases.php' );
 			require $this->plugin_path( 'includes/compatibility/manager.php' );
 			require $this->plugin_path( 'includes/indexer/manager.php' );
-			require $this->plugin_path( 'includes/seo_sitemap.php' );
+			require $this->plugin_path( 'includes/SEO/manager.php' );
 			require $this->plugin_path( 'includes/utils.php' );
 			require $this->plugin_path( 'includes/tax-query/manager.php' );
 			require $this->plugin_path( 'includes/plain-query/manager.php' );
+			require $this->plugin_path( 'includes/listing/controller.php' );
 		}
 
 		/**
@@ -369,7 +372,7 @@ if ( ! class_exists( 'Jet_Smart_Filters' ) ) {
 			$href = $this->is_classic_admin
 				? get_admin_url() . 'post.php?post=' . $filter_id . '&action=edit'
 				: get_admin_url() . 'admin.php?page=jet-smart-filters#/' . $filter_id;
-			
+
 			$this->admin_bar->register_post_item( $filter_id, array(
 				'href' => $href
 			) );

@@ -54,7 +54,7 @@ if ( ! class_exists( 'Jet_Engine_CPT_Admin_Filters' ) ) {
 				return $query;
 			}
 
-			if ( $this->post_type !== $query->query['post_type'] || empty( $_REQUEST[ $this->query_key ] ) ) {
+			if ( isset( $query->query['post_type'] ) && $this->post_type !== $query->query['post_type'] || empty( $_REQUEST[ $this->query_key ] ) ) {
 				return $query;
 			}
 
@@ -101,6 +101,10 @@ if ( ! class_exists( 'Jet_Engine_CPT_Admin_Filters' ) ) {
 							if ( $field_data['name'] === $field && 'checkbox' === $field_data['type'] ) {
 								$settings['is_checkbox'] = true;
 								$settings['is_array']    = ! empty( $field_data['is_array'] );
+							}
+
+							if ( $field_data['name'] === $field && 'select' === $field_data['type'] ) {
+								$settings['is_multiple'] = ! empty( $field_data['is_multiple'] );
 							}
 						}
 					}
@@ -153,6 +157,12 @@ if ( ! class_exists( 'Jet_Engine_CPT_Admin_Filters' ) ) {
 		 */
 		public function apply_meta_filter( $query, $meta_key, $value, $settings = array() ) {
 
+			global $wpdb;
+
+			// TEMP WORKAROUND: keep htmlspecialchars() to match values saved with wp_kses_post().
+			// See issue: https://github.com/Crocoblock/issues-tracker/issues/18927
+			$value = is_string( $value ) ? htmlspecialchars( wp_unslash( $value ), ENT_NOQUOTES ) : $value;
+
 			if ( empty( $query->query_vars['meta_query'] ) ) {
 				$query->query_vars['meta_query'] = array();
 			}
@@ -162,15 +172,22 @@ if ( ! class_exists( 'Jet_Engine_CPT_Admin_Filters' ) ) {
 				'value' => $value,
 			);
 
+			// Escape for safe use in LIKE
+			$value_escaped = $wpdb->esc_like( $value );
+
 			if ( ! empty( $settings['is_checkbox'] ) ) {
 				if ( $settings['is_array'] ) {
-					$meta_row['value'] = '"' . $value . '";';
+					$meta_row['value'] = '"' . $value_escaped . '";';
 					$meta_row['compare'] = 'LIKE';
 				} else {
-					$meta_row['value'] = ':["]?' . $value . '["]?;s:4:"true";';
+					$meta_row['value'] = ':["]?' . $value_escaped . '["]?;s:4:"true";';
 					$meta_row['compare'] = 'RLIKE';
 				}
+			}
 
+			if ( ! empty( $settings['is_multiple'] ) ) {
+				$meta_row['value']   = '"' . $value_escaped . '"';
+				$meta_row['compare'] = 'LIKE';
 			}
 
 			$query->query_vars['meta_query'][ $meta_key ] = $meta_row;
@@ -388,18 +405,39 @@ if ( ! class_exists( 'Jet_Engine_CPT_Admin_Filters' ) ) {
 
 						$sql = "SELECT DISTINCT pm.meta_value FROM $postmeta AS pm INNER JOIN $posts AS p ON p.ID = pm.post_id WHERE pm.meta_key = '%s' AND p.post_type = '%s'";
 
-						if ( ! empty( $filter['meta_order'] ) ) {
-							$sql .= " ORDER BY pm.meta_value " . $filter['meta_order'];
+						$post_types = jet_engine()->cpt->get_items();
+
+						$is_custom = false;
+
+						foreach ( $post_types as $type ) {
+							if ( ! empty( $type['custom_storage'] ) && $this->post_type === $type['slug'] ) {
+								$table     = \Jet_Engine\CPT\Custom_Tables\Manager::instance()->get_db_instance( $this->post_type )->table();
+								$sql       = "SELECT DISTINCT pm.$field FROM $table AS pm";
+								$is_custom = true;
+								break;
+							}
 						}
 
-						$result   = $wpdb->get_results(
-							$wpdb->prepare(
-								$sql,
-								$field,
-								$this->post_type
-							),
-							ARRAY_A
-						);
+						if ( ! empty( $filter['meta_order'] ) ) {
+							if ( ! $is_custom ) {
+								$sql .= " ORDER BY pm.meta_value " . $filter['meta_order'];
+							} else {
+								$sql .= " ORDER BY pm.$field " . $filter['meta_order'];
+							}	
+						}
+
+						if ( $is_custom ) {
+							$result = $wpdb->get_results( $sql, ARRAY_A );
+						} else {
+							$result = $wpdb->get_results(
+								$wpdb->prepare(
+									$sql,
+									$field,
+									$this->post_type
+								),
+								ARRAY_A
+							);
+						}
 
 					}
 
@@ -413,27 +451,27 @@ if ( ! class_exists( 'Jet_Engine_CPT_Admin_Filters' ) ) {
 				if ( is_array( $value ) ) {
 					if ( isset( $value['value'] ) && isset( $value['label'] ) ) {
 						$formatted_result[] = array(
-							'value' => apply_filters( 'jet-engine/admin-filters/filter-value', $value['value'], $filter, $this ),
-							'label' => apply_filters( 'jet-engine/admin-filters/filter-label', $value['label'], $filter, $this ),
+							'value' => apply_filters( 'jet-engine/admin-filters/filter-value', $this->sanitize_meta_value( $value['value'] ), $filter, $this ),
+							'label' => apply_filters( 'jet-engine/admin-filters/filter-label', $this->sanitize_meta_value( $value['label'] ), $filter, $this ),
 						);
 					} elseif ( ! isset( $value['value'] ) && isset( $value['label'] ) ) { // condition for radio fields.
 						$formatted_result[] = array(
-							'value' => apply_filters( 'jet-engine/admin-filters/filter-value', $key, $filter, $this ),
-							'label' => apply_filters( 'jet-engine/admin-filters/filter-label', $value['label'], $filter, $this ),
+							'value' => apply_filters( 'jet-engine/admin-filters/filter-value', $this->sanitize_meta_value( $key ), $filter, $this ),
+							'label' => apply_filters( 'jet-engine/admin-filters/filter-label', $this->sanitize_meta_value( $value['label'] ), $filter, $this ),
 						);
 					} else {
 						$value = array_values( $value );
 						if ( '' !== $value[0] ) {
 							$formatted_result[] = array(
-								'value' => apply_filters( 'jet-engine/admin-filters/filter-value', $value[0], $filter, $this ),
-								'label' => apply_filters( 'jet-engine/admin-filters/filter-label', isset( $value[1] ) ? $value[1] : $value[0], $filter, $this ),
+								'value' => apply_filters( 'jet-engine/admin-filters/filter-value', $this->sanitize_meta_value( $value[0] ), $filter, $this ),
+								'label' => apply_filters( 'jet-engine/admin-filters/filter-label', $this->sanitize_meta_value( isset( $value[1] ) ? $value[1] : $value[0] ), $filter, $this ),
 							);
 						}
 					}
 				} else {
 					$formatted_result[] = array(
-						'value' => apply_filters( 'jet-engine/admin-filters/filter-value', $key, $filter, $this ),
-						'label' => apply_filters( 'jet-engine/admin-filters/filter-label', $value, $filter, $this ),
+						'value' => apply_filters( 'jet-engine/admin-filters/filter-value', $this->sanitize_meta_value( $key ), $filter, $this ),
+						'label' => apply_filters( 'jet-engine/admin-filters/filter-label', $this->sanitize_meta_value( $value ), $filter, $this ),
 					);
 				}
 
@@ -441,6 +479,19 @@ if ( ! class_exists( 'Jet_Engine_CPT_Admin_Filters' ) ) {
 
 			return $formatted_result;
 
+		}
+
+		function sanitize_meta_value( $value ) {
+			// Remove tags
+			$value = strip_tags( $value );
+
+			// Replace " to avoid breaking HTML select tags
+			// Example: meta_value => Info about &amp; Mercedes "
+			// It becomes: <option value="Info about &amp; Mercedes " "="">Info about &amp; Mercedes "</option>
+			// Do not use htmlspecialchars() because I have &amp; in the input
+			$value = str_replace('"', '&quot;', $value);
+
+			return $value;
 		}
 
 	}

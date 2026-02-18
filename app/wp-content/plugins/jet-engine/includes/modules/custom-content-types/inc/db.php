@@ -29,6 +29,8 @@ class DB extends \Jet_Engine_Base_DB {
 	 */
 	public $adjust_fields_map = array();
 
+	public $last_query = '';
+
 	/**
 	 * Constructor for the class
 	 */
@@ -40,7 +42,6 @@ class DB extends \Jet_Engine_Base_DB {
 		if ( ! empty( $_GET['jet_cct_install_tables'] ) ) {
 			add_action( 'init', array( $this, 'install_table' ) );
 		}
-
 	}
 
 	public function set_query_object( $query_object ) {
@@ -119,6 +120,10 @@ class DB extends \Jet_Engine_Base_DB {
 
 		self::wpdb()->update( $this->table(), $new_data, $where );
 
+		/**
+		 * https://github.com/Crocoblock/suggestions/issues/7774
+		 */
+		$this->reset_found_items_cache();
 	}
 
 	/**
@@ -238,7 +243,7 @@ class DB extends \Jet_Engine_Base_DB {
 	}
 
 	public function get_fields_grouped_by_id( $fields_list = array() ) {
-		
+
 		$result = array();
 
 		foreach ( $fields_list as $index => $field ) {
@@ -262,7 +267,7 @@ class DB extends \Jet_Engine_Base_DB {
 		}
 
 		foreach ( $old_columns as $index => $col ) {
-			
+
 			$new_col = isset( $this->adjust_fields_map[ $col ] ) ? $this->adjust_fields_map[ $col ] : false;
 
 			if ( $new_col ) {
@@ -348,7 +353,6 @@ class DB extends \Jet_Engine_Base_DB {
 		$query .= apply_filters( 'jet-engine/custom-content-types/sql-count-query', $where, $table, $args, $this );
 
 		return self::wpdb()->get_var( $query );
-
 	}
 
 	/**
@@ -360,7 +364,7 @@ class DB extends \Jet_Engine_Base_DB {
 
 		$table = $this->table();
 		$query = array();
-		
+
 		$query['select'] = "SELECT * FROM $table";
 
 		if ( ! $rel ) {
@@ -374,7 +378,7 @@ class DB extends \Jet_Engine_Base_DB {
 		}
 
 		$where = $this->add_where_args( $args, $rel );
-		
+
 		$query['where'] = ! empty( $where ) ? $where : " WHERE 1=1";
 
 		if ( $search ) {
@@ -421,6 +425,8 @@ class DB extends \Jet_Engine_Base_DB {
 		$query = apply_filters( 'jet-engine/custom-content-types/sql-query-parts', $query, $table, $args, $this );
 		$query = implode( '', $query );
 
+		$this->last_query = $query;
+
 		$raw = self::wpdb()->get_results( $query, $this->get_format_flag() );
 
 		return array_map( function( $item ) {
@@ -430,11 +436,14 @@ class DB extends \Jet_Engine_Base_DB {
 
 					$value = maybe_unserialize( $value );
 
-					if ( is_string( $value ) ) {
+					// Removed wp_unslash() since data is already stored without slashes in the database
+					// https://github.com/Crocoblock/issues-tracker/issues/15447#issuecomment-2804553957
+					$item[ $key ] = $value;
+					/*if ( is_string( $value ) ) {
 						$item[ $key ] = wp_unslash( $value );
 					} else {
 						$item[ $key ] = $value;
-					}
+					}*/
 				}
 
 				$item['cct_slug'] = $this->table;
@@ -445,11 +454,14 @@ class DB extends \Jet_Engine_Base_DB {
 
 					$value = maybe_unserialize( $value );
 
-					if ( is_string( $value ) ) {
+					// Removed wp_unslash() since data is already stored without slashes in the database
+					// https://github.com/Crocoblock/issues-tracker/issues/15447#issuecomment-2804553957
+					$item->$key = $value;
+					/*if ( is_string( $value ) ) {
 						$item->$key = wp_unslash( $value );
 					} else {
 						$item->$key = $value;
-					}
+					}*/
 
 				}
 

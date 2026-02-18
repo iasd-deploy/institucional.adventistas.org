@@ -6,7 +6,7 @@ $settings = $this->get_settings_for_display();
 ?>
 <div class="jet-weather">
 	<div class="jet-weather__container"><?php
-		echo $this->get_weather_title();
+		echo $this->get_weather_title(); // phpcs:ignore
 
 		if ( isset( $settings['show_current_weather'] ) && 'true' === $settings['show_current_weather'] ) {
 			include $this->_get_global_template( 'current' );

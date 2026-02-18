@@ -17,17 +17,19 @@ $title_tag       = isset( $settings['title_html_tag'] ) ? $settings['title_html_
 $this->_processed_item_index += 1;
 ?>
 <li class="price-list__item"><?php
-	echo $this->_open_price_item_link( 'item_url' );
+	echo $this->_open_price_item_link( 'item_url' ); // phpcs:ignore
 	echo '<div class="price-list__item-inner">';
-	echo $this->_get_price_list_image();
+	echo $this->_get_price_list_image(); // phpcs:ignore
 	echo '<div class="price-list__item-content">';
+		// phpcs:disable
 		echo '<div class="price-list__item-title__wrapper">';
 			echo $this->_loop_item( array( 'item_title' ), '<' . $title_tag . ' ' . $item_title_attr . '>%s</' . $title_tag . '>' );
 			echo '<div class="price-list__item-separator"></div>';
 			echo $this->_loop_item( array( 'item_price' ), '<div ' . $item_price_attr . '>%s</div>' );
 		echo '</div>';
 		echo $this->_loop_item( array( 'item_text' ), '<div ' . $item_desc_attr . '>%s</div>' );
+		// phpcs:enable
 	echo '</div>';
 	echo '</div>';
-	echo $this->_close_price_item_link( 'item_url' );
+	echo $this->_close_price_item_link( 'item_url' ); // phpcs:ignore
 ?></li>

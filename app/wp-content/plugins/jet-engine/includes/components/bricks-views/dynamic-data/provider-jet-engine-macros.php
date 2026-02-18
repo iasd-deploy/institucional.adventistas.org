@@ -39,22 +39,12 @@ class Provider_Jet_Engine_Macros extends \Bricks\Integrations\Dynamic_Data\Provi
 		$post    = jet_engine()->listings->data->get_current_object();
 		$post_id = $post->ID ?? $post->_ID ?? '';
 
-		// Use a regular expression to find the relevant part of the string
-		$patternPercentage = '/%%(.*?)%%/';
-
-		// Replace the part of the string with the JSON format
-		$args = preg_replace_callback( $patternPercentage, [ $this, 'replace_symbols' ], $args );
-
-		// Use a regular expression to find the relevant part of the string
-		$patternDoubleAngleBrackets = '/<<(.+?)>>/';
-
-		// Replace the part of the string with the JSON format
-		$args = preg_replace_callback( $patternDoubleAngleBrackets, [ $this, 'convert_to_json' ], $args );
-
 		// STEP: Check for filter args
 		$filters = $this->get_filters_from_args( $args );
 
-		$value = jet_engine()->listings->macros->do_macros( $args );
+		$filters['meta_key'] = $this->replace_symbols($filters['meta_key']);
+
+		$value = jet_engine()->listings->macros->do_macros( $filters['meta_key'] );
 
 		// STEP: Apply context (text, link, image, media)
 		$value = $this->format_value_for_context( $value, $tag, $post_id, $filters, $context );
@@ -63,33 +53,26 @@ class Provider_Jet_Engine_Macros extends \Bricks\Integrations\Dynamic_Data\Provi
 	}
 
 	// This method replaces specific symbol patterns in the matched part of the string
-	public function replace_symbols( $matches ) {
+	public function replace_symbols( $data ) {
 		$replacements = [
+			// JetEngine 3.5.8 - Support for legacy macros
 			'%%' => '%',
-			'==' => ':',
-			'++' => '"',
 			'<~' => '[',
 			'~>' => ']',
 			'<<' => '{',
 			'>>' => '}',
+			'==' => ':',
+			'++' => '"',
+			';;' => ',',
+
+			// JetEngine 3.6.5 - New character replacements
+			"'" => '"',
+			'~#' => '{',
+			'#~' => '}',
+			'&@' => '[',
+			'@&' => ']',
 		];
 
-		return strtr($matches[0], $replacements);
-	}
-
-	// Function to process the matched part and convert it to JSON
-	public function convert_to_json( $matches ) {
-		// Split the parameters by ';;'
-		$params = explode( ';;', $matches[1] );
-
-		// Create an associative array
-		$result = [];
-		foreach ( $params as $param ) {
-			list( $key, $value ) = explode( '==', $param );
-			$result[ $key ] = $value;
-		}
-
-		// Return the array in JSON format
-		return json_encode( $result );
+		return strtr($data, $replacements);
 	}
 }

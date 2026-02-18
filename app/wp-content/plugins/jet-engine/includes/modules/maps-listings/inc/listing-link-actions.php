@@ -80,6 +80,13 @@ class Listing_Link_Actions {
 			$params['zoom'] = $settings['listing_link_map_zoom'];
 		}
 
+		$scroll_to_map = $settings['listing_link_scroll_to_map'] ?? false;
+		$scroll_to_map = filter_var( $scroll_to_map, FILTER_VALIDATE_BOOLEAN );
+
+		if ( $scroll_to_map ) {
+			$params['scroll_to_map'] = 'yes';
+		}
+
 		$url = jet_engine()->modules->get_module( 'maps-listings' )->instance->get_action_url( null, $event, $params );
 
 		return $url;
@@ -91,6 +98,18 @@ class Listing_Link_Actions {
 			array(
 				'label'     => esc_html__( 'Zoom', 'jet-engine' ),
 				'type'      => \Elementor\Controls_Manager::NUMBER,
+				'condition' => array(
+					'listing_link'        => 'yes',
+					'listing_link_source' => $this->get_map_sources_keys(),
+				),
+			)
+		);
+
+		$document->add_control(
+			'listing_link_scroll_to_map',
+			array(
+				'label'     => esc_html__( 'Scroll to map', 'jet-engine' ),
+				'type'      => \Elementor\Controls_Manager::SWITCHER,
 				'condition' => array(
 					'listing_link'        => 'yes',
 					'listing_link_source' => $this->get_map_sources_keys(),
@@ -140,6 +159,19 @@ class Listing_Link_Actions {
 						'jet_engine_listing_link_source' => $this->get_map_sources_keys(),
 					),
 				),
+				'jet_engine_listing_link_scroll_to_map' => array(
+					'label'      => esc_html__( 'Scroll to map', 'jet-engine' ),
+					'input_type' => 'select',
+					'options'    => array(
+						''    => esc_html__( 'Default', 'jet-engine' ),
+						'yes' => esc_html__( 'Yes', 'jet-engine' ),
+					),
+					'value'      => ! empty( $settings['listing_link_scroll_to_map'] ) ? $settings['listing_link_scroll_to_map'] : '',
+					'condition'  => array(
+						'jet_engine_listing_link'        => 'yes',
+						'jet_engine_listing_link_source' => $this->get_map_sources_keys(),
+					),
+				),
 			)
 		);
 
@@ -168,6 +200,7 @@ class Listing_Link_Actions {
 
 		$elementor_page_settings = get_post_meta( $post_id, '_elementor_page_settings', true );
 		$elementor_page_settings['listing_link_map_zoom'] = esc_attr( $_POST[ 'jet_engine_listing_link_map_zoom' ] );
+		$elementor_page_settings['listing_link_scroll_to_map'] = esc_attr( $_POST[ 'jet_engine_listing_link_scroll_to_map' ] );
 
 		update_post_meta( $post_id, '_elementor_page_settings', $elementor_page_settings );
 	}

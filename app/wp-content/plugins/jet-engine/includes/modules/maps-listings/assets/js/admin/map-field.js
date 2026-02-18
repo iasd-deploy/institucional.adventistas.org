@@ -96,6 +96,7 @@
 				fieldPrefix: this.fieldSettings.field_prefix,
 				isRepeater:  this.isRepeaterField,
 				valueFormat: this.fieldSettings.format,
+				providerNotice: this.fieldSettings.provider_notice,
 			};
 
 			this.$container.append( fieldTemplate( templateData ) );
@@ -112,7 +113,7 @@
 				$( this ).removeClass( 'error' );
 			} );
 
-			if ( this.$input.val() ) {
+			if ( this.$input.val() && this.marker ) {
 				this.$editButton.addClass( 'show' );
 			}
 
@@ -162,6 +163,10 @@
 				if ( valueFormat !== this.fieldSettings.format ) {
 					this.setValue( defaultPos );
 				}
+			}
+
+			if ( ! isFinite( defaultPos?.lat ) || ! isFinite( defaultPos.lng ) ) {
+				defaultPos = false;
 			}
 
 			if ( defaultPos ) {
@@ -305,7 +310,10 @@
 		}
 
 		resetLocation() {
-			this.mapProvider.removeMarker( this.marker );
+			if ( this.marker ) {
+				this.mapProvider.removeMarker( this.marker );
+			}
+			
 			this.setPreview( null );
 			this.$input.val( null ).trigger( 'change' );
 

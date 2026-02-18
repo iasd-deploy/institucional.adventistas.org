@@ -48,7 +48,7 @@ class Manager {
 			}
 		}
 
-		if ( $settings['enable_single_user_page'] && is_array( $settings['user_page_structure'] ?? false ) ) {
+		if ( ! empty( $settings['enable_single_user_page'] ) && is_array( $settings['user_page_structure'] ?? false ) ) {
 			foreach ( $settings['user_page_structure'] as $i => $data ) {
 				$settings['user_page_structure'][ $i ]['title'] = apply_filters('jet-engine/compatibility/translate-string', $data['title'] );
 			}

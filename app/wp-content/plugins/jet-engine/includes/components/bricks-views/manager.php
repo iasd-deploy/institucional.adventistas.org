@@ -25,7 +25,7 @@ class Manager {
 
 	/**
 	 * Listing manager instance
-	 * 
+	 *
 	 * @var null
 	 */
 	public $listing = null;
@@ -34,7 +34,7 @@ class Manager {
 	 * Constructor for the class
 	 */
 	function __construct() {
-		
+
 		if ( ! $this->has_bricks() ) {
 			return;
 		}
@@ -68,17 +68,28 @@ class Manager {
 					'jet-engine-icons',
 					jet_engine()->plugin_url( 'assets/lib/jetengine-icons/icons.css' ),
 					array(),
-					jet_engine()->get_version()
+					jet_engine()->get_version() . '-03062025'
 				);
 			}
 		} );
 
 		$this->compat_tweaks();
+		$this->register_content_setter();
 	}
 
 	public function init_export_import_manager() {
 		require $this->component_path( 'export-import.php' );
 		new Export_Import();
+	}
+
+	/**
+	 * Register and intialize Content Setter class to liste attempts to set Bricks content to some listing
+	 *
+	 * @return [type] [description]
+	 */
+	public function register_content_setter() {
+		require $this->component_path( 'content-setter.php' );
+		new Content_Setter();
 	}
 
 	public function init_listings() {
@@ -94,10 +105,11 @@ class Manager {
 	}
 
 	public function integrate_jet_engine_in_bricks_loop() {
+
 		require_once $this->component_path( 'query-loop.php' );
 		new Query_Loop();
 
-		// TODO Remove this check after verifying stability in v3.6.1 (expected removal in 2-3 releases).
+		// TODO: remove jet_smart_filters()->get_version() check later, ! but keep function_exists( 'jet_smart_filters' ) !
 		if ( function_exists( 'jet_smart_filters' ) && jet_smart_filters()->get_version() >= '3.5.6' ) {
 			require_once $this->component_path( 'filters.php' );
 			new Filters();
@@ -108,10 +120,12 @@ class Manager {
 		require_once $this->component_path( 'dynamic-data/providers.php' );
 		require jet_engine()->bricks_views->component_path( 'dynamic-data/provider-jet-engine-data.php' );
 		require jet_engine()->bricks_views->component_path( 'dynamic-data/provider-jet-engine-macros.php' );
+		require jet_engine()->bricks_views->component_path( 'dynamic-data/provider-jet-engine-query-builder.php' );
 
 		$dynamic_data_providers = apply_filters( 'jet-engine/bricks-views/dynamic_data/register_providers', array(
-			'jet-engine-data'   => '\Jet_Engine\Bricks_Views\Dynamic_Data',
-			'jet-engine-macros' => '\Jet_Engine\Bricks_Views\Dynamic_Data'
+			'jet-engine-data'          => '\Jet_Engine\Bricks_Views\Dynamic_Data',
+			'jet-engine-macros'        => '\Jet_Engine\Bricks_Views\Dynamic_Data',
+			'jet-engine-query-builder' => '\Jet_Engine\Bricks_Views\Dynamic_Data',
 		) );
 
 		Dynamic_Data\Providers::register( $dynamic_data_providers );
@@ -126,7 +140,7 @@ class Manager {
 		if ( ! class_exists( '\Jet_Engine\Bricks_Views\Elements\Base' ) ) {
 			require $this->component_path( 'elements/base.php' );
 		}
-		
+
 		require $this->component_path( 'helpers/options-converter.php' );
 		require $this->component_path( 'helpers/controls-converter/base.php' );
 		require $this->component_path( 'helpers/controls-converter/control-text.php' );
@@ -138,13 +152,14 @@ class Manager {
 		require $this->component_path( 'helpers/preview.php' );
 		require $this->component_path( 'helpers/repeater.php' );
 		require $this->component_path( 'helpers/controls-hook-bridge.php' );
-		
+
 		$element_files = array(
 			$this->component_path( 'elements/listing-grid.php' ),
 			$this->component_path( 'elements/dynamic-field.php' ),
 			$this->component_path( 'elements/dynamic-image.php' ),
 			$this->component_path( 'elements/dynamic-link.php' ),
 			$this->component_path( 'elements/dynamic-terms.php' ),
+			$this->component_path( 'elements/dynamic-repeater.php' ),
 		);
 
 		foreach ( $element_files as $file ) {
@@ -156,10 +171,11 @@ class Manager {
 
 	/**
 	 * Check if is Bricks editor render request
-	 * 
+	 *
 	 * @return boolean [description]
 	 */
 	public function is_bricks_editor() {
+		// phpcs:disable
 		// is API request
 		$bricks_request_str = 'wp-json/bricks/v1/render_element';
 		$is_api = ( ! empty( $_SERVER['REQUEST_URI'] ) && false !== strpos( $_SERVER['REQUEST_URI'], $bricks_request_str ) );
@@ -169,7 +185,7 @@ class Manager {
 
 		// Is editor iframe
 		$is_editor = ( ! empty( $_REQUEST['bricks'] ) && 'run' === $_REQUEST['bricks'] );
-
+		// phpcs:enable
 		return $is_api || $is_ajax || $is_editor;
 	}
 
@@ -186,11 +202,13 @@ class Manager {
 	public function get_request_data() {
 		$data = false;
 
+		// phpcs:disable
 		if ( bricks_is_rest_call() ) {
 			$data = file_get_contents( 'php://input' );
 		} elseif ( wp_doing_ajax() && isset( $_REQUEST['action'] ) && 'bricks_render_element' === $_REQUEST['action'] ) {
 			$data = $_REQUEST;
 		}
+		// phpcs:enable
 
 		if ( ! $data ) {
 			return false;
@@ -210,12 +228,12 @@ class Manager {
 	public function compat_tweaks() {
 		// fix slider arrows bug for the listing grid
 		add_filter( 'jet-engine/listing/grid/slider-options', function( $options ) {
-			
+			// phpcs:disable
 			if ( ! empty( $_REQUEST['action'] ) && 'bricks_get_element_html' === $_REQUEST['action'] ) {
 				$options['prevArrow'] = wp_slash( $options['prevArrow'] );
 				$options['nextArrow'] = wp_slash( $options['nextArrow'] );
 			}
-
+			// phpcs:enable
 			return $options;
 		} );
 	}

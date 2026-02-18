@@ -73,7 +73,7 @@ class Jet_Elements_Bar_Chart extends Jet_Elements_Base {
 	 * @return array
 	 */
 	public function get_script_depends() {
-		return array( 'chart-js' );
+		return array( 'chart-js', 'jet-bar-chart' );
 	}
 
 	/**
@@ -890,8 +890,8 @@ class Jet_Elements_Bar_Chart extends Jet_Elements_Base {
 		] );
 		
 		?>
-		<div <?php echo $this->get_render_attribute_string( 'container' ); ?>>
-			<canvas <?php echo $this->get_render_attribute_string( 'canvas' ); ?>></canvas>
+		<div <?php echo $this->get_render_attribute_string( 'container' ); // phpcs:ignore ?>>
+			<canvas <?php echo $this->get_render_attribute_string( 'canvas' ); // phpcs:ignore ?>></canvas>
 		</div>
 		<?php
 		$this->_close_wrap();

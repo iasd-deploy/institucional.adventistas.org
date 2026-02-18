@@ -45,15 +45,15 @@ class Registry {
 	}
 
 	/**
-	 * Get omponents from the DB
-	 * 
-	 * @return [type] [description]
+	 * Get components from the DB
+	 *
+	 * @return Component[] Array of component instances
 	 */
 	public function get_components() {
 
 		if ( null === $this->components ) {
 
-			$components = get_posts( [
+			$components = get_posts( apply_filters( 'jet-engine/listings/components/query-args', [
 				'post_type'      => jet_engine()->listings->post_type->slug(),
 				'posts_per_page' => -1,
 				'post_status'    => [ 'publish', 'draft', 'pending' ],
@@ -63,7 +63,7 @@ class Registry {
 						'value' => 'component',
 					]
 				],
-			] );
+			] ) );
 
 			$this->components = [];
 
@@ -83,9 +83,9 @@ class Registry {
 
 	/**
 	 * Returns component instance by name
-	 * 
-	 * @param  [type] $component_name [description]
-	 * @return [type]                 [description]
+	 *
+	 * @param  string           $component_name Component name / ID
+	 * @return Component|false                  Component instance or false if not found
 	 */
 	public function get( $component_name, $by = 'name' ) {
 

@@ -139,6 +139,12 @@ class Document extends \Jet_Listing_Item_Document {
 				'type'          => 'jet-repeater',
 				'fields'        => $repeater->get_controls(),
 				'prevent_empty' => false,
+				'item_actions' => [
+					'add' => true,
+					'duplicate' => false,
+					'remove' => true,
+					'sort' => true,
+				],
 				'default'       => [
 					[
 						'_id'                   => 'default_example',
@@ -213,6 +219,12 @@ class Document extends \Jet_Listing_Item_Document {
 				'label'         => __( 'Style Controls', 'jet-engine' ),
 				'type'          => 'jet-repeater',
 				'fields'        => $repeater->get_controls(),
+				'item_actions'  => [
+					'add' => true,
+					'duplicate' => false,
+					'remove' => true,
+					'sort' => true,
+				],
 				'prevent_empty' => false,
 				'default'       => [],
 				'title_field' => '{{{ control_label }}}'
@@ -318,6 +330,10 @@ class Document extends \Jet_Listing_Item_Document {
 		}
 
 		$attributes['class'] .= sprintf( ' jet-listing-grid--%1$s', $component->get_id() );
+
+		if ( ! empty( $state['component_unique_class'] ) ) {
+			$attributes['class'] .= ' ' . $state['component_unique_class'];
+		}
 
 		return $attributes;
 

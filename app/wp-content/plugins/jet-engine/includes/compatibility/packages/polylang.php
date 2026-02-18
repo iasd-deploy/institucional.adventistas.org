@@ -1,4 +1,7 @@
 <?php
+
+use \Jet_Engine\Modules\Data_Stores\Stores\Factory;
+
 /**
  * Polylang compatibility package
  */
@@ -13,8 +16,25 @@ if ( ! class_exists( 'Jet_Engine_Polylang_Package' ) ) {
 	class Jet_Engine_Polylang_Package {
 
 		public function __construct() {
-			add_filter( 'jet-engine/listings/frontend/rendered-listing-id', array( $this, 'set_translated_object' ) );
-			add_filter( 'jet-engine/forms/render/form-id',                  array( $this, 'set_translated_object' ) );
+			add_filter(
+				'jet-engine/listings/frontend/rendered-listing-id',
+				array( $this, 'set_translated_object' )
+			);
+
+			add_filter(
+				'jet-engine/component/render-id',
+				array( $this, 'set_translated_object' )
+			);
+
+			add_filter(
+				'jet-engine/forms/render/form-id',
+				array( $this, 'set_translated_object' )
+			);
+
+			add_filter(
+				'jet-engine/listings/components/query-args',
+				array( $this, 'ensure_all_components_registered' )
+			);
 
 			// Translate Admin Labels
 			add_filter( 'jet-engine/compatibility/translate-string', array( $this, 'translate_admin_labels' ) );
@@ -26,26 +46,135 @@ if ( ! class_exists( 'Jet_Engine_Polylang_Package' ) ) {
 			if ( jet_engine()->relations ) {
 				$this->relations_hooks();
 			}
-			
+
 			//Data Stores
 			add_filter( 'jet-engine/data-stores/store/data', array( $this, 'set_translated_store' ), 10, 2 );
-			// https://github.com/Crocoblock/issues-tracker/issues/9567
-			add_action( 'jet-engine/data-stores/after-remove-from-store', array( $this, 'remove_ip_store_translations' ), 10, 3 );
+
+			add_action( 'jet-engine/data-stores/filtered-id', array( $this, 'get_original_data_store_post_id' ), 10, 3 );
+
+			add_action( 'jet-engine/data-stores/post-count-increased', array( $this, 'update_translations_count' ), 10, 3 );
+			add_action( 'jet-engine/data-stores/post-count-decreased', array( $this, 'update_translations_count' ), 10, 3 );
+
+			//ensure all translated items share the same count
+			add_filter( 'jet-engine/data-stores/pre-get-post-count', array( $this, 'get_post_count' ), 10, 3 );
+
+			add_filter( 'pll_copy_post_metas', array( $this, 'listing_meta_to_synch' ), 99 );
 		}
 
-		public function remove_ip_store_translations( $post_id, $store, $factory ) {
-			if ( $factory->is_user_store() || $factory->get_type()->type_id() !== 'user_ip' ) {
+		/**
+		 * Ensure all components are registered
+		 *
+		 * @see https://github.com/Crocoblock/issues-tracker/issues/15829
+		 * @param array $args Query args
+		 *
+		 * @return array
+		 */
+		public function ensure_all_components_registered( $args ) {
+			$args['lang'] = '';
+			return $args;
+		}
+
+		/**
+		 * Add listing meta keys to Polylang copy post metas filter
+		 *
+		 * @param array $keys Array of meta keys
+		 *
+		 * @return array
+		 */
+		public function listing_meta_to_synch( $keys ) {
+
+			$keys[] = '_entry_type';
+			$keys[] = '_listing_data';
+			$keys[] = '_listing_type';
+			$keys[] = '_jet_engine_listing_css';
+			$keys[] = '_component_props';
+			$keys[] = '_component_styles';
+
+			return $keys;
+		}
+
+		/**
+		 * @param int     $post_id Post ID
+		 * @param string  $store   Store slug
+		 * @param Factory $factory Factory instance
+		 */
+		public function get_original_data_store_post_id( $post_id, $store, $factory ) {
+			if ( $factory->is_user_store() || $factory->get_arg( 'is_cct' ) ) {
+				return $post_id;
+			}
+
+			switch ( $factory->get_type()->type_id() ) {
+				case 'user_ip':
+					$post_id = $this->get_original_post_id( $post_id );
+					break;
+			}
+
+			return $post_id;
+		}
+
+		/**
+		 * Get original post ID (translation in default language). Returns translation ID if no original found.
+		 *
+		 * @param  int $translation_id Post ID
+		 * @return int                 Original post ID if found, given post ID otherwise
+		 */
+		public function get_original_post_id( $translation_id ) {
+			$default_language = pll_default_language();
+			$original_id = pll_get_post( $translation_id, $default_language );
+
+			if ( $original_id === $translation_id ) {
+				return $translation_id;
+			}
+
+			return $original_id;
+		}
+
+		/**
+		 * @param  int|false     $count   Pre-get post count, or false if count should not be pre-get
+		 * @param  int           $post_id Store slug
+		 * @param  Factory       $factory Factory instance
+		 * @return int|false     Pre-get post count, or false if count should not be pre-get
+		 */
+		public function get_post_count( $count, $post_id, $factory ) {
+			if ( $factory->is_user_store() || ! $factory->get_type() ) {
+				return $count;
+			}
+
+			$original_id = $this->get_original_post_id( $post_id );
+
+			if ( $original_id === $post_id || ! get_post( $original_id ) ) {
+				return $count;
+			}
+
+			return $factory->get_post_count( $original_id );
+		}
+
+		/**
+		 * Sync data store post count between translations
+		 *
+		 * @param int     $post_id Store slug
+		 * @param int     $count   Post count
+		 * @param Factory $factory Factory instance
+		 */
+		public function update_translations_count( $post_id, $count, $factory ) {
+			if ( $factory->is_user_store() || $factory->get_arg( 'is_cct' ) ) {
 				return;
 			}
-			
-			$translations = pll_get_post_translations( $post_id );
 
-			foreach ( $translations as $id ) {
-				if ( $id === $post_id ) {
-					continue;
+			$original_id = $this->get_original_post_id( $post_id );
+
+			if ( ( int ) $original_id !== ( int ) $post_id ) {
+				update_post_meta( $original_id, $factory->get_count_posts_key() . $factory->get_slug(), $count );
+			} else {
+				$translations = pll_get_post_translations( $post_id );
+
+				foreach ( $translations as $id ) {
+					if ( ( int ) $post_id === ( int ) $id ) {
+						continue;
+					}
+
+					update_post_meta( $id, $factory->get_count_posts_key() . $factory->get_slug(), $count );
 				}
-				
-				$factory->get_type()->remove( $store, $id );
 			}
 		}
 
@@ -76,7 +205,7 @@ if ( ! class_exists( 'Jet_Engine_Polylang_Package' ) ) {
 
 			return $obj_id;
 		}
-		
+
 		/**
 		 * Set translated data store item IDs to show
 		 *
@@ -107,7 +236,7 @@ if ( ! class_exists( 'Jet_Engine_Polylang_Package' ) ) {
 			}, $store );
 
 			return $store;
-		}	
+		}
 
 		/**
 		 * Translate Admin Labels
@@ -165,22 +294,27 @@ if ( ! class_exists( 'Jet_Engine_Polylang_Package' ) ) {
 				return;
 			}
 
+			// phpcs:disable WordPress.Security.NonceVerification
 			if ( empty( $_REQUEST['relatedObjectType'] ) ) {
 				return;
 			}
+			// phpcs:enable WordPress.Security.NonceVerification
 
 			$refer_lang = false;
 
+			// phpcs:disable
 			if ( ! empty( $_REQUEST['pll_post_id'] ) ) {
-				$refer_lang = pll_get_post_language( (int) $_REQUEST['pll_post_id'] );
+				$refer_lang = pll_get_post_language( absint( $_REQUEST['pll_post_id'] ) );
 			} elseif ( ! empty( $_REQUEST['pll_term_id'] ) ) {
-				$refer_lang = pll_get_term_language( (int) $_REQUEST['pll_term_id'] );
+				$refer_lang = pll_get_term_language( absint( $_REQUEST['pll_term_id'] ) );
 			}
+			// phpcs:enable
 
 			if ( empty( $refer_lang ) ) {
 				return;
 			}
 
+			// phpcs:disable WordPress.Security.NonceVerification
 			switch ( $_REQUEST['relatedObjectType'] ) {
 				case 'posts':
 
@@ -210,10 +344,12 @@ if ( ! class_exists( 'Jet_Engine_Polylang_Package' ) ) {
 
 					break;
 			}
+			// php:enable WordPress.Security.NonceVerification
 		}
 
 		public function sync_relations_on_add_translation_post( $post_id ) {
 
+			// phpcs:disable WordPress.Security.NonceVerification
 			if ( ! isset( $GLOBALS['pagenow'], $_GET['from_post'], $_GET['new_lang'] ) ) {
 				return;
 			}
@@ -226,10 +362,11 @@ if ( ! class_exists( 'Jet_Engine_Polylang_Package' ) ) {
 				return;
 			}
 
-			$from_post_id = (int) $_GET['from_post'];
-			$lang         = PLL()->model->get_language( sanitize_key( $_GET['new_lang'] ) );
+			$from_post_id = absint( wp_unslash( $_GET['from_post'] ) );
+			$lang         = PLL()->model->get_language( sanitize_key( wp_unslash( $_GET['new_lang'] ) ) );
 
 			$this->sync_relations_items( $from_post_id, $post_id, $lang->slug );
+			// phpcs:enable WordPress.Security.NonceVerification
 		}
 
 		public function sync_relations_items( $original_id, $translated_id, $lang ) {

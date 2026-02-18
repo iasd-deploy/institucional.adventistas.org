@@ -3,7 +3,7 @@
 namespace Elementor;
 
 use Elementor\Group_Control_Border;
-use Elementor\Core\Schemes\Typography as Scheme_Typography;
+use Elementor\Core\Kits\Documents\Tabs\Global_Typography as Global_Typography;
 
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
@@ -129,7 +129,7 @@ class Jet_Smart_Filters_Rating_Widget extends Jet_Smart_Filters_Base_Widget {
 				'label_on'     => esc_html__( 'Yes', 'jet-smart-filters' ),
 				'label_off'    => esc_html__( 'No', 'jet-smart-filters' ),
 				'return_value' => 'yes',
-				'default'      => 'yes',
+				'default'      => '',
 				'condition'    => array(
 					'apply_on' => 'submit'
 				),
@@ -431,7 +431,9 @@ class Jet_Smart_Filters_Rating_Widget extends Jet_Smart_Filters_Base_Widget {
 			Group_Control_Typography::get_type(),
 			array(
 				'name'     => 'filter_apply_button_typography',
-				'scheme'   => Scheme_Typography::TYPOGRAPHY_1,
+				'global'   => array(
+					'default' => Global_Typography::TYPOGRAPHY_PRIMARY,
+				),
 				'selector' => '{{WRAPPER}} ' . $css_scheme['apply-filters-button'],
 			)
 		);
@@ -629,11 +631,14 @@ class Jet_Smart_Filters_Rating_Widget extends Jet_Smart_Filters_Base_Widget {
 		$additional_providers = jet_smart_filters()->utils->get_additional_providers( $settings );
 		$icon                 = ! empty( $settings['rating_icon'] ) ? $settings['rating_icon'] : 'fa fa-star';
 		$format               = '<i class="jet-rating-icon %s"></i>';
-		$rating_icon          = sprintf( $format, $icon );
+		$rating_icon          = sprintf( $format, esc_attr( $icon ) );
 
 		jet_smart_filters()->admin_bar_register_item( $filter_id );
 
-		printf( '<div class="%1$s jet-filter">', $base_class );
+		printf(
+			'<div class="%1$s jet-filter">',
+			esc_attr( $base_class )
+		);
 
 		include jet_smart_filters()->get_template( 'common/filter-label.php' );
 

@@ -91,7 +91,7 @@ class Map_Field {
 		if ( $is_cct_field || $is_repeater_field ) {
 			$field_prefix = $field['name'];
 		} else {
-			$field_prefix = md5( $field['name'] );
+			$field_prefix = self::get_field_prefix( $field['name'] );
 		}
 
 		if ( ! $is_repeater_field ) {
@@ -103,10 +103,14 @@ class Map_Field {
 			$args['description'] .= $this->get_field_description( $field_prefix );
 		}
 
+		$provider_id      = Module::instance()->settings->get( 'geocode_provider' );
+		$geocode_provider = Module::instance()->providers->get_providers( 'geocode', $provider_id );
+
 		$field_settings = array(
 			'height'       => ! empty( $field['map_height'] ) ? $field['map_height'] : '300',
 			'format'       => $value_format,
 			'field_prefix' => $field_prefix,
+			'provider_notice' => $geocode_provider->get_map_field_notice(),
 		);
 
 		$args['extra_attr'] = array(
@@ -215,6 +219,13 @@ class Map_Field {
 				<div class="jet-engine-map-field__search-loader"></div>
 				<ul class="jet-engine-map-field__search-list"></ul>
 			</div>
+			<# if ( data.providerNotice ) { #>
+			<div class="jet-engine-map-field__provider_notice">
+				<p>
+					<strong>Note: </strong>{{{data.providerNotice}}}
+				</p>
+			</div>
+			<# } #>
 			<div class="jet-engine-map-field__frame" style="height:{{{data.height}}}px"></div>
 			<# if ( data.isRepeater ) { #>
 			<div class="jet-engine-map-field__description">
@@ -226,6 +237,10 @@ class Map_Field {
 			<# } #>
 		</script>
 		<?php
+	}
+
+	public static function get_field_prefix( $field_name ) {
+		return apply_filters( 'jet-engine/maps-listings/map-field-prefix', md5( $field_name ), $field_name );
 	}
 
 	public function add_lat_lng_fields( $fields = array(), $instance = null ) {
@@ -248,7 +263,7 @@ class Map_Field {
 
 			if ( $this->field_type === $field['type'] ) {
 
-				$hash = md5( $field['name'] );
+				$hash = self::get_field_prefix( $field['name'] );
 
 				$field_prefix = $hash;
 

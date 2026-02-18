@@ -57,7 +57,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_URL_Aliases' ) ) {
 			}
 
 			$site_path    = jet_smart_filters()->data->get_sitepath();
-			$replaced_url = substr( $_SERVER['REQUEST_URI'], strlen( $site_path ) );
+			$replaced_url = substr( $_SERVER['REQUEST_URI'], strlen( $site_path ) ); // phpcs:ignore
 
 			foreach ( $this->url_aliases as $alias ) {
 				if ( ! $alias['needle'] || ! $alias['replacement'] ) {
@@ -91,8 +91,9 @@ if ( ! class_exists( 'Jet_Smart_Filters_URL_Aliases' ) ) {
 
 			parse_str( $parts['query'], $params );
 
+			$request = jet_smart_filters()->data->get_request();
 			foreach ( $params as $key => $param ) {
-				if ( isset( $_REQUEST[$key] ) && $_REQUEST[$key] === $param ) {
+				if ( isset( $request[$key] ) && $request[$key] === $param ) {
 					continue;
 				}
 

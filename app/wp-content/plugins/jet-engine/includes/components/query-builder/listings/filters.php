@@ -14,7 +14,7 @@ class Filters {
 	/**
 	 * Private filters request checker.
 	 * Used as separate method to filters its result later in single place in the code
-	 * 
+	 *
 	 * @return boolean [description]
 	 */
 	private function _is_filters_request( $query = null ) {
@@ -48,7 +48,7 @@ class Filters {
 		if ( ! empty( $request['jet-smart-filters'] ) ) {
 			$request['jsf'] = str_replace( '/', ':', $request['jet-smart-filters'] );
 		}
-		
+
 		if ( ! empty( $request['jsf'] ) ) {
 
 			// Ensure separator one more time
@@ -59,18 +59,23 @@ class Filters {
 			$query_id = isset( $jsf_data[1] ) ? $jsf_data[1] : null;
 
 			return $this->is_current_provider_query( $query, $query_id, $provider );
-			
+
 		}
 
 		return false;
 
 	}
-	
+
 	public function is_current_provider_query( $query, $query_id, $provider ) {
-		
+
 		$allowed_providers = apply_filters(
 			'jet-engine/query-builder/filters/allowed-providers',
-			array( 'jet-engine', 'jet-engine-maps', 'jet-engine-calendar' )
+			array(
+				'jet-engine',
+				'jet-engine-maps',
+				'jet-engine-calendar',
+				'jet-engine-multiday-calendar'
+			)
 		);
 
 		if ( $query_id && 'default' !== $query_id && $query && $query->query_id ) {
@@ -80,7 +85,7 @@ class Filters {
 		}
 
 		return in_array( $provider, $allowed_providers );
-		
+
 	}
 
 	/**
@@ -189,6 +194,8 @@ class Filters {
 
 		}
 
+		$remove_hook = apply_filters( 'jet-engine/query-builder/filters/setup/remove-hook', $remove_hook, $query );
+
 		if ( $remove_hook ) {
 			remove_action( 'jet-engine/query-builder/query/after-query-setup', array( $this, 'maybe_setup_filter' ) );
 		}
@@ -227,6 +234,10 @@ class Filters {
 				$provider = 'jet-engine-calendar';
 				break;
 
+			case 'jet-listing-multiday-calendar':
+				$provider = 'jet-engine-multiday-calendar';
+				break;
+
 			default:
 				$provider = apply_filters( 'jet-engine/query-builder/filter-provider', 'jet-engine', $widget, $query, $settings, $query_manager );
 				break;
@@ -242,7 +253,7 @@ class Filters {
 				'query_type'    => $query->get_query_type(),
 				'query_id'      => $query->id,
 				'query_meta'    => $query->get_query_meta(),
-			), $provider, $query_id ),
+			), $provider, $query_id, $query ),
 			$query_id
 		);
 
@@ -274,7 +285,15 @@ class Filters {
 
 			// Store the orderby random seed if it exists.
 			if ( ! empty( $query->final_query['_random_seed'] ) ) {
-				$data['extra_props'][ '_random_seed_' . $query->id ] = $query->final_query['_random_seed'];
+				//https://github.com/Crocoblock/issues-tracker/issues/13716
+				if ( isset( $data['extra_props'] ) ) {
+					if ( is_array( $data['extra_props'] ) ) {
+						$data['extra_props'][ '_random_seed_' . $query->id ] = $query->final_query['_random_seed'];
+					} elseif ( is_object( $data['extra_props'] ) ) {
+						$prop = '_random_seed_' . $query->id;
+						$data['extra_props']->$prop = $query->final_query['_random_seed'];
+					}
+				}
 			}
 
 			return $data;

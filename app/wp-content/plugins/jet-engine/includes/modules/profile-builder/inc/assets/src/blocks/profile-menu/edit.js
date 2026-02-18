@@ -1,3 +1,7 @@
+const {
+	ServerSideRender
+} = window.JetEngineBlocksComponents;
+
 const { __ } = wp.i18n;
 
 const {
@@ -6,10 +10,6 @@ const {
 	SelectControl,
 	Disabled
 } = wp.components;
-
-const {
-	serverSideRender: ServerSideRender
-} = wp;
 
 const {
 	Fragment
@@ -21,6 +21,7 @@ const {
 
 const {
 	InspectorControls,
+	useBlockProps,
 } = wp.blockEditor;
 
 const Edit = function( props ) {
@@ -68,7 +69,7 @@ const Edit = function( props ) {
 						});
 					} }
 				/>
-				{ 'account_page' === attributes.menu_context && window.JetEngineProfileBlocksConfig.account_roles && 0 < window.JetEngineProfileBlocksConfig.account_roles.length && 
+				{ 'account_page' === attributes.menu_context && window.JetEngineProfileBlocksConfig.account_roles && 0 < window.JetEngineProfileBlocksConfig.account_roles.length &&
 					<SelectControl
 						label={ __( 'Show menu for the role' ) }
 						value={ attributes.account_roles }
@@ -80,7 +81,7 @@ const Edit = function( props ) {
 						} }
 					/>
 				}
-				{ 'user_page' === attributes.menu_context && window.JetEngineProfileBlocksConfig.user_roles && 0 < window.JetEngineProfileBlocksConfig.user_roles.length && 
+				{ 'user_page' === attributes.menu_context && window.JetEngineProfileBlocksConfig.user_roles && 0 < window.JetEngineProfileBlocksConfig.user_roles.length &&
 					<SelectControl
 						label={ __( 'Show menu for the role' ) }
 						value={ attributes.user_roles }
@@ -132,13 +133,15 @@ const Edit = function( props ) {
 				/>
 			</PanelBody>
 		</InspectorControls> }
-		<Disabled>
-			<ServerSideRender
-				block="jet-engine/profile-menu"
-				attributes={ attributes }
-				urlQueryArgs={ {} }
-			/>
-		</Disabled>
+		<div { ...useBlockProps() }>
+			<Disabled>
+				<ServerSideRender
+					block="jet-engine/profile-menu"
+					attributes={ attributes }
+					urlQueryArgs={ {} }
+				/>
+			</Disabled>
+		</div>
 	</Fragment>;
 }
 

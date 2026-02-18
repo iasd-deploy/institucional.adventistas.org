@@ -220,6 +220,10 @@ if ( ! class_exists( 'Jet_Engine_CPT_Page_Edit' ) ) {
 							'label' => __( 'How to set the visibility of meta fields using conditional logic', 'jet-engine' ),
 						),
 					),
+					'translation_plugins' => array(
+						'wpml'     => defined( 'ICL_SITEPRESS_VERSION' ),
+						'polylang' => function_exists( 'PLL' ),
+					),
 				) )
 			);
 
@@ -246,6 +250,28 @@ if ( ! class_exists( 'Jet_Engine_CPT_Page_Edit' ) ) {
 							'label'       => __( 'Set format', 'jet-engine' ),
 							'description' => '<a href="https://wordpress.org/support/article/formatting-date-and-time/">' . __( 'Documentation on date and time formatting', 'jet-engine' ) . '</a>',
 							'value'       => get_option( 'date_format' ),
+						),
+					),
+				),
+				'jet_engine_custom_cb_number' => array(
+					'description' => __( 'Format number', 'jet-engine' ),
+					'args'        => array(
+						'field' => array(
+							'label'       => __( 'Set field', 'jet-engine' ),
+							'description' => __( 'Meta field to get date from', 'jet-engine' ),
+							'value'       => '',
+						),
+						'decimal_places' => array(
+							'label'       => __( 'Decimal Places Number', 'jet-engine' ),
+							'value'       => '2',
+						),
+						'decimals_separator' => array(
+							'label'       => __( 'Decimals Separator', 'jet-engine' ),
+							'value'       => '.',
+						),
+						'thousands_separator' => array(
+							'label'       => __( 'Thousands Separator', 'jet-engine' ),
+							'value'       => '',
 						),
 					),
 				),

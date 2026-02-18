@@ -77,6 +77,7 @@ class Edit_Item_Page extends \Jet_Engine_Options_Page_Factory {
 	 */
 	public $clone_action = 'jet-cct-clone-item';
 
+	public $action            = false;
 	public $layout_now        = false;
 	public $current_component = false;
 	public $current_panel     = false;
@@ -152,7 +153,10 @@ class Edit_Item_Page extends \Jet_Engine_Options_Page_Factory {
 	public function get( $option = null, $default = false, $field = array() ) {
 
 		$item  = ! empty( $this->page['item'] ) ? $this->page['item'] : array();
-		$value = isset( $item[ $option ] ) ? wp_unslash( $this->pages_manager->factory->maybe_from_timestamp( $item[ $option ], $field ) ) : $default;
+		// Removed second wp_unslash call to prevent over-stripping slashes from input data.
+		// https://github.com/Crocoblock/issues-tracker/issues/15071#issuecomment-2778426105
+//		$value = isset( $item[ $option ] ) ? wp_unslash( $this->pages_manager->factory->maybe_from_timestamp( $item[ $option ], $field ) ) : $default;
+		$value = isset( $item[ $option ] ) ? $this->pages_manager->factory->maybe_from_timestamp( $item[ $option ], $field ) : $default;
 
 		return $value;
 	}
@@ -382,24 +386,73 @@ class Edit_Item_Page extends \Jet_Engine_Options_Page_Factory {
 				margin: 0;
 			}
 		</style>
-		<script>
-			jQuery( document ).on( 'click', '.cct-confirm', function( event ) {
-				event.preventDefault();
-				if ( confirm( '<?php esc_html_e( 'Are you sure? All unsaved changes will be lost.', 'jet-engine' ); ?>' ) ) {
-					window.location = jQuery( this ).attr( 'href' );
-				}
-			});
-			jQuery( document ).on( 'click', '.jet-cct-delete-item', function( event ) {
-				event.preventDefault();
-				if ( confirm( '<?php esc_html_e( 'Are you sure you want to delete this item?', 'jet-engine' ); ?>' ) ) {
-					window.location = jQuery( this ).attr( 'href' );
-				}
-			});
-		</script>
 		<div class="jet-cct-edit-page-wrap">
 		<?php $this->builder->render(); ?>
 		<?php do_action( 'jet-engine/custom-content-types/after-edit-page/' . $this->pages_manager->factory->get_arg( 'slug' ), $this ); ?>
 		</div>
+		<script>
+			class JetCCTEditForm {
+
+				constructor() {
+
+					this.form = jQuery( '.cx-form' );
+					this.initialHash = false;
+					this.allowUnload = false;
+
+					window.addEventListener( "load", ( event ) => {
+						this.init();
+					} );
+				}
+
+				init() {
+
+					this.initialHash = this.getFormDataHash();
+
+					this.form.on( 'click', '.jet-cct-delete-item', ( event ) => {
+						event.preventDefault();
+						const $link = jQuery( event.target );
+						if ( confirm( '<?php esc_html_e( 'Are you sure you want to delete this item?', 'jet-engine' ); ?>' ) ) {
+							this.allowUnload = true;
+							window.location = $link.attr( 'href' );
+						}
+					});
+
+					this.form.on( 'click', 'button[type="submit"]', ( event ) => {
+						this.allowUnload = true;
+					});
+
+					window.addEventListener( "beforeunload", ( event ) => {
+						if ( ! this.formAllowedUnload() ) {
+							event.preventDefault();
+							event.returnValue = true;
+						}
+					} );
+				}
+
+				formAllowedUnload() {
+
+					if ( this.allowUnload ) {
+						this.allowUnload = false;
+						return true;
+					}
+
+					const hash = this.getFormDataHash();
+
+					if ( this.initialHash && hash && hash !== this.initialHash ) {
+						return false;
+					} else {
+						return true;
+					}
+				}
+
+				getFormDataHash() {
+					const formData = new FormData( this.form[0] );
+					return JSON.stringify( formData.entries().toArray() );
+				}
+			}
+
+			new JetCCTEditForm();
+		</script>
 		<?php
 	}
 

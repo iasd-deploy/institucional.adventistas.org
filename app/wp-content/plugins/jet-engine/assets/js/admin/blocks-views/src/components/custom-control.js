@@ -10,7 +10,9 @@ const {
 	Button,
 	Flex,
 	FlexBlock,
-	FlexItem
+	FlexItem,
+	ToolbarGroup,
+	ToolbarButton
 } = wp.components;
 
 const {
@@ -89,6 +91,7 @@ class CustomControl extends Component {
 			control,
 			value,
 			onChange,
+			onRichTextEdit,
 			children
 		} = this.props;
 
@@ -109,7 +112,7 @@ class CustomControl extends Component {
 				let options = [];
 
 				if ( control.options && control.options.length ) {
-					
+
 					options = [ ...control.options ];
 
 					if ( control.placeholder ) {
@@ -151,6 +154,24 @@ class CustomControl extends Component {
 					</Fragment>;
 				}
 
+			case 'rich_text':
+				return <Fragment>
+					{ children }
+					<div>
+						<label>{ control.label }</label>
+					</div>
+					<Button
+						isSecondary
+						icon="edit"
+						size="small"
+						style={{margin: "5px 0 5px"}}
+						onClick={ () => {
+							onRichTextEdit( control );
+						} }
+					>Edit HTML</Button>
+					<div><small>* Opens in component body</small></div>
+					<div>{ this.htmlDesc( htmlDescription ) }</div>
+				</Fragment>;
 			case 'textarea':
 				return <Fragment>
 					{ children }

@@ -48,6 +48,10 @@ class Jet_Elements_Timeline extends Jet_Elements_Base {
 		return array( 'jet-timeline', 'jet-timeline-skin' ); 
 	}
 
+	public function get_script_depends() {
+		return array( 'jet-timeline' );
+	}
+
 	protected function register_controls() {
 		$css_scheme = apply_filters(
 			'jet-elements/timeline/css-scheme',
@@ -160,7 +164,7 @@ class Jet_Elements_Timeline extends Jet_Elements_Base {
 			'item_desc',
 			array(
 				'label'   => esc_html__( 'Description', 'jet-elements' ),
-				'type'    => Controls_Manager::TEXTAREA,
+				'type'    => Controls_Manager::WYSIWYG,
 				'dynamic' => array( 'active' => true ),
 			)
 		);
@@ -1902,6 +1906,7 @@ class Jet_Elements_Timeline extends Jet_Elements_Base {
 				),
 				'selectors'  => array(
 					'{{WRAPPER}} ' . $css_scheme['line'] => 'width: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .jet-timeline--align-right ' . $css_scheme['line']  => 'right: -{{SIZE}}{{UNIT}};',
 				),
 			),
 			25
@@ -1941,7 +1946,7 @@ class Jet_Elements_Timeline extends Jet_Elements_Base {
 				$this->_icon( 'item_point_icon', '<div class="timeline-item__point-content timeline-item__point-content--icon"><span class="jet-elements-icon">%s</span></div>' );
 				break;
 			case 'text':
-				echo $this->_loop_item( array( 'item_point_text' ), '<div class="timeline-item__point-content timeline-item__point-content--text">%s</div>' );
+				echo $this->_loop_item( array( 'item_point_text' ), '<div class="timeline-item__point-content timeline-item__point-content--text">%s</div>' ); // phpcs:ignore
 				break;
 		}
 		echo '</div>';

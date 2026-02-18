@@ -34,11 +34,13 @@ if ( ! class_exists( 'Jet_Smart_Filters_Provider_Jet_Engine_Calendar' ) ) {
 		 */
 		public function is_month_request() {
 
-			if ( isset( $_REQUEST['action'] ) && 'jet_engine_calendar_get_month' === $_REQUEST['action'] ) {
+			$action_request_val = jet_smart_filters()->data->get_request_var( 'action' );
+			if ( $action_request_val && $action_request_val === 'jet_engine_calendar_get_month' ) {
 				return true;
 			}
 
-			if ( isset( $_REQUEST['jet_engine_action'] ) && 'jet_engine_calendar_get_month' === $_REQUEST['jet_engine_action'] ) {
+			$jet_engine_action_request_val = jet_smart_filters()->data->get_request_var( 'jet_engine_action' );
+			if ( $jet_engine_action_request_val && $jet_engine_action_request_val === 'jet_engine_calendar_get_month' ) {
 				return true;
 			}
 
@@ -54,8 +56,9 @@ if ( ! class_exists( 'Jet_Smart_Filters_Provider_Jet_Engine_Calendar' ) ) {
 				return $settings;
 			}
 
-			if ( ! empty( $_REQUEST['settings'] ) ) {
-				return $_REQUEST['settings'];
+			$settings_request_val = jet_smart_filters()->data->get_request_var( 'settings' );
+			if ( $settings_request_val ) {
+				return $settings_request_val;
 			} else {
 				return $settings;
 			}
@@ -222,7 +225,8 @@ if ( ! class_exists( 'Jet_Smart_Filters_Provider_Jet_Engine_Calendar' ) ) {
 			}
 
 			if ( $this->is_month_request() ) {
-				jet_smart_filters()->query->get_query_from_request( isset( $_REQUEST['query'] ) ? $_REQUEST : array() );
+				$request = jet_smart_filters()->data->get_request();
+				jet_smart_filters()->query->get_query_from_request( isset( $request['query'] ) ? $request : array() );
 			}
 
 			return array_merge( $args, jet_smart_filters()->query->get_query_args() );

@@ -6,6 +6,9 @@ namespace Jet_Engine\CPT\Custom_Tables;
  */
 class Meta_Storage {
 
+	/**
+	 * @var DB
+	 */
 	public $db;
 	public $object_type;
 	public $object_slug;
@@ -20,12 +23,14 @@ class Meta_Storage {
 
 		$this->hook_crud_handlers();
 
+		do_action( 'jet-engine/custom-meta-tables/meta-storage/on-init', $this );
+
 	}
 
 	/**
 	 * Hook CRUD action to appropriate WP functions
 	 * 
-	 * @return [type] [description]
+	 * @return void
 	 */
 	public function hook_crud_handlers() {
 
@@ -35,6 +40,7 @@ class Meta_Storage {
 		add_filter(
 			'add_' . $object_type . '_metadata', 
 			function( $result = null, $object_id = 0, $meta_key = '', $meta_value = '', $unique = false ) use ( $object_type ) {
+				$meta_key = str_replace( '+', '_', $meta_key );
 
 				if ( ! $this->is_custom_field_from_storage( $object_type, $object_id, $meta_key ) ) {
 					return $result;
@@ -50,7 +56,8 @@ class Meta_Storage {
 		add_filter(
 			'get_' . $object_type . '_metadata', 
 			function( $result = null, $object_id = 0, $meta_key = '', $single = true ) use ( $object_type ) {
-
+				$meta_key = str_replace( '+', '_', $meta_key );
+				
 				if ( ! $this->is_custom_field_from_storage( $object_type, $object_id, $meta_key ) ) {
 					return $result;
 				}
@@ -70,13 +77,13 @@ class Meta_Storage {
 		add_filter(
 			'update_' . $object_type . '_metadata',
 			function( $result = null, $object_id = 0, $meta_key = '', $meta_value = '', $prev = false ) use ( $object_type ) {
-
+				$meta_key = str_replace( '+', '_', $meta_key );
+				
 				if ( ! $this->is_custom_field_from_storage( $object_type, $object_id, $meta_key ) ) {
 					return $result;
 				}
 
 				return $this->add_data( $object_id, $meta_key, $meta_value );
-
 			},
 			0, 5
 		);
@@ -85,6 +92,7 @@ class Meta_Storage {
 		add_filter(
 			'delete_' . $object_type . '_metadata',
 			function( $result = null, $object_id = 0, $meta_key = '' ) use ( $object_type ) {
+				$meta_key = str_replace( '+', '_', $meta_key );
 
 				if ( ! $this->is_custom_field_from_storage( $object_type, $object_id, $meta_key ) ) {
 					return $result;
@@ -103,7 +111,7 @@ class Meta_Storage {
 	/**
 	 * Hook clearing metadata on object delete
 	 * 
-	 * @return [type] [description]
+	 * @return void
 	 */
 	public function on_object_delete() {
 
@@ -128,14 +136,14 @@ class Meta_Storage {
 	}
 
 	/**
-	 * Check if given custom field is stored in the custom DB table
+	 * Check if given custom field is stored in the custom DB table, or if custom meta storage is enabled for the object
 	 * 
-	 * @param  [type]  $object_type [description]
-	 * @param  [type]  $object_id   [description]
-	 * @param  [type]  $meta_key    [description]
-	 * @return boolean              [description]
+	 * @param  string  $object_type Type of object (post, term, etc. currently may be 'post' only)
+	 * @param  integer $object_id   Object ID
+	 * @param  string  $meta_key    Meta key
+	 * @return boolean              Whether the field is stored in the custom DB table
 	 */
-	public function is_custom_field_from_storage( $object_type, $object_id, $meta_key ) {
+	public function is_custom_field_from_storage( $object_type, $object_id, $meta_key = false ) {
 
 		// If meta key was not provided - check only by $object_id
 		if ( ! $meta_key && $this->is_object_of_type( $object_type, $object_id ) ) {
@@ -156,9 +164,9 @@ class Meta_Storage {
 	/**
 	 * Check if given object of current type
 	 * 
-	 * @param  string  $object_type [description]
-	 * @param  integer $object_id   [description]
-	 * @return boolean              [description]
+	 * @param  string  $object_type Type of object (post, term, etc. currently may be 'post' only)
+	 * @param  integer $object_id   Object ID
+	 * @return boolean              Whether the custom meta storage is enabled for the object
 	 */
 	public function is_object_of_type( $object_type = 'post', $object_id = 0 ) {
 
@@ -264,7 +272,14 @@ class Meta_Storage {
 		}
 
 		$obj_row = $this->get_all_data( $object_id );
-		$result  = isset( $obj_row[ $meta_key ] ) ? maybe_unserialize( $obj_row[ $meta_key ] ) : false;
+
+		$has_meta = isset( $obj_row[ $meta_key ] );
+
+		if ( ! $has_meta ) {
+			return $single ? '' : [];
+		}
+
+		$result = maybe_unserialize( $obj_row[ $meta_key ] );
 
 		// We always need to return an array here, because result of "get_{$meta_type}_metadata" filter processed as an array in the WP core
 		return [ $result ];
@@ -324,6 +339,15 @@ class Meta_Storage {
 			unset( $custom_data['object_ID'] );
 		}
 
+		if ( apply_filters( 'jet-engine/custom-meta-tables/storage/merged-meta-as-arrays', true, $object_id, $meta_type, $this ) ) {
+			$custom_data = array_map(
+				function( $value ) {
+					return [ $value ];
+				},
+				$custom_data
+			);
+		}
+
 		return array_merge( $meta_cache, $custom_data );
 	}
 
@@ -353,7 +377,14 @@ class Meta_Storage {
 		$obj_row_exists = $this->db->get_item( $object_id, 'object_ID' );
 
 		if ( $obj_row_exists ) {
-			
+
+			// Filter hook to control how empty values of custom meta fields are saved to the database.
+			// Allows changing empty values to either NULL or an empty string before saving.
+			// https://github.com/Crocoblock/issues-tracker/issues/15348
+			if ( false === $meta_value ) {
+				$meta_value = apply_filters( 'jet-engine/custom-meta-tables/storage/empty-meta-value', $meta_value, $object_id, $meta_key, $this->object_type );
+			}
+
 			$this->db->update( [ $meta_key => $meta_value ], [ 'object_ID' => $object_id ] );
 			wp_cache_delete( $this->get_cache_key( $object_id ), 'jet_engine_custom_tables' );
 
@@ -363,18 +394,15 @@ class Meta_Storage {
 			if ( 'post' === $this->object_type ) {
 				do_action( 'updated_postmeta', 0, $object_id, $meta_key, $meta_value );
 			}
-
 		} elseif ( $insert ) {
-			
+
 			$this->db->insert( [ $meta_key => $meta_value, 'object_ID' => $object_id ] );
 
 			// Trigger default WP hooks to ensure 3rd party code compatibility
 			do_action( 'added_' . $this->object_type . '_meta', 0, $object_id, $meta_key, $meta_value );
-
 		}
 
 		return true;
-
 	}
 
 }

@@ -5,6 +5,8 @@ use Jet_Engine\Modules\Maps_Listings\Base_Provider;
 
 abstract class Base extends Base_Provider {
 
+	private $errors = array();
+
 	/**
 	 * Hook name to register provider-specific settings
 	 *
@@ -12,6 +14,10 @@ abstract class Base extends Base_Provider {
 	 */
 	public function settings_hook() {
 		return 'jet-engine/maps-listing/settings/geocode-provider-controls';
+	}
+
+	public function get_api_key( $for_geocoding = false ) {
+		return '';
 	}
 
 	/**
@@ -38,6 +44,18 @@ abstract class Base extends Base_Provider {
 		return false;
 	}
 
+	public function get_error( $type = 'autocomplete' ) {
+		return $this->errors[ $type ] ?? false;
+	}
+
+	public function save_error( $error, $type = 'autocomplete' ) {
+		$this->errors[ $type ] = $error;
+	}
+
+	public function clear_error( $type = 'autocomplete' ) {
+		unset( $this->errors[ $type ] );
+	}
+
 	/**
 	 * Make geocoding request to the given URL
 	 *
@@ -46,23 +64,30 @@ abstract class Base extends Base_Provider {
 	 */
 	public function make_request( $request_url ) {
 
+		$headers = array(
+			'accept-language' => get_bloginfo( 'language' ),
+		);
+
+		if ( ! empty( $_SERVER['HTTP_USER_AGENT'] ) ) {
+			$headers['User-Agent'] = $_SERVER['HTTP_USER_AGENT'];
+		}
+
 		$response = wp_remote_get( $request_url, array(
-			'headers' => array(
-				'accept-language' => get_bloginfo( 'language' ),
-			)
+			'headers' => $headers,
 		) );
 
 		$json = wp_remote_retrieve_body( $response );
 
-		return json_decode( $json, true );
+		$data = json_decode( $json, true );
 
+		return $data;
 	}
 
 	/**
 	 * Find coordinates in the response data and return it
 	 *
-	 * @param  array  $data [description]
-	 * @return [type]       [description]
+	 * @param  array       $data Response data from API
+	 * @return array|false       Array of [ 'lat' => float, 'lng' => float ] if location found, false otherwise
 	 */
 	public function extract_coordinates_from_response_data( $data = array() ) {
 		return false;
@@ -117,10 +142,25 @@ abstract class Base extends Base_Provider {
 	}
 
 	/**
+	 * WP esc_attr function analog, that does not escape quotes
+	 * https://github.com/Crocoblock/issues-tracker/issues/12562
+	 *
+	 * @param  string $location String to escape
+	 * @return string           Escaped string
+	 */
+	public function esc_attr( $location ) {
+		if ( ! preg_match( '/[&<>"\']/', $location ) ) {
+			return $location;
+		}
+
+		return htmlspecialchars( $location, ENT_NOQUOTES );
+	}
+
+	/**
 	 * Returns data for the given location
 	 *
-	 * @param  string $location [description]
-	 * @return [type]           [description]
+	 * @param  string      $location Location string, address
+	 * @return array|false [ 'lat' => float, 'lng' => float ] if location found, false if not found or empty string given
 	 */
 	public function get_location_data( $location = '' ) {
 
@@ -128,17 +168,13 @@ abstract class Base extends Base_Provider {
 			return false;
 		}
 
-		$url = $this->build_api_url( esc_attr( $location ) );
+		$url = $this->build_api_url( $this->esc_attr( $location ) );
 
 		if ( ! $url ) {
 			return false;
 		}
 
 		$data = $this->make_request( $url );
-
-		if ( ! $data ) {
-			return false;
-		}
 
 		return $this->extract_coordinates_from_response_data( $data );
 
@@ -163,6 +199,10 @@ abstract class Base extends Base_Provider {
 		}
 
 		$data = $this->make_request( $url );
+
+		if ( ! empty( $data['error_message'] ) || ! empty( $data['error'] ) ) {
+			$this->save_error( $data, 'autocomplete' );
+		}
 
 		if ( ! $data ) {
 			return false;

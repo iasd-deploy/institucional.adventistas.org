@@ -30,6 +30,7 @@ if ( ! class_exists( 'CX_Control_Posts' ) ) {
 			'post_type'    => 'post',
 			'action'       => '',
 			'multiple'     => false,
+			'min_input'    => 3,
 			'placeholder'  => null,
 			'label'        => '',
 			'class'        => '',
@@ -124,7 +125,7 @@ if ( ! class_exists( 'CX_Control_Posts' ) ) {
 						$stingify_values = '';
 					}
 
-					$html .= '<select id="' . esc_attr( $this->settings['id'] ) . '" class="cx-ui-select" name="' . esc_attr( $name ) . '" size="' . esc_attr( $this->settings['size'] ) . '" ' . $multi_state . ' data-filter="true" data-placeholder="' . esc_attr( $this->settings['placeholder'] ) . '" ' . $inline_style . ' data-post-type="' . esc_attr( $post_type ) . '" data-action="' . esc_attr( $action ) . '" data-exclude="' . $stingify_values . '">';
+					$html .= '<select id="' . esc_attr( $this->settings['id'] ) . '" class="cx-ui-select" name="' . esc_attr( $name ) . '" size="' . esc_attr( $this->settings['size'] ) . '" ' . $multi_state . ' data-filter="true" data-placeholder="' . esc_attr( $this->settings['placeholder'] ) . '" ' . $inline_style . ' data-post-type="' . esc_attr( $post_type ) . '" data-action="' . esc_attr( $action ) . '" data-exclude="' . $stingify_values . '" data-min-input="' . esc_attr( $this->settings['min_input'] ) . '">';
 
 						foreach ( $values as $value ) {
 

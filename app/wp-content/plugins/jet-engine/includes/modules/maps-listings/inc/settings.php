@@ -88,7 +88,12 @@ class Settings {
 
 		update_option( $this->settings_key, $settings, false );
 
-		wp_send_json_success( array( 'message' => __( 'Settings saved', 'jet-engine' ) ) );
+		wp_send_json_success(
+			array(
+				'message' => __( 'Settings saved', 'jet-engine' ),
+				'additionalData' => apply_filters( 'jet-engine/maps-listing/settings/save-response/additional-data', array(), $settings ),
+			)
+		);
 
 	}
 
@@ -148,16 +153,19 @@ class Settings {
 		wp_localize_script(
 			'jet-engine-maps-settings',
 			'JetEngineMapsSettings',
-			array(
-				'_nonce'          => wp_create_nonce( $this->settings_key ),
-				'settings'        => $this->get_all(),
-				'sources'         => $sources,
-				'fieldsProviders' => $fields_providers,
-				'fields'          => $fields,
-				'customSources'   => $custom_sources,
-				'renderProviders' => Module::instance()->providers->get_providers_for_js( 'map' ),
-				'geoProviders'    => Module::instance()->providers->get_providers_for_js( 'geocode' ),
-			)
+			apply_filters(
+				'jet-engine/maps-listing/settings/js',
+				array(
+					'_nonce'          => wp_create_nonce( $this->settings_key ),
+					'settings'        => $this->get_all(),
+					'sources'         => $sources,
+					'fieldsProviders' => $fields_providers,
+					'fields'          => $fields,
+					'customSources'   => $custom_sources,
+					'renderProviders' => Module::instance()->providers->get_providers_for_js( 'map' ),
+					'geoProviders'    => Module::instance()->providers->get_providers_for_js( 'geocode' ),
+				)
+			),
 		);
 
 		do_action( 'jet-engine/maps-listing/settings/after-assets' );
@@ -238,7 +246,7 @@ class Settings {
 				<?php do_action( 'jet-engine/maps-listing/settings/geocode-provider-controls' ); ?>
 				<cx-vui-switcher
 					label="<?php _e( 'Preload coordinates by address', 'jet-engine' ); ?>"
-						description="<?php _e( 'We recommend to enable this option and set meta field to preload coordinates for. This is required to avoid optimize Google Maps API requests. Note: only JetEngine meta fields could be preloaded', 'jet-engine' ); ?>"
+						description="<?php _e( 'We recommend to enable this option and set meta field to preload coordinates for. This is required to avoid optimize Google Maps API requests.', 'jet-engine' ); ?>"
 					:wrapper-css="[ 'equalwidth' ]"
 					@input="updateSetting( $event, 'enable_preload_meta' )"
 					:value="settings.enable_preload_meta"
@@ -259,6 +267,18 @@ class Settings {
 						><?php _e( 'Add existing meta field', 'jet-engine' ); ?></a>
 					</div>
 				</cx-vui-textarea>
+				<div
+					class="cx-vui-component"
+					style="border:none;padding-top:0;"
+					v-if="settings.enable_preload_meta"
+				>
+					<cx-vui-alert
+						style="width:100%;"
+						type="warning"
+						:value="showPreloadWarnings()"
+						v-html="this.preloadWarnings"
+					></cx-vui-alert>
+				</div>
 				<cx-vui-switcher
 					label="<?php _e( 'Avoid markers overlapping', 'jet-engine' ); ?>"
 						description="<?php _e( 'Add a slight offset to avoid overlapping markers with the same addresses', 'jet-engine' ); ?>"
@@ -304,7 +324,7 @@ class Settings {
 						<cx-vui-f-select
 							label="<?php _e( 'Fields', 'jet-engine' ); ?>"
 							description="<?php _e( 'Select multiple meta fields to add these fields names separated by the \'+\' sign', 'jet-engine' ); ?>"
-							:wrapper-css="[ 'equalwidth', 'collpase-sides' ]"
+							:wrapper-css="[ 'equalwidth', 'collpase-sides', 'height-limit' ]"
 							:options-list="allFields[ currentPopupSource ]"
 							:multiple="true"
 							size="fullwidth"

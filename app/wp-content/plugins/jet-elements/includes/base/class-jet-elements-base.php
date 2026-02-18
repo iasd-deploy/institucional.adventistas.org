@@ -31,6 +31,17 @@ abstract class Jet_Elements_Base extends Widget_Base {
 	}
 
 	/**
+	 * Ensure value is in allowed list.
+	 *
+	 * @param mixed $current Current value.
+	 * @param array $allowed Allowed values.
+	 * @return mixed First element of allowed array if current value is not in the list.
+	 */
+	public function ensure_allowed_value( $current, $allowed ) {
+		return in_array( $current, $allowed, true ) ? $current : $allowed[0];
+	}
+
+	/**
 	 * [get_jet_help_url description]
 	 * @return [type] [description]
 	 */
@@ -165,6 +176,8 @@ abstract class Jet_Elements_Base extends Widget_Base {
 			include $templates['start'];
 		}
 
+		do_action( 'jet-engine-query-gateway/before-loop', $setting, $this );
+
 		foreach ( $loop as $item ) {
 
 			do_action( 'jet-engine-query-gateway/do-item', $item );
@@ -197,13 +210,13 @@ abstract class Jet_Elements_Base extends Widget_Base {
 	 */
 	public function _get_edit_looped_template( $templates = array(), $setting = null ) {
 		?>
-		<# if ( settings.<?php echo $setting; ?> ) { #>
+		<# if ( settings.<?php echo $setting; // phpcs:ignore ?> ) { #>
 		<?php
 			if ( ! empty( $templates['start'] ) ) {
 				include $templates['start'];
 			}
 		?>
-			<# _.each( settings.<?php echo $setting; ?>, function( item ) { #>
+			<# _.each( settings.<?php echo $setting; // phpcs:ignore ?>, function( item ) { #>
 			<?php
 				if ( ! empty( $templates['loop'] ) ) {
 					include $templates['loop'];
@@ -258,8 +271,8 @@ abstract class Jet_Elements_Base extends Widget_Base {
 
 		ob_start();
 
-		echo '<# if ( item.' . $settings . ' ) { #>';
-		printf( $format, '{{{ item.' . $settings . ' }}}' );
+		echo '<# if ( item.' . $settings . ' ) { #>'; // phpcs:ignore
+		printf( $format, '{{{ item.' . $settings . ' }}}' ); // phpcs:ignore
 		echo '<# } #>';
 
 		return ob_get_clean();
@@ -360,7 +373,7 @@ abstract class Jet_Elements_Base extends Widget_Base {
 
 		?>
 
-		<# if ( <?php echo $condition; ?> ) { #>
+		<# if ( <?php echo $condition; // phpcs:ignore ?> ) { #>
 
 			<?php include $file; ?>
 
@@ -375,7 +388,7 @@ abstract class Jet_Elements_Base extends Widget_Base {
 	 * @return void
 	 */
 	public function _open_wrap() {
-		printf( '<div class="elementor-%s jet-elements">', $this->get_name() );
+		printf( '<div class="elementor-%s jet-elements">', $this->get_name() ); // phpcs:ignore
 	}
 
 	/**
@@ -454,7 +467,7 @@ abstract class Jet_Elements_Base extends Widget_Base {
 		$val = $this->get_settings_for_display( $setting );
 
 		if ( ! is_array( $val ) && '0' === $val ) {
-			printf( $format, $val );
+			printf( $format, $val ); // phpcs:ignore
 		}
 
 		if ( is_array( $val ) && empty( $val[ $key ] ) ) {
@@ -466,9 +479,9 @@ abstract class Jet_Elements_Base extends Widget_Base {
 		}
 
 		if ( is_array( $val ) ) {
-			printf( $format, $val[ $key ] );
+			printf( $format, $val[ $key ] ); // phpcs:ignore
 		} else {
-			printf( $format, $val );
+			printf( $format, $val ); // phpcs:ignore
 		}
 
 	}
@@ -486,8 +499,8 @@ abstract class Jet_Elements_Base extends Widget_Base {
 			$setting = $setting[0] . '.' . $setting[1];
 		}
 
-		echo '<# if ( settings.' . $setting . ' ) { #>';
-		printf( $format, '{{{ settings.' . $setting . ' }}}' );
+		echo '<# if ( settings.' . $setting . ' ) { #>'; // phpcs:ignore
+		printf( $format, '{{{ settings.' . $setting . ' }}}' ); // phpcs:ignore
 		echo '<# } #>';
 	}
 
@@ -604,9 +617,9 @@ abstract class Jet_Elements_Base extends Widget_Base {
 	 *
 	 * @return void|string
 	 */
-	public function _render_icon( $setting = null, $format = '%s', $icon_class = '', $echo = true ) {
+	public function _render_icon( $setting = null, $format = '%s', $icon_class = '', $echo = true , $force_settings = false ) {
 
-		if ( false === $this->_processed_item ) {
+		if ( false === $this->_processed_item || true === $force_settings ) {
 			$settings = $this->get_settings_for_display();
 		} else {
 			$settings = $this->_processed_item;
@@ -642,7 +655,7 @@ abstract class Jet_Elements_Base extends Widget_Base {
 				$icon_class .= ' ' . $settings[ $setting ];
 			}
 
-			$icon_html = sprintf( '<i class="%s" aria-hidden="true"></i>', $icon_class );
+			$icon_html = sprintf( '<i class="%s" aria-hidden="true"></i>', esc_attr( $icon_class ) );
 		}
 
 		if ( empty( $icon_html ) ) {
@@ -653,8 +666,9 @@ abstract class Jet_Elements_Base extends Widget_Base {
 			return sprintf( $format, $icon_html );
 		}
 
-		printf( $format, $icon_html );
+		printf( $format, $icon_html ); // phpcs:ignore
 	}
+
 
 	/**
 	 * [__add_control description]

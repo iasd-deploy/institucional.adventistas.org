@@ -61,6 +61,9 @@ class Package {
 		require_once $this->package_path( 'listings.php' );
 		Listings\Manager::instance( $this );
 
+		require_once $this->package_path( 'components.php' );
+		Components\Manager::instance();
+
 		require_once $this->package_path( 'meta-boxes.php' );
 		Meta_Boxes\Manager::instance( $this );
 
@@ -72,6 +75,9 @@ class Package {
 
 		require_once $this->package_path( 'data-stores.php' );
 		Data_Stores\Manager::instance( $this );
+
+		require_once $this->package_path( 'maps-listings.php' );
+		Maps_listings\Manager::instance( $this );
 	}
 
 	/**
@@ -163,6 +169,11 @@ class Package {
 					'field'       => 'dynamic_field_format',
 					'type'        => esc_html__( 'Field: Field format (if used)', 'jet-engine' ),
 					'editor_type' => 'AREA',
+				),
+				array(
+					'field'       => 'field_fallback',
+					'type'        => esc_html__( 'Field: Fallback', 'jet-engine' ),
+					'editor_type' => 'LINE',
 				),
 			),
 		);
@@ -300,9 +311,31 @@ class Package {
 		return $label;
 	}
 
+	/**
+	 * Get original post ID (translation in default language). Returns translation ID if no original found.
+	 * 
+	 * @param  int $translation_id Post ID
+	 * @return int                 Original post ID if found, given post ID otherwise
+	 */
+	public function get_original_post_id( $translation_id ) {
+		global $sitepress;
+		$original_id = apply_filters(
+			'wpml_object_id',
+			$translation_id,
+			get_post_type( $translation_id ),
+			true,
+			$sitepress->get_default_language()
+		);
+		return $original_id;
+	}
+
 	public function disable_suppress_filters( $args = array() ) {
 		$args['suppress_filters'] = false;
 		return $args;
+	}
+
+	public function get_current_language() {
+		return apply_filters( 'wpml_current_language', null );
 	}
 
 	/**

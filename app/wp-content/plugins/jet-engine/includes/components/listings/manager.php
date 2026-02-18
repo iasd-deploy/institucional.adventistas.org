@@ -33,7 +33,7 @@ if ( ! class_exists( 'Jet_Engine_Listings' ) ) {
 		/**
 		 * Macros manager instance
 		 *
-		 * @var null
+		 * @var \Jet_Engine_Listings_Macros
 		 */
 		public $macros = null;
 
@@ -47,7 +47,7 @@ if ( ! class_exists( 'Jet_Engine_Listings' ) ) {
 		/**
 		 * Filters manager instance
 		 *
-		 * @var null
+		 * @var \Jet_Engine_Listings_Filters
 		 */
 		public $filters = null;
 
@@ -68,7 +68,7 @@ if ( ! class_exists( 'Jet_Engine_Listings' ) ) {
 		/**
 		 * Listings post type object
 		 *
-		 * @var null
+		 * @var \Jet_Engine_Listings_Post_Type
 		 */
 		public $post_type = null;
 
@@ -89,7 +89,7 @@ if ( ! class_exists( 'Jet_Engine_Listings' ) ) {
 		/**
 		 * Holder for Did posts instance.
 		 *
-		 * @var null
+		 * @var \Jet_Engine_Did_Posts_Watcher
 		 */
 		public $did_posts = null;
 
@@ -103,26 +103,26 @@ if ( ! class_exists( 'Jet_Engine_Listings' ) ) {
 		/**
 		 * Holder for legacy instance.
 		 *
-		 * @var null
+		 * @var \Jet_Engine_Listings_Legacy
 		 */
 		public $legacy = null;
 
 		/**
 		 * Holder for ajax handlers instance.
 		 *
-		 * @var null
+		 * @var \Jet_Engine_Listings_Ajax_Handlers
 		 */
 		public $ajax_handlers = null;
 
 		/**
 		 * Holds Jet_Engine_Listings_Callbacks instance
-		 * @var null
+		 * @var \Jet_Engine_Listings_Callbacks
 		 */
 		public $callbacks = null;
 
 		/**
 		 * Holds instance of components manager
-		 * @var null
+		 * @var \Jet_Engine\Listings\Components\Manager
 		 */
 		public $components = null;
 
@@ -142,6 +142,7 @@ if ( ! class_exists( 'Jet_Engine_Listings' ) ) {
 			require jet_engine()->plugin_path( 'includes/components/listings/preview.php' );
 			require jet_engine()->plugin_path( 'includes/classes/url-shemes-manager.php' );
 			require jet_engine()->plugin_path( 'includes/components/listings/components/manager.php' );
+			require jet_engine()->plugin_path( 'includes/components/listings/mcp/controller.php' );
 
 			$this->post_type     = new Jet_Engine_Listings_Post_Type();
 			$this->components    = new \Jet_Engine\Listings\Components\Manager();
@@ -152,6 +153,7 @@ if ( ! class_exists( 'Jet_Engine_Listings' ) ) {
 			$this->did_posts     = new Jet_Engine_Did_Posts_Watcher();
 			$this->objects_stack = new Jet_Engine_Objects_Stack();
 			$this->legacy        = new Jet_Engine_Listings_Legacy();
+			new \Jet_Engine\Listings\MCP\Controller();
 
 			// Ensure backward compatibility
 			jet_engine()->post_type = $this->post_type;
@@ -166,11 +168,28 @@ if ( ! class_exists( 'Jet_Engine_Listings' ) ) {
 			add_action( 'init', array( $this, 'register_renderers' ) );
 			add_action( 'init', array( $this, 'register_callbacks' ) );
 
+			add_action( 'jet-engine/listing/grid-items/before', array( $this, 'add_frontend_query_editor' ), 10, 2 );
+			add_action( 'jet-engine/listing/grid/not-found/before', array( $this, 'not_found_add_frontend_query_editor' ), 10 );
+
+		}
+
+		public function not_found_add_frontend_query_editor( $render ) {
+			$this->add_frontend_query_editor( array(), $render );
+		}
+
+		public function add_frontend_query_editor( $settings, $render ) {
+			if ( ! isset( \Jet_Engine\Query_Builder\Manager::instance()->frontend_editor ) ) {
+				return;
+			}
+
+			\Jet_Engine\Query_Builder\Manager::instance()->frontend_editor->render_edit_buttons( $render );
 		}
 
 		public function register_callbacks() {
-			require jet_engine()->plugin_path( 'includes/components/listings/callbacks.php' );
-			$this->callbacks = new Jet_Engine_Listings_Callbacks();
+			if ( ! $this->callbacks ) {
+				require jet_engine()->plugin_path( 'includes/components/listings/callbacks.php' );
+				$this->callbacks = new Jet_Engine_Listings_Callbacks();
+			}
 		}
 
 		/**
@@ -439,9 +458,8 @@ if ( ! class_exists( 'Jet_Engine_Listings' ) ) {
 					}
 
 					if ( ! class_exists( $dep_renderer['class_name'] ) ) {
-						require $dep_renderer['path'];
+						require_once $dep_renderer['path'];
 					}
-
 				}
 			}
 
@@ -487,6 +505,11 @@ if ( ! class_exists( 'Jet_Engine_Listings' ) ) {
 		 * @return [type] [description]
 		 */
 		public function get_allowed_callbacks() {
+
+			if ( ! $this->callbacks ) {
+				$this->register_callbacks();
+			}
+
 			return $this->callbacks ? $this->callbacks->get_cllbacks_for_options() : array();
 		}
 
@@ -496,6 +519,11 @@ if ( ! class_exists( 'Jet_Engine_Listings' ) ) {
 		 * @return [type] [description]
 		 */
 		public function get_callbacks_args( $for = 'elementor' ) {
+
+			if ( ! $this->callbacks ) {
+				$this->register_callbacks();
+			}
+
 			return $this->callbacks ? $this->callbacks->get_callbacks_args( $for ) : array();
 		}
 

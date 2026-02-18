@@ -87,13 +87,14 @@ class SQL_Query extends Base_Query {
 	}
 
 	public function get_cast_objects() {
-		
+
 		$objects = apply_filters( 'jet-engine/query-builder/types/sql-query/cast-objects', array(
-			''           => __( 'Keep stdClass', 'jet-engine' ),
-			'WP_Post'    => __( 'Post', 'jet-engine' ),
-			'WP_User'    => __( 'User', 'jet-engine' ),
-			'WP_Term'    => __( 'Taxonomy Term', 'jet-engine' ),
-			'WP_Comment' => __( 'Comment', 'jet-engine' ),
+			''                                          => __( 'Keep stdClass', 'jet-engine' ),
+			'jet_engine_maybe_unserialize_object_props' => __( 'Keep stdClass, unserialize properties', 'jet-engine' ),
+			'WP_Post'                                   => __( 'Post', 'jet-engine' ),
+			'WP_User'                                   => __( 'User', 'jet-engine' ),
+			'WP_Term'                                   => __( 'Taxonomy Term', 'jet-engine' ),
+			'WP_Comment'                                => __( 'Comment', 'jet-engine' ),
 		) );
 
 		$result = array();
@@ -198,15 +199,29 @@ class SQL_Query extends Base_Query {
 			$prepared_tables = array();
 
 			foreach ( $tables as $table ) {
-				$prepared_tables[] = sprintf( '\'%1$s%2$s\'', $wpdb->prefix, $table );
+				$table = sanitize_key( $table );
+
+				if ( ! $table ) {
+					continue;
+				}
+
+				$prepared_tables[] = $wpdb->prepare( '%s', $wpdb->prefix . $table );
 			}
 
-			$prepared_tables = implode( ', ', $prepared_tables );
+			if ( ! empty( $prepared_tables ) ) {
+				$prepared_tables = implode( ', ', $prepared_tables );
 
-			$all_columns = $wpdb->get_results( "SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.columns WHERE table_schema = '$db_name' AND table_name IN ( $prepared_tables );", ARRAY_N );
+				$all_columns = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.columns WHERE table_schema = %s AND table_name IN ( $prepared_tables );",
+						$db_name
+					),
+					ARRAY_N
+				);
 
-			foreach ( $all_columns as $col ) {
-				$result[] = $col[1];
+				foreach ( $all_columns as $col ) {
+					$result[] = $col[1];
+				}
 			}
 		}
 
@@ -225,10 +240,35 @@ class SQL_Query extends Base_Query {
 	}
 
 	/**
+	 * Print custom editor template for SQL nested fields.
+	 *
+	 * @return void
+	 */
+	public function print_custom_editor_templates() {
+
+		ob_start();
+		include Manager::instance()->component_path( 'templates/admin/sql-query-field.php' );
+		$content = ob_get_clean();
+
+		printf( '<script type="text/x-template" id="jet-engine-sql-query-field">%s</script>', $content );
+	}
+
+	/**
 	 * Constructor for the class
 	 */
 	public function __construct() {
-		add_filter( 'jet-engine/query-builder/edit-query/request', array( $this, 'update_fields_list_for_query' ) );
+
+		parent::__construct();
+
+		add_filter(
+			'jet-engine/query-builder/edit-query/request',
+			array( $this, 'update_fields_list_for_query' )
+		);
+
+		add_action(
+			'jet-engine/query-builder/editor/before-print-templates',
+			array( $this, 'print_custom_editor_templates' )
+		);
 	}
 
 }

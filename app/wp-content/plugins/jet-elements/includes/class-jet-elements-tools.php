@@ -228,28 +228,87 @@ if ( ! class_exists( 'Jet_Elements_Tools' ) ) {
 			$ext  = pathinfo( $url, PATHINFO_EXTENSION );
 			$attr = array_merge( array( 'alt' => '' ), $attr );
 
-			if ( 'svg' !== $ext ) {
-				return sprintf( '<img src="%1$s"%2$s>', $url, $this->get_attr_string( $attr ) );
+			if ( 'svg' !== strtolower( $ext ) ) {
+				return sprintf( '<img src="%1$s"%2$s>', esc_url( $url ), $this->get_attr_string( $attr ) );
 			}
 
 			$base_url = site_url( '/' );
 			$svg_path = str_replace( $base_url, ABSPATH, $url );
-			$key      = md5( $svg_path );
+			$key      = '_' . md5( $svg_path );
 			$svg      = get_transient( $key );
 
-			if ( ! $svg ) {
+			if ( ! file_exists( $svg_path ) ) {
+				return sprintf( '<img src="%1$s"%2$s>', esc_url( $url ), $this->get_attr_string( $attr ) );
+			}
+
+			if ( ! $svg && file_exists( $svg_path ) ) {
 				$svg = file_get_contents( $svg_path );
+				$svg = $this->sanitize_svg( $svg );
+				set_transient( $key, $svg, DAY_IN_SECONDS );
 			}
 
 			if ( ! $svg ) {
-				return sprintf( '<img src="%1$s"%2$s>', $url, $this->get_attr_string( $attr ) );
+				return sprintf( '<img src="%1$s"%2$s>', esc_url( $url ), $this->get_attr_string( $attr ) );
 			}
-
-			set_transient( $key, $svg, DAY_IN_SECONDS );
 
 			unset( $attr['alt'] );
 
-			return sprintf( '<' . $tag . '%2$s>%1$s</' . $tag . '>', $svg, $this->get_attr_string( $attr ) );
+			return sprintf( '<%1$s%3$s>%2$s</%1$s>', esc_html( $tag ), $svg, $this->get_attr_string( $attr ) );
+		}
+
+		/**
+		 * Sanitize SVG content
+		 *
+		 * @param string $raw_svg Raw SVG content.
+		 *
+		 * @return string|bool Sanitized SVG content or false on failure.
+		 */
+		public function sanitize_svg( $raw_svg ) {
+
+			$dirty = $raw_svg;
+
+			// Is the SVG gzipped? If so we try and decode the string
+			$is_zipped = $this->is_gzipped( $dirty );
+
+			if ( $is_zipped ) {
+				$dirty = gzdecode( $dirty );
+
+				// If decoding fails, bail as we're not secure
+				if ( false === $dirty ) {
+					return false;
+				}
+			}
+
+			$sanitizer = new \enshrined\svgSanitize\Sanitizer();
+			$clean     = $sanitizer->sanitize( $dirty );
+
+			if ( false === $clean ) {
+				return false;
+			}
+
+			// If we were gzipped, we need to re-zip
+			if ( $is_zipped ) {
+				$clean = gzencode( $clean );
+			}
+
+			return $clean;
+		}
+
+		/**
+		 * Check if the contents are gzipped
+		 *
+		 * @see http://www.gzip.org/zlib/rfc-gzip.html#member-format
+		 *
+		 * @param string $contents Content to check.
+		 *
+		 * @return bool
+		 */
+		protected function is_gzipped( $contents ) {
+			if ( function_exists( 'mb_strpos' ) ) {
+				return 0 === mb_strpos( $contents, "\x1f" . "\x8b" . "\x08" );
+			} else {
+				return 0 === strpos( $contents, "\x1f" . "\x8b" . "\x08" );
+			}
 		}
 
 		/**
@@ -535,6 +594,10 @@ if ( ! class_exists( 'Jet_Elements_Tools' ) ) {
 			return ( ( string ) ( int ) $timestamp === $timestamp ) && ( $timestamp <= PHP_INT_MAX ) && ( $timestamp >= ~PHP_INT_MAX );
 		}
 
+		/**
+		 * @param $tag
+		 * @return mixed|string
+		 */
 		public function validate_html_tag( $tag ) {
 			$allowed_tags = array(
 				'article',
@@ -570,6 +633,18 @@ if ( ! class_exists( 'Jet_Elements_Tools' ) ) {
 			) );
 
 			return $callbacks;
+		}
+
+		/**
+		 * @return false|int|string
+		 */
+		public function get_plugin_license() {
+
+			if ( ! class_exists( '\Jet_Dashboard\Utils' ) ) {
+				\Jet_Dashboard\Dashboard::get_instance();
+			}
+
+			return \Jet_Dashboard\Utils::get_plugin_license_key( 'jet-elements/jet-elements.php' );
 		}
 
 		/**

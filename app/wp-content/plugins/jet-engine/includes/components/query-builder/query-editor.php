@@ -19,6 +19,9 @@ class Query_Editor {
 		add_action( 'jet-engine/rest-api/init-endpoints', array( $this, 'register_query_types' ) );
 
 		add_action( 'jet-engine/query-builder/editor/before-enqueue-scripts', array( $this, 'enqueue_editor_components' ) );
+
+		// Fall back to extra-call for register types
+		add_action( 'jet-engine/query-builder/editor/types', array( $this, 'register_query_types' ) );
 	}
 
 	/**
@@ -48,7 +51,6 @@ class Query_Editor {
 		$this->register_type( new Query_Editor\Merged_Query() );
 
 		do_action( 'jet-engine/query-builder/query-editor/register', $this );
-
 	}
 
 	/**
@@ -117,16 +119,29 @@ class Query_Editor {
 			if ( $type->editor_component_name() && $type->editor_component_template() ) {
 				$has_templates = true;
 			}
-
 		}
 
 		if ( $has_templates ) {
 			add_action( 'admin_footer', array( $this, 'print_editor_templates' ) );
 		}
 
+		wp_enqueue_script(
+			'sql-formatter',
+			jet_engine()->plugin_url( 'assets/lib/sql-formatter/sql-formatter.js' ),
+			array(),
+			jet_engine()->get_version(),
+			true
+		);
+
 	}
 
 	public function print_editor_templates() {
+
+		/**
+		 * Triggered before print editor templates
+		 */
+		do_action( 'jet-engine/query-builder/editor/before-print-templates' );
+
 		foreach ( $this->get_types() as $type ) {
 			if ( $type->editor_component_name() && $type->editor_component_template() ) {
 				printf( '<script type="text/x-template" id="%1$s">%2$s</script>', $type->editor_component_name(), $type->editor_component_template() );

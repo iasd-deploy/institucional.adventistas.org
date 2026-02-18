@@ -497,9 +497,14 @@ class Jet_Smart_Filters_Bricks_Date_Range extends Jet_Smart_Filters_Bricks_Base 
 			);
 		}
 
-		echo "<div {$this->render_attributes( '_root' )}>";
+		$attrs = $this->render_attributes( '_root' );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<div ' . $attrs . '>';
 
-		printf( '<div class="%1$s jet-filter">', $base_class );
+		printf(
+			'<div class="%1$s jet-filter">',
+			esc_attr( $base_class )
+		);
 
 		$apply_type = ! empty( $settings['apply_type'] ) ? $settings['apply_type'] : 'ajax';
 
@@ -509,6 +514,9 @@ class Jet_Smart_Filters_Bricks_Date_Range extends Jet_Smart_Filters_Bricks_Base 
 		$icon                 = '';
 
 		if ( ! empty( $settings['apply_button_icon'] ) ) {
+			if ( isset( $settings['apply_button_icon']['icon'] ) ) {
+				$settings['apply_button_icon']['icon'] = esc_attr( $settings['apply_button_icon']['icon'] );
+			}
 			$rendered_icon = Element::render_icon( $settings['apply_button_icon'] );
 			$format        = '<span class="jet-date-range__submit-icon">%s</span>';
 			$icon          = sprintf( $format, $rendered_icon );

@@ -80,6 +80,13 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 		 */
 		public $repeater_index = 0;
 
+		/**
+		 * Repeater iteration index
+		 *
+		 * @var integer
+		 */
+		public $listing_item_index = 1;
+
 		public $user_fields = array();
 
 		/**
@@ -188,7 +195,7 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 		 * @return string
 		 */
 		public function get_listing_type( $listing_id ) {
-			
+
 			$listing_type = get_post_meta( $listing_id, '_listing_type', true );
 
 			if ( ! $listing_type ) {
@@ -325,7 +332,7 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 
 		/**
 		 * Return user object fields
-		 * 
+		 *
 		 * @return array
 		 */
 		public function get_user_object_fields() {
@@ -549,6 +556,42 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 		}
 
 		/**
+		 * Sets the queried object for WP_Query, ensuring required properties are present.
+		 * This method adds default values for essential post properties (e.g., ID, post_title, post_name)
+		 * to prevent PHP warnings when WP_Query accesses them.
+		 *
+		 * @param object $object The object to be set as the queried object.
+		 * @param WP_Query $query The WP_Query instance being modified.
+		 */
+		public function set_queried_object( $object, $query ) {
+			if ( ! is_object( $object ) ) {
+				return;
+			}
+
+			if ( 'stdClass' === get_class( $object ) ) {
+				$ensure_props = array(
+					'ID' => 0,
+					'post_title' => '',
+					'post_name' => '',
+					'post_type' => 'post',
+					'post_date' => wp_date( 'Y-m-d H:i:s' ),
+					'post_modified' => wp_date( 'Y-m-d H:i:s' ),
+					'post_content' => '',
+					'post_excerpt' => '',
+					'post_status' => 'publish',
+				);
+
+				foreach ( $ensure_props as $prop => $default ) {
+					if ( ! property_exists( $object, $prop ) ) {
+						$object->$prop = $default;
+					}
+				}
+			}
+
+			$query->queried_object = $object;
+		}
+
+		/**
 		 * Returns queried user object
 		 *
 		 * @return [type] [description]
@@ -735,6 +778,7 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 
 			global $post;
 
+			// phpcs:disable
 			if ( is_singular() ) {
 				$default_object = $this->current_post = $post;
 			} elseif ( is_tax() || is_category() || is_tag() || is_author() ) {
@@ -742,9 +786,9 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 				$this->current_post = $post;
 			} elseif ( wp_doing_ajax() ) {
 				if ( isset( $_REQUEST['editor_post_id'] ) ) {
-					$post_id = $_REQUEST['editor_post_id'];
+					$post_id = absint( $_REQUEST['editor_post_id'] );
 				} elseif ( isset( $_REQUEST['post_id'] ) ) {
-					$post_id = $_REQUEST['post_id'];
+					$post_id = absint( $_REQUEST['post_id'] );
 				} else {
 					$post_id = false;
 				}
@@ -760,6 +804,7 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 			} elseif ( $post ) {
 				$default_object = $this->current_post = $post;
 			}
+			// phpcs:enable
 
 			$this->default_object = apply_filters( 'jet-engine/listings/data/default-object', $default_object, $this );
 
@@ -813,7 +858,8 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 		 */
 		public function get_prop( $property = null, $object = null ) {
 
-			if ( $this->is_user_prop( $property ) ) {
+			if ( $this->is_user_prop( $property )
+			     && ! jet_engine()->misc_settings->get_settings( 'disable_legacy_user_meta' ) ) {
 
 				if ( $object ) {
 					$current_user = $object;
@@ -843,6 +889,15 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 				}
 
 				$vars = get_object_vars( $object );
+
+				if ( is_a( $object, '\WP_User' ) ) {
+					$vars = ! empty( $vars['data'] ) ? (array) $vars['data'] : array();
+					
+					if ( 'user_nicename' === $property && isset( $object->ID ) ) {
+						$vars['user_nicename'] = get_user_meta( $object->ID, 'nickname', true );
+					}
+				}
+
 				$vars = apply_filters( 'jet-engine/listings/data/object-vars', $vars, $object );
 
 				if ( 'post_id' === $property && 'WP_Post' === get_class( $object ) ) {
@@ -946,7 +1001,7 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 
 		/**
 		 * Returns object publication date dependes on object type
-		 * 
+		 *
 		 * @param  [type] $object [description]
 		 * @return [type]         [description]
 		 */
@@ -996,7 +1051,10 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 				$object = $this->get_current_object();
 			}
 
-			if ( in_array( $key, $this->user_fields ) ) {
+			if (
+				in_array( $key, $this->user_fields )
+				&& ! jet_engine()->misc_settings->get_settings( 'disable_legacy_user_meta' )
+			) {
 
 				if ( $object && 'WP_User' === get_class( $object ) ) {
 					$user = $object;
@@ -1087,10 +1145,10 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 					}
 
 					if ( $source ) {
-						return apply_filters( 
-							'jet-engine/listings/data/get-meta/' . $source, 
-							$result, 
-							$key, 
+						return apply_filters(
+							'jet-engine/listings/data/get-meta/' . $source,
+							$result,
+							$key,
 							$object
 						);
 					}
@@ -1144,6 +1202,34 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 		 * @param int $index
 		 * @return void
 		 */
+		public function set_listing_item_index( $index ) {
+			$this->listing_item_index = $index;
+		}
+
+		/**
+		 * Reset repeater index
+		 *
+		 * @return [type] [description]
+		 */
+		public function reset_listing_item_index() {
+			$this->listing_item_index = 1;
+		}
+
+		/**
+		 * Get repeater index
+		 *
+		 * @return int
+		 */
+		public function get_listing_item_index() {
+			return $this->listing_item_index;
+		}
+
+		/**
+		 * Set repeater index
+		 *
+		 * @param int $index
+		 * @return void
+		 */
 		public function set_index( $index ) {
 			$this->repeater_index = $index;
 		}
@@ -1162,7 +1248,7 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 
 			switch ( $repeater_source ) {
 				case 'jet_engine':
-					
+
 					$meta_value = $this->get_meta( $source_field, $this->get_current_object(), 'object' );
 
 					if ( empty( $meta_value ) || ! is_array( $meta_value ) ) {
@@ -1250,8 +1336,14 @@ if ( ! class_exists( 'Jet_Engine_Listings_Data' ) ) {
 				case 'WP_Post':
 					return get_permalink( $object->ID );
 
-				case 'WP_Term':
-					return get_term_link( $object->term_id );
+				case 'WP_Term':					
+					$result = get_term_link( absint( $object->term_id ) );
+
+					if ( is_wp_error( $result ) ) {
+						return '';
+					}
+
+					return $result;
 
 				case 'WP_User':
 					return apply_filters( 'jet-engine/listings/data/user-permalink', false, $object );

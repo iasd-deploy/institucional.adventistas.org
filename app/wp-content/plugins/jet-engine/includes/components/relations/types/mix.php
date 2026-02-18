@@ -78,6 +78,7 @@ class Mix extends Base {
 
 				$table = $wpdb->users;
 				$res   = $wpdb->get_results( "SELECT ID AS value, CONCAT( user_login, ' (', user_email, ')' ) AS label FROM $table", ARRAY_A );
+				$res   = apply_filters( 'jet-engine/relations/types/mix/items/users', ! empty( $res ) ? $res : array(), $relation );
 
 				return ! empty( $res ) ? $res : array();
 
@@ -105,7 +106,7 @@ class Mix extends Base {
 					$result = $user->user_login . ' (' . $user->user_email . ')';
 				}
 
-				return $result;
+				return apply_filters( 'jet-engine/relations/types/mix/item-title/users', $result, $item_id, $relation );
 
 			default:
 				return apply_filters( 'jet-engine/relations/types/mix/item-title/' . $object_name, $result, $item_id, $relation );
@@ -115,10 +116,6 @@ class Mix extends Base {
 
 	/**
 	 * Returns item edit URL by object type data and item ID
-	 *
-	 * @param  [type] $type    [description]
-	 * @param  [type] $item_id [description]
-	 * @return [type]          [description]
 	 */
 	public function get_type_item_edit_url( $item_id, $object_name, $relation ) {
 
@@ -293,9 +290,90 @@ class Mix extends Base {
 				break;
 		}
 
-		do_action( 'jet-engine/relations/types/mix/on-create/' . $object_name, $result, $data, $object_name );
+			do_action( 'jet-engine/relations/types/mix/on-create/' . $object_name, $result, $data, $object_name );
 
-		return $result;
+			return $result;
+
+	}
+
+	/**
+	 * Query items of mix type by provided arguments.
+	 *
+	 * @param array                            $args        Query arguments.
+	 * @param string                           $object_name Object name.
+	 * @param \Jet_Engine\Relations\Relation $relation    Relation instance.
+	 *
+	 * @return array
+	 */
+	public function query( $args, $object_name, $relation ) {
+
+		$this->ensure_type_query_classs();
+
+		$ids = isset( $args['related_items_ids'] ) ? $args['related_items_ids'] : array();
+
+		if ( empty( $ids ) ) {
+			return new Type_Query();
+		}
+
+		unset( $args['related_items_ids'] );
+
+		switch ( $object_name ) {
+
+			case 'users':
+
+				// adjust arguments accordingly WP_User_Query
+				if ( ! empty( $args['max_items'] ) ) {
+					$args['number'] = absint( $args['max_items'] );
+
+					if ( ! empty( $args['page'] ) ) {
+						$args['offset'] = ( absint( $args['page'] ) - 1 ) * $args['number'];
+					} elseif ( ! empty( $args['offset'] ) ) {
+						$args['offset'] = absint( $args['offset'] );
+					}
+				}
+
+				if ( ! empty( $args['include'] ) && is_array( $args['include'] ) ) {
+					$ids = array_intersect( $ids, $args['include'] );
+				}
+
+				if ( ! empty( $args['exclude'] ) && is_array( $args['exclude'] ) ) {
+					$ids = array_diff( $ids, $args['exclude'] );
+					unset( $args['exclude'] );
+				}
+
+				if ( empty( $ids ) ) {
+					return new Type_Query();
+				}
+
+				$query_args = wp_parse_args( $args, array( 'include' => $ids ) );
+
+				if ( empty( $query_args['orderby'] ) ) {
+					$query_args['orderby'] = 'include';
+				}
+
+				$users_query = new \WP_User_Query( $query_args );
+
+				$query_args['_query_type'] = 'users';
+
+				return apply_filters(
+					'jet-engine/relations/types/mix/query/users',
+					new Type_Query(
+						$users_query->get_results(),
+						(int) $users_query->get_total(),
+						$query_args
+					),
+					$users_query,
+					$relation
+				);
+
+			default:
+				return apply_filters(
+					'jet-engine/relations/types/mix/query/' . $object_name,
+					array(),
+					$args,
+					$relation
+				);
+		}
 
 	}
 
@@ -345,6 +423,19 @@ class Mix extends Base {
 
 		}
 
+	}
+
+	public function filtered_arg( $object_name = '' ) {
+
+		switch ( $object_name ) {
+
+			case 'users':
+				return 'include';
+
+			default:
+				return apply_filters( 'jet-engine/relations/types/mix/filtered-arg/' . $object_name, '' );
+
+		}
 	}
 
 	/**

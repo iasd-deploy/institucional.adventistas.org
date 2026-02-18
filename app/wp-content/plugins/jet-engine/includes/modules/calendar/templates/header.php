@@ -1,21 +1,16 @@
 <?php
 /**
  * Calendar header template
+ * @var Jet_Listing_Render_Calendar $this
  */
 
 global $wp_locale;
 
+$days_format = ! empty( $settings['week_days_format'] ) ? $settings['week_days_format'] : 'short';
+$week_begins = (int) get_option( 'start_of_week', 0 );
 ?>
 <caption class="jet-calendar-caption">
-	<div class="jet-calendar-caption__wrap wrap-<?php echo $settings['caption_layout']; ?>">
-		<div class="jet-calendar-caption__name"><?php echo date_i18n( 'F Y', $current_month ); ?></div>
-		<div class="jet-calendar-nav__link nav-link-prev" data-month="<?php echo $human_read_prev; ?>">
-			<svg viewBox="0 0 90 179" xmlns="http://www.w3.org/2000/svg"><path transform="scale(0.1,-0.1) translate(0,-1536)" d="M627 992q0 -13 -10 -23l-393 -393l393 -393q10 -10 10 -23t-10 -23l-50 -50q-10 -10 -23 -10t-23 10l-466 466q-10 10 -10 23t10 23l466 466q10 10 23 10t23 -10l50 -50q10 -10 10 -23z" /></svg>
-		</div>
-		<div class="jet-calendar-nav__link nav-link-next" data-month="<?php echo $human_read_next; ?>">
-			<svg viewBox="0 0 90 179" xmlns="http://www.w3.org/2000/svg"><path transform="scale(0.1,-0.1) translate(0,-1536)" d="M627 992q0 -13 -10 -23l-393 -393l393 -393q10 -10 10 -23t-10 -23l-50 -50q-10 -10 -23 -10t-23 10l-466 466q-10 10 -10 23t10 23l466 466q10 10 23 10t23 -10l50 -50q10 -10 10 -23z" /></svg>
-		</div>
-	</div>
+	<?php $this->render_calendar_navigation( $settings, $current_month ); ?>
 </caption>
 <thead class="jet-calendar-header">
 	<tr class="jet-calendar-header__week"><?php

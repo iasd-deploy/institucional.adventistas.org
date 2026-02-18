@@ -67,7 +67,7 @@ class Jet_Elements_Line_Chart extends Jet_Elements_Base {
 	 * @return array
 	 */
 	public function get_script_depends() {
-		return array( 'chart-js' );
+		return array( 'chart-js', 'jet-line-chart' );
 	}
 
 	/**
@@ -120,10 +120,20 @@ class Jet_Elements_Line_Chart extends Jet_Elements_Base {
 		$this->add_control(
 			'axis_range',
 			array(
-				'label'       => esc_html__( 'Scale Axis Range', 'jet-elements' ),
+				'label'       => esc_html__( 'Max Scale Axis Range', 'jet-elements' ),
 				'type'        => Controls_Manager::NUMBER,
 				'default'     => 10,
 				'description' => esc_html__( 'User defined maximum number for the scale, overrides maximum value from data.', 'jet-elements' ),
+				'dynamic'     => array( 'active' => true ),
+			)
+		);
+
+		$this->add_control(
+			'axis_range_min',
+			array(
+				'label'       => esc_html__( 'Min Scale Axis Range', 'jet-elements' ),
+				'type'        => Controls_Manager::NUMBER,
+				'description' => esc_html__( 'User defined minimum number for the scale, overrides minimum value from data.', 'jet-elements' ),
 				'dynamic'     => array( 'active' => true ),
 			)
 		);
@@ -1023,8 +1033,8 @@ class Jet_Elements_Line_Chart extends Jet_Elements_Base {
 		] );
 		
 		?>
-		<div <?php echo $this->get_render_attribute_string( 'container' ); ?>>
-			<canvas <?php echo $this->get_render_attribute_string( 'canvas' ); ?>></canvas>
+		<div <?php echo $this->get_render_attribute_string( 'container' ); // phpcs:ignore ?>>
+			<canvas <?php echo $this->get_render_attribute_string( 'canvas' ); // phpcs:ignore ?>></canvas>
 		</div>
 		<?php
 		$this->_close_wrap();
@@ -1165,16 +1175,23 @@ class Jet_Elements_Line_Chart extends Jet_Elements_Base {
 			}
 		}
 		
+		$axis_ticks = array(
+			'display'     => $labels_display,
+			'beginAtZero' => true,
+			'stepSize'    => isset($settings['step_size']) ? intval($settings['step_size']) : 1,
+		);
+		if (isset($settings['axis_range']) && $settings['axis_range'] !== '') {
+			$axis_ticks['max'] = intval($settings['axis_range']);
+		}
+		if (isset($settings['axis_range_min']) && $settings['axis_range_min'] !== '') {
+			$axis_ticks['min'] = intval($settings['axis_range_min']);
+		}
+
 		if ( $grid_display ) {
 			$options['scales'] = array(
 				'yAxes' => array( array(
 					'stacked'     => false,
-					'ticks'       => array(
-						'display'     => $labels_display,
-						'beginAtZero' => true,
-						'max'         => isset( $settings['axis_range'] ) ? intval( $settings['axis_range'] ) : 10,
-						'stepSize'    => isset( $settings['step_size'] ) ? intval( $settings['step_size'] ) : 1,
-					),
+					'ticks'       => $axis_ticks,
 					'gridLines'   => array(
 						'drawBorder'    => false,
 						'zeroLineColor' => isset( $settings['chart_grid_color'] ) ? $settings['chart_grid_color'] : 'rgba(0,0,0,0.05)',
@@ -1182,12 +1199,7 @@ class Jet_Elements_Line_Chart extends Jet_Elements_Base {
 					)
 				) ),
 				'xAxes' => array( array(
-					'ticks'     => array(
-						'display'     => $labels_display,
-						'beginAtZero' => true,
-						'max'         => isset( $settings['axis_range'] ) ? intval( $settings['axis_range'] ) : 10,
-						'stepSize'    => isset( $settings['step_size'] ) ? intval( $settings['step_size'] ) : 1,
-					),
+					'ticks'     => $axis_ticks,
 					'gridLines' => array(
 						'drawBorder' => false,
 						'color'      => isset( $settings['chart_grid_color'] ) ? $settings['chart_grid_color'] : 'rgba(0,0,0,0.05)',
@@ -1198,23 +1210,13 @@ class Jet_Elements_Line_Chart extends Jet_Elements_Base {
 			$options['scales'] = array(
 				'stacked'     => true,
 				'yAxes' => array( array(
-					'ticks' => array(
-						'display'     => $labels_display,
-						'beginAtZero' => true,
-						'max'         => isset( $settings['axis_range'] ) ? intval( $settings['axis_range'] ) : 10,
-						'stepSize'    => isset( $settings['step_size'] ) ? intval( $settings['step_size'] ) : 1,
-					),
+					'ticks' => $axis_ticks,
 					'gridLines' => array(
 						'display'    => false,
 					)
 				) ),
 				'xAxes' => array( array(
-					'ticks' => array(
-						'display'     => $labels_display,
-						'beginAtZero' => true,
-						'max'         => isset( $settings['axis_range'] ) ? intval( $settings['axis_range'] ) : 10,
-						'stepSize'    => isset( $settings['step_size'] ) ? intval( $settings['step_size'] ) : 1,
-					),
+					'ticks' => $axis_ticks,
 					'gridLines' => array(
 						'display'    => false,
 					)

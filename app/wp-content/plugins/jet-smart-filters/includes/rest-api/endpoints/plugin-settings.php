@@ -22,6 +22,7 @@ class Plugin_Settings extends Base {
 
 		return array(
 			'key'      => array(
+				'default'  => false,
 				'required' => false,
 			),
 			'settings' => array(
@@ -36,6 +37,9 @@ class Plugin_Settings extends Base {
 		$key      = $args['key'];
 		$settings = $args['settings'];
 
+		// Sanitize the incoming settings using a dedicated method
+		$sanitized_settings = $this->sanitize_settings( $settings );
+
 		if ( $key ) {
 
 			// update specified option by key
@@ -43,13 +47,13 @@ class Plugin_Settings extends Base {
 				function( $setting ) {
 					return is_array( $setting ) ? $setting : esc_attr( $setting );
 				},
-				$settings
+				$sanitized_settings
 			);
 
 			jet_smart_filters()->settings->update( $key, $data );
 
 			if ( $key === 'seo_sitemap_rules' ) {
-				jet_smart_filters()->seo_sitemap->update_seo_sitemap();
+				jet_smart_filters()->seo->sitemap->update();
 			}
 
 		} else {
@@ -59,10 +63,10 @@ class Plugin_Settings extends Base {
 				function( $setting ) {
 					return is_array( $setting ) ? $setting : esc_attr( $setting );
 				},
-				$settings
+				$sanitized_settings
 			);
 
-			jet_smart_filters()->seo_sitemap->process_seo_sitemap_settings( $data );
+			jet_smart_filters()->seo->sitemap->process_settings( $data );
 
 			update_option( jet_smart_filters()->settings->key, $data );
 
@@ -72,6 +76,34 @@ class Plugin_Settings extends Base {
 			'status'  => 'success',
 			'message' => __( 'Settings have been saved', 'jet-smart-filters' ),
 		] );
+	}
+
+	/**
+	 * Sanitize plugin settings based on predefined types.
+	 *
+	 * This method iterates through the settings array, applies the correct
+	 * sanitization or type conversion for each key, and returns the sanitized array.
+	 *
+	 * @param array $settings The settings array to sanitize.
+	 * @return array The sanitized settings.
+	 */
+	private function sanitize_settings( $settings ) {
+		// Initialize an array to store sanitized settings
+		$sanitized_settings = [];
+
+		// Iterate through the settings
+		foreach ( $settings as $key => $value ) {
+			// Replace 'false' (string) with an empty string for specific keys
+			if ( $key === 'provider_preloader_fixed_position' && $value === 'false' ) {
+				$sanitized_settings[ $key ] = '';
+			} else {
+				// Leave other values unchanged
+				$sanitized_settings[ $key ] = $value;
+			}
+		}
+
+		// Return the array of sanitized settings
+		return $sanitized_settings;
 	}
 
 	/**

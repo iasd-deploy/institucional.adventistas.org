@@ -66,7 +66,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Color_Image_Filter' ) ) {
 				$_options[ $value ] = array(
 					'image' => $option['source_image'],
 					'color' => $option['source_color'],
-					'label' => $option['label'],
+					'label' => wp_kses_post( $option['label'] )
 				);
 
 			}
@@ -110,15 +110,18 @@ if ( ! class_exists( 'Jet_Smart_Filters_Color_Image_Filter' ) ) {
 					$tax              = get_post_meta( $filter_id, '_source_taxonomy', true );
 					$only_child       = filter_var( get_post_meta( $filter_id, '_only_child', true ), FILTER_VALIDATE_BOOLEAN );
 					$show_empty_terms = filter_var( get_post_meta( $filter_id, '_show_empty_terms', true ), FILTER_VALIDATE_BOOLEAN );
+					$query_type       = 'tax_query';
+					$query_var        = $tax;
 					$custom_query_var = $this->get_custom_query_var( $filter_id );
+					$is_terms_slugs   = jet_smart_filters()->settings->url_taxonomy_term_name === 'slug' && ! $custom_query_var;
 
-					$current_options = jet_smart_filters()->data->get_terms_for_options( $tax, $only_child, array(
-						'hide_empty' => ! $show_empty_terms,
-					) );
-					$options = array_intersect_key( $options, $current_options );
-
-					$query_type = 'tax_query';
-					$query_var  = $tax;
+					// merging options with taxonomy terms
+					$options = jet_smart_filters()->utils->mergeArraysByKeyAndValue(
+						$options,
+						jet_smart_filters()->data->get_terms_for_options( $tax, $only_child, $is_terms_slugs, array(
+							'hide_empty' => ! $show_empty_terms,
+						) )
+					);
 
 					if ( $custom_query_var ) {
 						$query_type = 'meta_query';
@@ -135,9 +138,15 @@ if ( ! class_exists( 'Jet_Smart_Filters_Color_Image_Filter' ) ) {
 				case 'custom_fields':
 					$custom_field    = get_post_meta( $filter_id, '_source_custom_field', true );
 					$current_options = get_post_meta( get_the_ID(), $custom_field, true );
-					$current_options = jet_smart_filters()->data->maybe_parse_repeater_options( $current_options );
-					$query_type      = 'meta_query';
-					$query_var       = get_post_meta( $filter_id, '_query_var', true );
+
+					if ( ! is_array( $current_options ) ) {
+						$current_options = jet_smart_filters()->data->get_options_by_field_key( $custom_field );
+					} else {
+						$current_options = jet_smart_filters()->data->maybe_parse_repeater_options( $current_options );
+					}
+
+					$query_type = 'meta_query';
+					$query_var  = get_post_meta( $filter_id, '_query_var', true );
 
 					$options = array_intersect_key( $options, $current_options );
 					break;

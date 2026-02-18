@@ -286,9 +286,11 @@ class Jet_Smart_Filters_Bricks_Apply_Button extends \Jet_Engine\Bricks_Views\Ele
 			$settings['apply_button_text'] = '';
 		}
 
-		echo "<div {$this->render_attributes( '_root' )}>";
+		$attrs = $this->render_attributes( '_root' );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<div ' . $attrs . '>';
 
-		echo '<div class="' . $base_class . ' jet-filter">';
+		echo '<div class="' . esc_attr( $base_class ) . ' jet-filter">';
 		include jet_smart_filters()->get_template( 'common/apply-filters.php' );
 		echo '</div>';
 

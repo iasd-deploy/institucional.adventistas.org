@@ -531,3 +531,64 @@
 		padding-right: 19px;
 	}
 }
+
+.jet-engine-timber-dynamic-data {
+	&__control-row {
+		.cx-vui-component__control {
+			display: flex;
+			position: relative;
+
+			.jet-engine-timber-macros {
+				flex-basis: 10%;
+
+				&__config-trigger {
+					color: #007cba;
+					text-decoration: underline;
+					text-decoration-style: dashed;
+					cursor: pointer;
+					font-size: 12px;
+				}				
+
+				&__back {
+					cursor: pointer;
+					color: #007cba;
+					font-weight: bold;
+					text-decoration: underline;
+				}
+
+				&__editor {
+					position: absolute;
+					right: 0;
+					left: 0;
+					background: #fff;
+					padding: 20px 25px;
+					margin: 0;
+					border: 1px solid #929292;
+					box-shadow: 0 2px 6px rgba(35, 40, 45, .07);
+					border-radius: 6px;
+					z-index: 9999;
+				}
+
+				&-item {
+					&__name {
+						font-size: 13px;
+						line-height: 17px;
+						color: #7b7e81;
+						padding: 2px 0;
+						display: flex;
+						align-content: flex-start;
+						cursor: pointer;
+
+						&:hover {
+							color: #23282d;
+							font-weight: bold;
+						}
+					}
+				}
+			}
+		}
+
+		
+	}
+
+}

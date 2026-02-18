@@ -1,7 +1,7 @@
 <?php
 namespace Elementor;
 
-use Elementor\Core\Schemes\Typography as Scheme_Typography;
+use Elementor\Core\Kits\Documents\Tabs\Global_Typography as Global_Typography;
 
 /**
  * Search items style controls
@@ -263,7 +263,9 @@ $this->add_group_control(
 	Group_Control_Typography::get_type(),
 	array(
 		'name'     => 'more_less_button_typography',
-		'scheme'   => Scheme_Typography::TYPOGRAPHY_1,
+		'global'   => array(
+			'default' => Global_Typography::TYPOGRAPHY_PRIMARY,
+		),
 		'selector' => '{{WRAPPER}} ' . $css_items_moreless_scheme['more-less-toggle'],
 	)
 );

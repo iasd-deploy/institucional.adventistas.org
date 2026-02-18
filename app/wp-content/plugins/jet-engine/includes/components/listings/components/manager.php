@@ -11,9 +11,22 @@ if ( ! defined( 'WPINC' ) ) {
  */
 class Manager {
 
+	/**
+	 * @var Editor
+	 */
 	public $editor;
+	/**
+	 * @var Registry
+	 */
 	public $registry;
+	/**
+	 * @var State
+	 */
 	public $state;
+	/**
+	 * @var Stack
+	 */
+	public $stack;
 
 	private $is_component_hits = [];
 
@@ -25,18 +38,20 @@ class Manager {
 		require_once $this->path( 'editor.php' );
 		require_once $this->path( 'registry.php' );
 		require_once $this->path( 'state.php' );
+		require_once $this->path( 'component-stack.php' );
 
 		$this->editor   = new Editor();
 		$this->registry = new Registry();
 		$this->state    = new State();
+		$this->stack    = new Stack();
 
 	}
 
 	/**
 	 * Returns component instance by name
-	 * 
-	 * @param  [type] $component_name [description]
-	 * @return [type]                 [description]
+	 *
+	 * @param  string           $component_name Component name / ID
+	 * @return Component|false                  Component instance or false if not found
 	 */
 	public function get( $component_name = '', $by = 'name' ) {
 		return $this->registry->get( $component_name, $by );
@@ -44,12 +59,12 @@ class Manager {
 
 	/**
 	 * Check if given ID is ID of component
-	 * 
+	 *
 	 * @param  [type]  $id [description]
 	 * @return boolean     [description]
 	 */
 	public function is_component( $id ) {
-		
+
 		if ( isset( $this->is_component_hits[ $id ] ) ) {
 			return $this->is_component_hits[ $id ];
 		}
@@ -63,7 +78,7 @@ class Manager {
 
 	/**
 	 * Returns component category data - slug and name
-	 * 
+	 *
 	 * @return [type] [description]
 	 */
 	public function components_category( $return = 'slug' ) {
@@ -78,7 +93,7 @@ class Manager {
 
 	/**
 	 * Base component name to use in elements and docuemnts
-	 * 
+	 *
 	 * @return [type] [description]
 	 */
 	public function get_component_base_name() {
@@ -88,13 +103,14 @@ class Manager {
 	/**
 	 * Get supported control types for component properties.
 	 * Used to implement UI for various builders.
-	 * 
+	 *
 	 * @return [type] [description]
 	 */
 	public function get_supported_control_types() {
 		return [
 			'text'          => __( 'Text', 'jet-engine' ),
 			'textarea'      => __( 'Textarea', 'jet-engine' ),
+			'rich_text'     => __( 'Rich Text', 'jet-engine' ),
 			'select'        => __( 'Select', 'jet-engine' ),
 			'media'         => __( 'Single Media', 'jet-engine' ),
 			//'media_gallery' => __( 'Media Gallery', 'jet-engine' ), temporary disabled until feature became stable
@@ -104,7 +120,7 @@ class Manager {
 
 	/**
 	 * Path inside components dir
-	 * 
+	 *
 	 * @return [type] [description]
 	 */
 	public function path( $path = '' ) {
@@ -113,7 +129,7 @@ class Manager {
 
 	/**
 	 * Path inside components dir
-	 * 
+	 *
 	 * @return [type] [description]
 	 */
 	public function url( $path = '' ) {

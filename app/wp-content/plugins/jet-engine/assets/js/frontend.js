@@ -51,6 +51,7 @@
 
 			$scope
 				.on( 'jet-filter-content-rendered', JetEngine.calendarCache.clear )
+				.on( 'change.JetEngine', '.jet-calendar-caption__date-select', JetEngine.selectCalendarMonth )
 				.on( 'click.JetEngine', '.jet-calendar-nav__link', JetEngine.switchCalendarMonth )
 				.on( 'click.JetEngine', '.jet-calendar-week__day-mobile-overlay', JetEngine.showCalendarEvent )
 				.on( 'click.JetEngine', '.jet-listing-dynamic-link__link[data-delete-link="1"]', JetEngine.showConfirmDeleteDialog )
@@ -60,7 +61,37 @@
 				.on( 'click.JetEngine', '.jet-engine-listing-overlay-wrap:not([data-url*="event=hover"])', JetEngine.handleListingItemClick )
 				.on( 'jet-filter-content-rendered', JetEngine.filtersCompatibility )
 				.on( 'click.JetEngine', '.jet-container[data-url]', JetEngine.handleContainerURL )
+				.on( 'click.JetEngine', '.jet-md-calendar__event', JetEngine.openCalendarEvent )
+				.on( 'click.JetEngine', '.jet-md-calendar__event-overlay, .jet-md-calendar__event-close', JetEngine.closeCalendarEvents )
 				.on( 'change.JetEngine', '.jet-listing-dynamic-link .qty', JetEngine.handleProductQuantityChange );
+		},
+
+		closeCalendarEvents: function ( event ) {
+
+			if ( event ) {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+
+			$( '.jet-md-calendar__event-content' ).removeClass( 'is-active' );
+		},
+
+		openCalendarEvent: function ( event ) {
+			event.preventDefault();
+			event.stopPropagation();
+
+			var $event = $( event.currentTarget );
+			var eventId = $event.data( 'object-id' );
+
+			var $eventContent = $event.closest( '.jet-calendar' ).find( `.jet-md-calendar__event-content[data-object-id="${eventId}"]` );
+
+			if ( ! $eventContent.length ) {
+				return;
+			}
+
+			JetEngine.closeCalendarEvents();
+
+			$eventContent.addClass( 'is-active' );
 		},
 
 		handleProductQuantityChange: function ( event ) {
@@ -87,7 +118,13 @@
 
 		filtersCompatibility: function( event, $provider, filtersInstance, providerType ) {
 
-			if ( 'jet-engine' !== providerType ) {
+			let providers = {
+				'jet-engine': true,
+				'jet-engine-calendar': true,
+				'jet-data-table': true,
+			};
+
+			if ( ! providers[ providerType ] ) {
 				return;
 			}
 
@@ -181,6 +218,19 @@
 					callback: JetEngine.widgetDynamicField
 				}
 			] );
+
+			document.addEventListener('bricks/tabs/changed', (event) => {
+				const tabActivePane = event.detail?.activePane;
+
+				if (tabActivePane) {
+					const $content = jQuery(tabActivePane);
+
+					setTimeout(() => {
+						JetEngine.maybeReinitSlider(event, $content);
+						JetEngine.widgetDynamicField($content);
+					}, 50);
+				}
+			});
 		},
 
 		initFrontStores: function( $scope ) {
@@ -276,7 +326,7 @@
 						storeSlug  = query.post__in[2],
 						store      = JetEngineStores[ storeType ],
 						posts      = [],
-						$container = $this.closest( '.elementor-widget-container' );
+						$container = $this.closest( '.jet-listing-grid' );
 
 					if ( ! store ) {
 						return;
@@ -298,7 +348,7 @@
 						return;
 					}
 
-					query.post__in = posts;
+					query.front_store__in = posts;
 					query.is_front_store = true;
 
 					JetEngine.ajaxGetListing( {
@@ -318,6 +368,20 @@
 				}
 
 			} );
+		},
+
+		dataStores: {
+			queues: {},
+			getQueue: function( store ) {
+				if ( ! ( this.queues?.[ store ] instanceof Promise ) ) {
+					this.queues[ store ] = Promise.resolve();
+				}
+
+				return this.queues[ store ];
+			},
+			addToQueue: function( store, callback ) {
+				this.queues[ store ] = this.getQueue( store ).then( callback );
+			},
 		},
 
 		removeFromStore: function( event ) {
@@ -376,68 +440,70 @@
 			$this.css( 'opacity', 0.3 );
 			$this.addClass( 'jet-store-processing' );
 
-			$.ajax({
-				url: JetEngineSettings.ajaxurl,
-				type: 'POST',
-				dataType: 'json',
-				data: {
-					action: 'jet_engine_remove_from_store_' + args.store.slug,
-					store: args.store.slug,
-					post_id: args.post_id,
-				},
-			}).done( function( response ) {
+			JetEngine.dataStores.addToQueue( args.store.slug, () => {
+				return $.ajax({
+					url: JetEngineSettings.ajaxurl,
+					type: 'POST',
+					dataType: 'json',
+					data: {
+						action: 'jet_engine_remove_from_store_' + args.store.slug,
+						store: args.store.slug,
+						post_id: args.post_id,
+					},
+				}).done( function( response ) {
 
-				$this.css( 'opacity', 1 );
-				$this.removeClass( 'jet-store-processing' );
+					$this.css( 'opacity', 1 );
+					$this.removeClass( 'jet-store-processing' );
 
-				if ( response.success ) {
+					if ( response.success ) {
 
-					if ( ! isDataStoreBtn ) {
-						$this.addClass( 'is-hidden' );
+						if ( ! isDataStoreBtn ) {
+							$this.addClass( 'is-hidden' );
+						}
+
+						$( '.jet-add-to-store[data-store="' + args.store.slug + '"][data-post="' + args.post_id + '"]' ).each( function() {
+							JetEngine.switchDataStoreStatus( $( this ), true );
+						} );
+
+						$( '.jet-data-store-link.jet-remove-from-store[data-store="' + args.store.slug + '"][data-post="' + args.post_id + '"]' ).each( function() {
+							JetEngine.switchDataStoreStatus( $( this ), true );
+						} );
+
+						JetEngine.dataStoreSyncListings( args );
+
+						if ( args.remove_from_listing ) {
+							$this.closest( '.jet-listing-grid__item[data-post="' + args.post_id + '"]' ).remove();
+						}
+
+						if ( response.data.fragments ) {
+							$.each( response.data.fragments, function( selector, value ) {
+								$( selector ).html( value );
+							} );
+						}
+
+						$( document ).trigger( 'jet-engine-data-stores-on-remove', args );
+
+					} else {
+						alert( response.data.message );
 					}
 
-					$( '.jet-add-to-store[data-store="' + args.store.slug + '"][data-post="' + args.post_id + '"]' ).each( function() {
-						JetEngine.switchDataStoreStatus( $( this ), true );
-					} );
+					return response;
 
-					$( '.jet-data-store-link.jet-remove-from-store[data-store="' + args.store.slug + '"][data-post="' + args.post_id + '"]' ).each( function() {
-						JetEngine.switchDataStoreStatus( $( this ), true );
-					} );
-
-					JetEngine.dataStoreSyncListings( args );
+				} ).done( function( response ) {
 
 					if ( args.remove_from_listing ) {
-						$this.closest( '.jet-listing-grid__item[data-post="' + args.post_id + '"]' ).remove();
+						$this.closest( '.jet-listing-grid__item' ).remove();
 					}
 
-					if ( response.data.fragments ) {
-						$.each( response.data.fragments, function( selector, value ) {
-							$( selector ).html( value );
-						} );
+					if ( response.success ) {
+						$( 'span.jet-engine-data-store-count[data-store="' + args.store.slug + '"]' ).text( response.data.count );
 					}
 
-					$( document ).trigger( 'jet-engine-data-stores-on-remove', args );
-
-				} else {
-					alert( response.data.message );
-				}
-
-				return response;
-
-			} ).done( function( response ) {
-
-				if ( args.remove_from_listing ) {
-					$this.closest( '.jet-listing-grid__item' ).remove();
-				}
-
-				if ( response.success ) {
-					$( 'span.jet-engine-data-store-count[data-store="' + args.store.slug + '"]' ).text( response.data.count );
-				}
-
-			} ).fail( function( jqXHR, textStatus, errorThrown ) {
-				$this.css( 'opacity', 1 );
-				$this.removeClass( 'jet-store-processing' );
-				alert( errorThrown );
+				} ).fail( function( jqXHR, textStatus, errorThrown ) {
+					$this.css( 'opacity', 1 );
+					$this.removeClass( 'jet-store-processing' );
+					alert( errorThrown );
+				} );
 			} );
 
 		},
@@ -472,9 +538,14 @@
 			const ids = args.synch_id.split( /[\s,]+/ ).map( ( id ) => id.replace( /\s/, '' ) ).filter( ( id ) => !! id );
 
 			ids.forEach( function ( id ) {
-				let $container     = $( '#' + id ),
-				    $elemContainer = $container.find( '> .elementor-widget-container' ),
-				    $items         = $container.find( '.jet-listing-grid__items' ),
+				let $container = $( '#' + id ),
+				$elemContainer = $container.find( '> .elementor-widget-container' );
+
+				if ( ! $container.length ) {
+					return;
+				}
+
+				let $items         = $container.find( '.jet-listing-grid__items' ),
 				    posts          = [],
 				    nav            = $items.data( 'nav' ) || {},
 				    query          = nav.query || {},
@@ -486,7 +557,7 @@
 				if ( $container.hasClass( 'brxe-jet-engine-listing-grid' ) ) {
 					postID = window.bricksData.postId;
 				}
-				
+
 				// Context Gutenberg
 				if ( $container.hasClass( 'jet-listing-grid--blocks' )) {
 					postID = JetEngineSettings.post_id;
@@ -501,7 +572,7 @@
 						posts = [ 'is-front', args.store.type, args.store.slug ];
 					}
 
-					query.post__in = posts;
+					query.front_store__in = posts;
 					query.is_front_store = true;
 				}
 
@@ -590,55 +661,57 @@
 
 			$( document ).trigger( 'jet-engine-on-add-to-store', [ $this, args ] );
 
-			$.ajax({
-				url: JetEngineSettings.ajaxurl,
-				type: 'POST',
-				dataType: 'json',
-				data: {
-					action: 'jet_engine_add_to_store_' + args.store.slug,
-					store: args.store.slug,
-					post_id: args.post_id,
-				},
-			}).done( function( response ) {
+			JetEngine.dataStores.addToQueue( args.store.slug, () => {
+				return $.ajax({
+					url: JetEngineSettings.ajaxurl,
+					type: 'POST',
+					dataType: 'json',
+					data: {
+						action: 'jet_engine_add_to_store_' + args.store.slug,
+						store: args.store.slug,
+						post_id: args.post_id,
+					},
+				}).done( function( response ) {
 
-				$this.css( 'opacity', 1 );
-				$this.removeClass( 'jet-store-processing' );
+					$this.css( 'opacity', 1 );
+					$this.removeClass( 'jet-store-processing' );
 
-				if ( response.success ) {
+					if ( response.success ) {
 
-					JetEngine.switchDataStoreStatus( $this );
-					$( '.jet-remove-from-store[data-store="' + args.store.slug + '"][data-post="' + args.post_id + '"]' ).removeClass( 'is-hidden' );
+						JetEngine.switchDataStoreStatus( $this );
+						$( '.jet-remove-from-store[data-store="' + args.store.slug + '"][data-post="' + args.post_id + '"]' ).removeClass( 'is-hidden' );
 
-					if ( response.data.fragments ) {
-						$.each( response.data.fragments, function( selector, value ) {
-							$( selector ).html( value );
-						} );
+						if ( response.data.fragments ) {
+							$.each( response.data.fragments, function( selector, value ) {
+								$( selector ).html( value );
+							} );
+						}
+
+						JetEngine.dataStoreSyncListings( args );
+
+						if ( args.popup ) {
+							JetEngine.triggerPopup( args.popup, args.isJetEngine, args.post_id );
+						}
+
+					} else {
+						alert( response.data.message );
 					}
 
-					JetEngine.dataStoreSyncListings( args );
+					$( document ).trigger( 'jet-engine-data-stores-on-add', args );
 
-					if ( args.popup ) {
-						JetEngine.triggerPopup( args.popup, args.isJetEngine, args.post_id );
+					return response;
+
+				} ).done( function( response ) {
+
+					if ( response.success ) {
+						$( 'span.jet-engine-data-store-count[data-store="' + args.store.slug + '"]' ).text( response.data.count );
 					}
 
-				} else {
-					alert( response.data.message );
-				}
-
-				$( document ).trigger( 'jet-engine-data-stores-on-add', args );
-
-				return response;
-
-			} ).done( function( response ) {
-
-				if ( response.success ) {
-					$( 'span.jet-engine-data-store-count[data-store="' + args.store.slug + '"]' ).text( response.data.count );
-				}
-
-			} ).fail( function( jqXHR, textStatus, errorThrown ) {
-				$this.css( 'opacity', 1 );
-				$this.removeClass( 'jet-store-processing' );
-				alert( errorThrown );
+				} ).fail( function( jqXHR, textStatus, errorThrown ) {
+					$this.css( 'opacity', 1 );
+					$this.removeClass( 'jet-store-processing' );
+					alert( errorThrown );
+				} );
 			} );
 
 		},
@@ -734,9 +807,45 @@
 			var $this = $( this );
 
 			if ( window.confirm( $this.data( 'delete-message' ) ) ) {
-				window.location = $this.attr( 'href' );
+				JetEngine.handleDeleteRedirect( $this.attr( 'href' ), this );
 			}
 
+		},
+
+		handleDeleteRedirect: function( url, baseElement ) {
+			if ( ! window.JetSmartFilters ) {
+				window.location = url;
+				return;
+			}
+
+			const filterGroups = window.JetSmartFilters.filterGroups;
+
+			for ( const groupName in filterGroups ) {
+				const filterGroup = filterGroups[ groupName ];
+
+				if ( filterGroup?.$provider && filterGroup.$provider.find( $( baseElement ) ) ) {
+					filterGroup.startAjaxLoading();
+
+					$.ajax({
+						url: url,
+						type: 'GET',
+					}).done(
+						function( response ) {
+							const redirectURL = new URLSearchParams( url ).get( 'redirect' ).replace(/\/+$/, '');
+							const currentURL  = ( window.location.origin + window.location.pathname ).replace(/\/+$/, '');
+
+							if ( redirectURL === currentURL ) {
+								filterGroup.currentQuery[ '_refresh_listing_' + Date.now() ] = Date.now();
+								filterGroup.apply();
+							} else {
+								filterGroup.doRedirect( 'ajax', redirectURL );
+							}
+						}
+					)
+					
+					return;
+				}
+			}
 		},
 
 		handleListingItemClick: function( event ) {
@@ -877,14 +986,20 @@
 					}
 				}
 
-				if ( $gridItem.length ) {
+				if ( $itemObject?.length ) {
+					popupData['postId'] = $itemObject.data( 'item-object' );
+
+					filterProvider = $itemObject.data( 'render-type' );
+
+					if ( ! filterProvider && $itemObject.hasClass( 'jet-dynamic-table__row' ) ) {
+						filterProvider = 'jet-data-table';
+					}
+				} else if ( $gridItem.length ) {
 					popupData['postId'] = $gridItem.data( 'post-id' );
 					filterProvider = 'jet-engine';
 				} else if ( $calendarItem.length ) {
 					popupData['postId'] = $calendarItem.data( 'post-id' );
 					filterProvider = 'jet-engine-calendar';
-				} else if ( $itemObject ) {
-					popupData['postId'] = $itemObject.data( 'item-object' );
 				} else if ( window.elementorFrontendConfig && window.elementorFrontendConfig.post ) {
 					popupData['postId'] = window.elementorFrontendConfig.post.id;
 				}
@@ -910,6 +1025,16 @@
 
 							if ( settings._element_id ) {
 								filterQueryId = settings._element_id;
+							}
+							break;
+
+						case 'jet-data-table':
+							const table = $scope.closest( '.jet-dynamic-table' );
+							const queryId = table[0].dataset.queryId;
+							const customIds = JetEngineSettings.query_builder.custom_ids;
+
+							if ( customIds.length !== 0 && customIds?.[ queryId ] ) {
+								filterQueryId = customIds[ queryId ];
 							}
 							break;
 					}
@@ -975,13 +1100,22 @@
 				masonryGrid = false,
 				listingType = 'elementor';
 
+			if ( ! widgetID ) {
+				widgetID    = $scope.data( 'element-id' );
+				listingType = $scope.data( 'listing-type' );
+			}
+
 			navSettings = JetEngine.ensureJSON( navSettings );
 
 			if ( hasLazyLoad ) {
 
 				var lazyLoadOptions = $wrapper.data( 'lazy-load' ),
-					widgetSettings = {},
-					$container = $scope.find( '.elementor-widget-container' );
+					$container = $scope.find( '.elementor-widget-container' ),
+					widgetSettings = false;
+
+				if ( ! $container.length ) {
+					$container = $scope;
+				}
 
 				// Get widget settings from `elementorFrontend` in Editor.
 				if ( window.elementorFrontend && window.elementorFrontend.isEditMode()
@@ -991,14 +1125,8 @@
 					widgetID       = false; // for avoid get widget settings from document in editor
 				}
 
-				if ( ! $container.length ) {
-					$container = $scope;
+				if ( ! widgetSettings ) {
 					widgetSettings = $scope.data( 'widget-settings' );
-				}
-
-				if ( ! widgetID ) {
-					widgetID    = $scope.data( 'element-id' );
-					listingType = $scope.data( 'listing-type' );
 				}
 
 				JetEngine.lazyLoadListing( {
@@ -1037,9 +1165,10 @@
 
 				JetEngine.loadMoreListing( {
 					container: $listing,
-					settings:  navSettings,
-					masonry:   $masonry,
-					slider:    $slider,
+					settings: navSettings,
+					masonry: $masonry,
+					slider: $slider,
+					elementID: widgetID,
 				} );
 
 			}
@@ -1264,7 +1393,7 @@
 					}
 
 					// Re-init Bricks scripts
-					JetEngine.reinitBricksScripts();
+					JetEngine.reinitBricksScripts( elementID );
 
 					Promise.all( JetEngine.assetsPromises ).then( function() {
 						JetEngine.initElementsHandlers( $html );
@@ -1303,6 +1432,7 @@
 					this.masonry   = args.masonry;
 					this.slider    = args.slider;
 					this.settings  = args.settings;
+					this.elementID  = args.elementID;
 
 					this.wrapper = this.container.closest( '.jet-listing-grid' );
 
@@ -1346,7 +1476,7 @@
 						return;
 					}
 
-					if ( this.page === this.pages && ! window.elementor ) {
+					if ( ! this.pages || this.page === this.pages && ! window.elementor ) {
 						$button.css( 'display', 'none' );
 					} else {
 						$button.removeAttr( 'style' );
@@ -1356,6 +1486,11 @@
 						.off( 'click', this.settings.more_el )
 						.on( 'click', this.settings.more_el, function( event ) {
 							event.preventDefault();
+
+							if ( ! self.pages || self.page >= self.pages) {
+								$button.css( 'display', 'none' );
+								return;
+							}
 
 							$button.css( {
 								pointerEvents: 'none',
@@ -1382,7 +1517,7 @@
 						return;
 					}
 
-					if ( this.page === this.pages ) {
+					if ( ! this.pages || this.page === this.pages ) {
 						return;
 					}
 
@@ -1461,6 +1596,7 @@
 							query:          this.settings.query,
 							widgetSettings: this.settings.widget_settings,
 							page:           this.page,
+							elementID:      this.elementID,
 							queriedID:      this.queriedID,
 							preventCSS:     !! this.wrapper.find( '.jet-listing-grid__loader' ).length, // Prevent CSS if listing has the loader.
 						}, function( response ) {
@@ -1536,6 +1672,7 @@
 
 								if ( $widget.length ) {
 									$widget.find( '.jet-listing-grid' ).first().removeClass( 'jet-listing-grid--lazy-load' );
+									$widget.find( '.jet-listing-grid' ).first().addClass( 'jet-listing-grid--lazy-load-completed' );
 								}
 
 								JetEngine.widgetListingGrid( $widget );
@@ -1626,12 +1763,14 @@
 		},
 
 		initSlider: function( $slider, customOptions ) {
-			var $eWidget    = $slider.closest( '.elementor-widget' ),
+			var $eWidget  = $slider.closest( '.elementor-widget' ),
 				options     = $slider.data( 'slider_options' ),
 				windowWidth = $( window ).width(),
 				tabletBP    = 1025,
 				mobileBP    = 768,
 				tabletSlides, mobileSlides, defaultOptions, slickOptions;
+
+			let widgetID = null;
 
 			options = JetEngine.ensureJSON( options );
 
@@ -1739,6 +1878,12 @@
 				];
 			}
 
+			// Context Bricks
+			if ( ! $eWidget.length ) {
+				$eWidget = $slider.closest( '.brxe-jet-engine-listing-grid' );
+				widgetID = $eWidget.data( 'element-id' );
+			}
+
 			defaultOptions = {
 				customPaging: function( slider, i ) {
 					return $( '<span />' ).text( i + 1 ).attr( 'role', 'tab' );
@@ -1761,6 +1906,9 @@
 					}
 
 					JetEngine.initElementsHandlers( $clonedSlides );
+
+					// Re-init Bricks scripts
+					JetEngine.reinitBricksScripts( widgetID );
 
 					if ( $slider.find('.bricks-lazy-hidden').length ) {
 						bricksLazyLoad();
@@ -1809,7 +1957,35 @@
 				slickOptions.responsive = null;
 			}
 
+			$sliderItems.on(
+				'init.JetEngine',
+				() => {
+					$sliderItems.find( '.slick-active' ).each(
+						( i, el ) => {
+							JetEngine.rerunElementorAnimation( $( el ) );
+						}
+					);
+				}
+			);
+
+			$sliderItems.on(
+				'afterChange.JetEngine',
+				() => {
+					$sliderItems.find( '.slick-active' ).each(
+						( i, el ) => {
+							JetEngine.rerunElementorAnimation( $( el ) );
+						}
+					);
+				}
+			);
+
 			$sliderItems.slick( slickOptions );
+
+			if ( $sliderItems.closest( '.jet-listing-grid--lazy-load-completed' ).length ) {
+				$sliderItems.slick( 'refresh', true );
+			}
+
+			$sliderItems.off( 'init.JetEngine' );
 		},
 
 		maybeReinitSlider: function( event, $scope ) {
@@ -1819,7 +1995,37 @@
 				$slider.each( function() {
 					JetEngine.initSlider( $( this ) );
 				} );
+
 			}
+		},
+
+		rerunElementorAnimation: function( $scope, forceRerun = false ) {
+			let selector = '.elementor-element[data-settings*="_animation"]';
+
+			if ( ! forceRerun ) {
+				selector += ':is( .elementor-invisible, :not(.jet-engine-animation-rerun) )';
+			}
+
+			$scope.find( selector ).each(
+				( i, el ) => {
+					const settings = JSON.parse( el.dataset.settings || '{}' );
+					const $el = $( el );
+
+					if ( settings._animation ) {
+						const classes = `animated ${settings._animation}`;
+						$el.removeClass( classes );
+
+						setTimeout(
+							() => {
+								$el.removeClass( 'elementor-invisible' ).addClass( classes );
+								$el.addClass( 'jet-engine-animation-rerun' );
+							},
+							settings._animation_delay
+						);
+
+					}
+				}
+			);
 		},
 
 		widgetDynamicField: function( $scope ) {
@@ -1888,7 +2094,7 @@
 
 				const slider = event.target;
 
-				if (!slider.classList.contains('jet-engine-gallery-lightbox')) {
+				if (!slider.classList.contains('jet-engine-gallery-lightbox') || ! window?.PhotoSwipeLightbox) {
 					return;
 				}
 
@@ -1959,27 +2165,27 @@
 			get: function ( cacheId, month ) {
 				return JetEngine.calendarCache.entries[ cacheId ]?.get( month ) || false;
 			},
-	
+
 			set: function ( cacheId, month, content, settings = {}, timestamp = false ) {
 				if ( ! JetEngine.calendarCache.entries[ cacheId ] ) {
 					JetEngine.calendarCache.entries[ cacheId ] = new Map();
 				}
-	
+
 				if ( ! JetEngine.calendarCache.entries[ cacheId ].has( month )
 					&& JetEngine.calendarCache.entries[ cacheId ].size > ( settings['max_cache'] ?? 12 ) - 1
 				) {
 					let deletedKey;
-	
+
 					const mapKeys = JetEngine.calendarCache.entries[ cacheId ].keys();
-	
+
 					if ( settings['__switch_direction'] < 0 ) {
 						let maxDate = false;
-	
+
 						JetEngine.calendarCache.iterate(
 							mapKeys,
 							function ( key ) {
 								const parsedDate = Date.parse( key );
-		
+
 								if ( ! maxDate || parsedDate > maxDate ) {
 									maxDate = parsedDate;
 									deletedKey = key;
@@ -1988,12 +2194,12 @@
 						);
 					} else {
 						let minDate = false;
-	
+
 						JetEngine.calendarCache.iterate(
 							mapKeys,
 							function ( key ) {
 								const parsedDate = Date.parse( key );
-		
+
 								if ( ! minDate || parsedDate < minDate ) {
 									minDate = parsedDate;
 									deletedKey = key;
@@ -2001,22 +2207,22 @@
 							}
 						);
 					}
-	
+
 					JetEngine.calendarCache.entries[ cacheId ].delete( deletedKey );
 				}
-	
+
 				if ( ! timestamp ) {
 					timestamp = Date.now();
 				}
-	
+
 				JetEngine.calendarCache.entries[ cacheId ].set( month, [ content, timestamp ] );
 			},
-	
+
 			update: function ( cacheId, month, content, settings = {} ) {
 				let cached = JetEngine.calendarCache.get( cacheId, month );
 				JetEngine.calendarCache.set( cacheId, month, content, settings, cached[1] ?? false );
 			},
-	
+
 			deleteExpiredEntries: function ( cacheId, cacheTimeout ) {
 				//delete possible orphaned caches
 				for ( const cacheId in JetEngine.calendarCache.entries ) {
@@ -2024,11 +2230,11 @@
 						delete JetEngine.calendarCache.entries[ cacheId ];
 					}
 				}
-	
+
 				if ( ! JetEngine.calendarCache.entries[ cacheId ] ) {
 					return;
 				}
-	
+
 				JetEngine.calendarCache.iterate(
 					JetEngine.calendarCache.entries[ cacheId ].keys(),
 					function ( month ) {
@@ -2038,33 +2244,37 @@
 					}
 				);
 			},
-	
+
 			isExpired: function ( cacheId, month, cacheTimeout ) {
 				if ( cacheTimeout < 0 ) {
 					return false;
 				}
-	
+
 				const cached = JetEngine.calendarCache.get( cacheId, month );
-	
+
 				if ( ! cached || ! Array.isArray( cached ) ) {
 					return true;
 				}
-	
+
 				return ! cached[1] || cached[1] < Date.now() - cacheTimeout;
 			},
-	
+
 			clear: function( e, $calendar ) {
 				const cacheId = $calendar.data( 'cache-id' ) || false;
-	
+
 				if ( ! cacheId ) {
 					return;
 				}
-	
+
 				JetEngine.calendarCache.entries[ cacheId ] = new Map();
 			},
 
 			modifyJetSmartFiltersSetiings: function( $widget, widgetType, monthData ) {
 				if ( ! window.JetSmartFilterSettings || ! window.JetSmartFilterSettings.settings ) {
+					return;
+				}
+
+				if ( ! window.JetSmartFilterSettings.settings['jet-engine-calendar'] ) {
 					return;
 				}
 
@@ -2087,7 +2297,7 @@
 							window.JetSmartFilterSettings.settings['jet-engine-calendar'][ widgetId ]['start_from_month'] = month;
 							window.JetSmartFilterSettings.settings['jet-engine-calendar'][ widgetId ]['start_from_year'] = year;
 						}
-						
+
 						break;
 					case 'bricks':
 						widgetId = $widget.data( 'element-id' );
@@ -2097,7 +2307,7 @@
 						}
 
 						for ( const id in window.JetSmartFilterSettings.settings['jet-engine-calendar'] ) {
-							if ( window.JetSmartFilterSettings.settings['jet-engine-calendar'][ id ]._id === widgetId ) {
+							if ( window.JetSmartFilterSettings.settings['jet-engine-calendar'][ id ]?._id === widgetId ) {
 								window.JetSmartFilterSettings.settings['jet-engine-calendar'][ id ]['start_from_month'] = month;
 								window.JetSmartFilterSettings.settings['jet-engine-calendar'][ id ]['start_from_year'] = year;
 								break;
@@ -2112,7 +2322,7 @@
 							widgetId = 'default';
 						}
 
-						if ( window.JetSmartFilterSettings.settings['jet-engine-calendar'][ widgetId ] ) {
+						if ( window.JetSmartFilterSettings.settings['jet-engine-calendar']?.[ widgetId ] ) {
 							window.JetSmartFilterSettings.settings['jet-engine-calendar'][ widgetId ]['start_from_month'] = month;
 							window.JetSmartFilterSettings.settings['jet-engine-calendar'][ widgetId ]['start_from_year'] = year;
 						}
@@ -2122,16 +2332,51 @@
 			},
 		},
 
+		selectCalendarMonth: function ( $event ) {
+			let wrapper = this.closest( '.jet-calendar-caption__dates' );
+
+			if ( ! JetEngine.updateDateSelectLabels( wrapper ) ) {
+				return;
+			}
+
+			JetEngine.switchCalendarMonth.bind( wrapper )()
+		},
+
+		updateDateSelectLabels: function( wrapper ) {
+			let month = wrapper.querySelector( '.jet-calendar-caption__date-select.select-month' ),
+			    year = wrapper.querySelector( '.jet-calendar-caption__date-select.select-year' );
+
+			if ( ! month || ! year ) {
+				return false;
+			}
+
+			let monthLabel = wrapper.querySelector( '.jet-calendar-caption__date-select-label.select-month' ),
+				yearLabel = wrapper.querySelector( '.jet-calendar-caption__date-select-label.select-year' );
+
+			wrapper.setAttribute( 'data-month', month.value + ' ' + year.value );
+
+			const monthOption = month.querySelector( `option[value="${month.value}"]` ),
+			      yearOption = year.querySelector( `option[value="${year.value}"]` );
+
+			monthLabel.innerHTML = monthOption.innerHTML;
+			yearLabel.innerHTML = yearOption.innerHTML;
+
+			return true;
+		},
+
 		switchCalendarMonth: function( $event ) {
 
-			var $this     = $( this ),
+			var $this   = $( this ),
 				$calendar = $this.closest( '.jet-calendar' ),
-				$widget   = $calendar.closest( '.elementor-widget-container' ),
+				$widget   = $this.closest( '.elementor-widget' ),
+				widgetID  = $widget.closest( '.elementor-widget' ).data( 'id' ),
 				settings  = $calendar.data( 'settings' ),
 				post      = $calendar.data( 'post' ),
 				month     = $this.data( 'month' );
 
 			settings = JetEngine.ensureJSON( settings );
+
+			settings['renderer'] = $calendar.data( 'renderer' ) || '';
 
 			if ( this.classList.contains( 'nav-link-prev' ) ) {
 				settings['__switch_direction'] = -1;
@@ -2151,7 +2396,8 @@
 
 			// Context Bricks
 			if ( ! $widget.length ) {
-				$widget = $calendar.closest( '.brxe-jet-listing-calendar' )
+				$widget = $calendar.closest( '.brxe-jet-listing-calendar' );
+				widgetID = $widget.data( 'element-id' );
 				widgetType = 'bricks';
 			}
 
@@ -2161,7 +2407,7 @@
 			      cacheTimeout = ( settings['cache_timeout'] ?? 0 ) * 1000;
 
 			if ( cacheId && cacheTimeout ) {
-				
+
 				JetEngine.calendarCache.deleteExpiredEntries( cacheId, cacheTimeout );
 
 				// Remove the 'listening' and 'brx-open' classes from all matched elements to prevent
@@ -2180,9 +2426,11 @@
 					replacement.removeClass( 'jet-calendar-loading' );
 					$calendar.replaceWith( replacement[0] );
 					JetEngine.initElementsHandlers( $widget );
-
+					JetEngine.updateDateSelectLabels( $widget[0] );
 					// Re-init Bricks scripts
-					JetEngine.reinitBricksScripts();
+					JetEngine.reinitBricksScripts( widgetID );
+
+					$( document ).trigger( 'jet-engine-request-calendar-cached', [ $widget ] );
 
 					return;
 				}
@@ -2213,9 +2461,10 @@
 					}
 
 					JetEngine.initElementsHandlers( $widget );
-
 					// Re-init Bricks scripts
-					JetEngine.reinitBricksScripts();
+					JetEngine.reinitBricksScripts( widgetID );
+
+					$( document ).trigger( 'jet-engine-request-calendar-done', [ $widget ] );
 				}
 				$calendar.removeClass( 'jet-calendar-loading' );
 			} );
@@ -2256,6 +2505,7 @@
 			}
 
 			if ( window.JetPopupFrontend && window.JetPopupFrontend.initAttachedPopups ) {
+				$selector.find( '.jet-popup-attach-event-inited' ).removeClass( 'jet-popup-attach-event-inited' );
 				window.JetPopupFrontend.initAttachedPopups( $selector );
 			}
 
@@ -2366,7 +2616,7 @@
 			//$( 'body' ).append( scriptHtml );
 
 			var scriptsTags = scriptHtml.match( /<script[\s\S]*?<\/script>/gm );
-			
+
 			if ( scriptsTags.length ) {
 
 				for ( var i = 0; i < scriptsTags.length; i++ ) {
@@ -2452,12 +2702,18 @@
 			return true;
 		},
 
-		reinitBricksScripts: function() {
-			if ( window.bricksIsFrontend ) {
-				document.dispatchEvent(
-					new CustomEvent("bricks/ajax/query_result/displayed")
-				);
+		reinitBricksScripts: function (elementId) {
+			if (!window.bricksIsFrontend) {
+				return;
 			}
+
+			document.dispatchEvent(
+				new CustomEvent("bricks/ajax/query_result/displayed", {
+					detail: {
+						queryId: elementId || null
+					}
+				})
+			);
 		},
 
 		filters: ( function() {
@@ -2508,6 +2764,12 @@
 
 	window.JetEngine = JetEngine;
 
+	document.addEventListener( 'jet-smart-filters/inited', function() {
+		window.JetSmartFilters.events.subscribe( 'ajaxFilters/updated', function( provider, queryId ) {
+			window.JetEngine.initFrontStores( window.JetSmartFilters?.filterGroups?.[ provider + '/' + queryId ]?.$provider);
+		} );
+	} );
+
 	JetEngine.commonInit();
 
 	window.addEventListener( 'DOMContentLoaded', function() {
@@ -2520,5 +2782,81 @@
 	}
 
 	$( window ).trigger( 'jet-engine/frontend/loaded' );
+
+	const initFilterConflictHandler = function() {
+		const conflictHandler = class FilterConflictHandler {
+
+			isResolving = false;
+
+			constructor() {
+				this.init();
+			}
+
+			init( e ) {
+				JetSmartFilters.events.subscribe( 'fiter/change', ( filter ) => {
+					if ( this.isResolving || filter?.filterConflictHandlerBlocked ) {
+						return;
+					}
+
+					this.isResolving = true;
+
+					if ( ! [ 'map-sync', 'user-geolocation', 'location-distance' ].includes( filter?.name ) ) {
+						return;
+					}
+
+					let conflictingTypes = [];
+
+					switch ( filter.name ) {
+						case 'map-sync':
+							conflictingTypes = [ 'user-geolocation', 'location-distance' ];
+							break;
+						case 'location-distance':
+							conflictingTypes = [ 'map-sync', 'user-geolocation' ];
+							break;
+						default:
+							conflictingTypes = [ 'map-sync' ];
+					}
+
+					this.resetConflictingFilters( filter, conflictingTypes );
+				} );
+			}
+
+			resetConflictingFilters( filter, conflictingTypes ) {
+				for ( const conflictingFilter of this.getFilters( filter, conflictingTypes ) ) {
+					conflictingFilter.reset();
+					conflictingFilter.dataValue = false;
+					conflictingFilter.wasChanged ? conflictingFilter.wasChanged() : conflictingFilter.wasСhanged();
+				}
+
+				this.isResolving = false;
+			}
+
+			getFilters( filter, types ) {
+				if ( ! types.length ) {
+					return [];
+				}
+
+				let filters = [];
+
+				filter.filterGroup.filters.forEach(
+					( f ) => {
+						if ( ! types.includes( f.name ) ) {
+							return;
+						}
+
+						filters.push( f );
+					}
+				);
+
+				return filters;
+			}
+
+		};
+
+		new conflictHandler();
+
+	}
+
+	document.addEventListener( 'jet-smart-filters/inited', initFilterConflictHandler );
 
 }( jQuery ) );

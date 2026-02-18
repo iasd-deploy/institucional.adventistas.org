@@ -9,6 +9,45 @@ class Blocks_Integration {
 	public function __construct() {
 		add_action( 'jet-engine/blocks-views/register-block-types', array( $this, 'register_block_types' ) );
 		add_filter( 'jet-engine/blocks-views/editor/config',        array( $this, 'add_editor_config' ) );
+
+		if ( class_exists( '\JET_SM\Gutenberg\Block_Manager' ) && class_exists( '\JET_SM\Gutenberg\Block_Manager' ) ) {
+			add_filter( 'get_post_metadata', array( $this, 'fix_jsm_styles' ), 10, 4 );
+		}
+	}
+
+	/**
+	 * Fix CSS selectors from Jet Style Manager meta
+	 * https://github.com/Crocoblock/issues-tracker/issues/15337
+	 */
+	public function fix_jsm_styles( $value, $post_id, $meta_key, $single ) {
+		if ( $meta_key !== '_jet_sm_ready_style' ) {
+			return $value;
+		}
+
+		remove_filter( 'get_post_metadata', array( $this, 'fix_jsm_styles' ), 10 );
+
+		$styles = get_post_meta( $post_id, $meta_key, true );
+
+		if ( empty( $styles ) ) {
+			return $value;
+		}
+
+		$styles = preg_replace_callback(
+			'/(?<block_id>\.jet-sm-[^{}]+?)\s+(?<selector>\.jet-map-marker(?:\s+path)?)\s*(?<styles>{\s*(?:color:|fill:).+?})/',
+			function( $matches ) {
+				return sprintf(
+					'%s %s%s',
+					$matches['block_id'],
+					str_replace( '.jet-map-marker', '.jet-map-marker:not( .keep-color, .custom-color )', $matches['selector'] ),
+					$matches['styles']
+				);
+			},
+			$styles
+		);
+
+		add_filter( 'get_post_metadata', array( $this, 'fix_jsm_styles' ), 10, 4 );
+
+		return $single ? $styles : array( $styles );
 	}
 
 	/**
@@ -56,12 +95,16 @@ class Blocks_Integration {
 			);
 		}
 
+		$provider = Module::instance()->providers->get_active_map_provider();
+		$provider_id = $provider->get_id();
+
 		$config['atts']['mapsListing'] = jet_engine()->blocks_views->block_types->get_block_atts( 'maps-listing' );
 
 		$config['mapsListingConfig'] = array(
 			'markerTypes'      => $marker_types_for_js,
 			'markerLabelTypes' => $marker_label_types_for_js,
 			'providerControls' => $this->get_provider_controls(),
+			'providerId'       => $provider_id,
 		);
 
 		return $config;

@@ -81,9 +81,23 @@ class Render {
 		$ui          = new \CX_Vue_UI( $module_data );
 
 		$ui->enqueue_assets();
+		$emmet_settings = [
+			'extraKeys' => [
+				'Tab'   => 'emmetExpandAbbreviation',
+				'Esc'   => 'emmetResetAbbreviation',
+				'Enter' => 'emmetInsertLineBreak',
+			]
+		];
 
-		$html_settings = wp_enqueue_code_editor( [ 'type' => 'text/html' ] );
-		$css_settings  = wp_enqueue_code_editor( [ 'type' => 'text/css' ] );
+		$html_settings = wp_enqueue_code_editor( [
+			'type'       => 'text/html',
+			'codemirror' => $emmet_settings
+		] );
+
+		$css_settings = wp_enqueue_code_editor( [
+			'type'       => 'text/css',
+			'codemirror' => $emmet_settings
+		] );
 
 		jet_engine()->register_jet_plugins_js();
 
@@ -109,13 +123,21 @@ class Render {
 
 		wp_enqueue_script(
 			'jet-engine-frontend',
-			jet_engine()->plugin_url( 'assets/js/frontend.js' ),
+			jet_engine()->plugin_url( 'assets/js/frontend/frontend.js' ),
 			array( 'jquery', 'jet-plugins' ),
 			jet_engine()->get_version(),
 			true
 		);
 
 		wp_enqueue_media();
+
+		wp_enqueue_script(
+			'jet-engine-codemirror-emmet',
+			Package::instance()->package_url( 'assets/js/codemirror-emmet.js' ),
+			[],
+			jet_engine()->get_version(),
+			true
+		);
 
 		wp_enqueue_script(
 			'jet-engine-timber-editor', 

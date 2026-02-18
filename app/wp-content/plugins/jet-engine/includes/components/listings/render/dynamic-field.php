@@ -219,6 +219,7 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Field' ) ) {
 
 							global $wp_query;
 
+							// phpcs:disable
 							if ( isset( $wp_query->query_vars[ $variable ] ) ) {
 								$result = $wp_query->query_vars[ $variable ];
 							} elseif ( isset( $_REQUEST[ $variable ] ) ) {
@@ -228,6 +229,7 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Field' ) ) {
 									$result = $_REQUEST[ $variable ];
 								}
 							}
+							// phpcs:enable
 						}
 
 						break;
@@ -281,8 +283,8 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Field' ) ) {
 			}
 
 			$this->need_sanitize = apply_filters(
-				'jet-engine/listings/dynamic-field/sanitize-output', 
-				$this->need_sanitize, $this 
+				'jet-engine/listings/dynamic-field/sanitize-output',
+				$this->need_sanitize, $this
 			);
 
 			if ( $this->need_sanitize && is_string( $result ) ) {
@@ -304,12 +306,11 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Field' ) ) {
 			$result = $this->get_field_content( $settings );
 
 			if ( ! $this->show_field || $this->show_fallback ) {
-				echo $result;
+				echo $result; // phpcs:ignore
 				return;
 			}
 
 			$this->render_filtered_result( $result, $settings );
-
 		}
 
 		/**
@@ -329,7 +330,7 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Field' ) ) {
 			}
 
 			if ( is_wp_error( $result ) ) {
-				_e( '<strong>Warning:</strong> Error appears on callback applying. Please select other callback to filter field value.', 'jet-engine' );
+				_e( '<strong>Warning:</strong> Error appears on callback applying. Please select other callback to filter field value.', 'jet-engine' ); // phpcs:ignore
 				return;
 			}
 
@@ -339,7 +340,7 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Field' ) ) {
 
 				if ( false === strpos( $settings['dynamic_field_format'], '%s' ) && false === strpos( $settings['dynamic_field_format'], '%1$s' ) ) {
 
-					echo __( '<b>Error:</b> the field format must contains "%s" or "%1$s".', 'jet-engine' );
+					echo __( '<b>Error:</b> the field format must contains "%s" or "%1$s".', 'jet-engine' ); // phpcs:ignore
 
 					return;
 				}
@@ -349,8 +350,7 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Field' ) ) {
 				try {
 					$result = sprintf( $settings['dynamic_field_format'], $result );
 				} catch ( ArgumentCountError $e ) {
-					printf( '<b>%1$s:</b> %2$s', esc_html__( 'Error', 'jet-engine' ), $e->getMessage() );
-
+					printf( '<b>%1$s:</b> %2$s', esc_html__( 'Error', 'jet-engine' ), esc_html( $e->getMessage() ) );
 					return;
 				}
 
@@ -360,19 +360,24 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Field' ) ) {
 
 			if ( is_object( $result ) ) {
 
-				echo __( '<b>Error:</b> can\'t render field data in the current format. You can try "Get child value" callback. Available children: ', 'jet-engine' ) . implode( ', ', array_keys( get_object_vars( $result ) ) ) . '. ' . __( 'Or one of array-related callbacks - "Multiple select field values", "Checkbox field values", "Checked values list" etc', 'jet-engine' );
+				echo __( '<b>Error:</b> can\'t render field data in the current format. You can try "Get child value" callback. Available children: ', 'jet-engine' ) . esc_html( implode( ', ', array_keys( get_object_vars( $result ) ) ) ) . '. ' . __( 'Or one of array-related callbacks - "Multiple select field values", "Checkbox field values", "Checked values list" etc', 'jet-engine' ); // phpcs:ignore
 
 				return;
 			}
 
 			if ( is_array( $result ) ) {
-				echo __( '<b>Error:</b> can\'t render field data in the current format. You can try "Get child value" callback. Available children: ', 'jet-engine' ) . implode( ', ', array_keys( $result ) ) . '. ' . __( 'Or one of array-related callbacks - "Multiple select field values", "Checkbox field values", "Checked values list" etc', 'jet-engine' );
+				echo __( '<b>Error:</b> can\'t render field data in the current format. You can try "Get child value" callback. Available children: ', 'jet-engine' ) . esc_html( implode( ', ', array_keys( $result ) ) ) . '. ' . __( 'Or one of array-related callbacks - "Multiple select field values", "Checkbox field values", "Checked values list" etc', 'jet-engine' ); // phpcs:ignore
 
 				return;
 			}
 
-			echo $result;
+			$use_kses = apply_filters( 'jet-engine/listings/dynamic-field/kses-output', false, $settings );
 
+			if ( $use_kses ) {
+				$result = wp_kses_post( $result );
+			}
+
+			echo $result; // phpcs:ignore
 		}
 
 		/**
@@ -382,11 +387,11 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Field' ) ) {
 		 * @return [type]           [description]
 		 */
 		public function apply_callback( $result, $settings ) {
-			
+
 			// Check if multiple callbacks applied
 			$callbacks = isset( $settings['filter_callbacks'] ) ? $settings['filter_callbacks'] : array();
 			$callback = isset( $settings['filter_callback'] ) ? $settings['filter_callback'] : '';
-			
+
 			if ( ! empty( $callbacks ) ) {
 				foreach ( $callbacks as $cb_data ) {
 					$cb     = isset( $cb_data['filter_callback'] ) ? $cb_data['filter_callback'] : '';
@@ -396,7 +401,7 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Field' ) ) {
 				$result = jet_engine()->listings->apply_callback( $result, $callback, $settings, $this );
 			}
 
-			
+
 			return $result;
 
 		}
@@ -435,7 +440,7 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Field' ) ) {
 
 			$this->show_field = true;
 
-			$base_class    = $this->get_name();
+			$base_class    = esc_attr( $this->get_name() );
 			$settings      = $this->get_settings();
 			$tag           = ! empty( $settings['field_tag'] ) ? esc_attr( $settings['field_tag'] ) : 'div';
 			$tag           = Jet_Engine_Tools::sanitize_html_tag( $tag );
@@ -443,39 +448,62 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Field' ) ) {
 			$field_icon    = ! empty( $settings['field_icon'] ) ? esc_attr( $settings['field_icon'] ) : false;
 			$new_icon      = ! empty( $settings['selected_field_icon'] ) ? $settings['selected_field_icon'] : false;
 
+			$atts     = apply_filters( 'jet-engine/listing/dynamic-field/render-attributes', array() );
+			$atts_str = '';
+
+			if ( ! empty( $atts ) ) {
+				foreach ( $atts as $key => $value ) {
+					$atts_str .= sprintf(
+						' %1$s="%2$s"',
+						esc_attr( $key ),
+						esc_attr( $value ) );
+				}
+			}
+
 			ob_start();
 			$this->render_field_content( $settings );
 			$field_content = ob_get_clean();
 
 			ob_start();
 
+			$ensure_wrapper = $this->prevent_wrap()
+							  && isset( $settings['__je_has_widget_inner_wrapper'] )
+							  && ! filter_var( $settings['__je_has_widget_inner_wrapper'] ?? false, FILTER_VALIDATE_BOOLEAN )
+							  && class_exists( '\Elementor\Widget_Base' )
+			                  && method_exists( '\Elementor\Widget_Base', 'has_widget_inner_wrapper' );
+
+			if ( $ensure_wrapper ) {
+				printf( '<div class="%s__replacement-wrap">', $base_class ); // phpcs:ignore
+			}
+
 			$classes = $this->get_wrapper_classes();
 
 			if ( ! $this->prevent_wrap() ) {
-				printf( '<div class="%s">', implode( ' ', $classes ) );
+				printf( '<div class="%s">', esc_attr( implode( ' ', $classes ) ) );
 			}
 
 				if ( ! $this->prevent_wrap() && 'inline' === $field_display ) {
-					printf( '<div class="%s__inline-wrap">', $base_class );
+					printf( '<div class="%s__inline-wrap">', $base_class ); // phpcs:ignore
 				}
 
 				if ( ! $this->prevent_icon ) {
 
-					$new_icon_html = Jet_Engine_Tools::render_icon( $new_icon, $base_class . '__icon' );
+					$new_icon_html = Jet_Engine_Tools::render_icon( $new_icon, $base_class . '__icon', $atts );
 
 					if ( $new_icon_html ) {
-						echo $new_icon_html;
+						// Escaped by \Jet_Engine_Tools::render_icon()
+						echo $new_icon_html; // phpcs:ignore
 					} elseif ( $field_icon ) {
-						printf( '<i class="%1$s %2$s__icon"></i>', $field_icon, $base_class );
+						// Escaped above
+						printf( '<i class="%1$s %2$s__icon"></i>', $field_icon, $base_class ); // phpcs:ignore
 					}
-
 				}
 
 				do_action( 'jet-engine/listing/dynamic-field/before-field', $this );
 
-				printf( '<%1$s class="%2$s__content">', $tag, $base_class );
-					echo $field_content;
-				printf( '</%s>', $tag );
+				printf( '<%1$s class="%2$s__content" %3$s>', $tag, $base_class, $atts_str ); // phpcs:ignore
+					echo $field_content; // phpcs:ignore
+				printf( '</%s>', $tag ); // phpcs:ignore
 
 				do_action( 'jet-engine/listing/dynamic-field/after-field', $this );
 
@@ -487,14 +515,15 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Field' ) ) {
 				echo '</div>';
 			}
 
+			if ( $ensure_wrapper ) {
+				echo '</div>';
+			}
+
 			$content = ob_get_clean();
 
 			if ( $this->show_field ) {
-				echo $content;
+				echo $content; // phpcs:ignore
 			}
-
 		}
-
 	}
-
 }

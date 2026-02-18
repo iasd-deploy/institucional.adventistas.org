@@ -63,15 +63,17 @@ if ( ! class_exists( 'Jet_Smart_Filters_Render' ) ) {
 		 */
 		public function hierarchy_level() {
 
-			$depth     = isset( $_REQUEST['depth'] ) ? absint( $_REQUEST['depth'] ) : false;
-			$filter_id = isset( $_REQUEST['filter_id'] ) ? absint( $_REQUEST['filter_id'] ) : 0;
+			$request   = jet_smart_filters()->data->get_request();
+
+			$depth     = isset( $request['depth'] ) ? absint( $request['depth'] ) : false;
+			$filter_id = isset( $request['filter_id'] ) ? absint( $request['filter_id'] ) : 0;
 
 			if ( ! $filter_id ) {
 				wp_send_json_error();
 			}
 
-			$values  = ! empty( $_REQUEST['values'] ) ? $_REQUEST['values'] : array();
-			$args    = ! empty( $_REQUEST['args'] ) ? $_REQUEST['args'] : array();
+			$values  = ! empty( $request['values'] ) ? $request['values'] : array();
+			$args    = ! empty( $request['args'] ) ? $request['args'] : array();
 
 			require jet_smart_filters()->plugin_path( 'includes/hierarchy.php' );
 
@@ -90,9 +92,11 @@ if ( ! class_exists( 'Jet_Smart_Filters_Render' ) ) {
 		 */
 		public function get_indexed_data() {
 
-			$provider_key     = isset( $_REQUEST['provider'] ) ? $_REQUEST['provider'] : false;
-			$indexing_filters = isset( $_REQUEST['indexing_filters'] ) ? json_decode( stripcslashes( $_REQUEST['indexing_filters'] ), true ) : false;
-			$query_args       = isset( $_REQUEST['query_args'] ) ? $_REQUEST['query_args'] : array();
+			$request          = jet_smart_filters()->data->get_request();
+
+			$provider_key     = isset( $request['provider'] ) ? $request['provider'] : false;
+			$indexing_filters = isset( $request['indexing_filters'] ) ? json_decode( stripcslashes( $request['indexing_filters'] ), true ) : false;
+			$query_args       = isset( $request['query_args'] ) ? $request['query_args'] : array();
 
 			if ( ! ( $provider_key && $indexing_filters ) ) {
 				return;
@@ -120,13 +124,19 @@ if ( ! class_exists( 'Jet_Smart_Filters_Render' ) ) {
 		 */
 		public function apply_filters_from_request() {
 
-			if ( empty( $_REQUEST['jsf'] ) ) {
+			$request = jet_smart_filters()->data->get_request();
+
+			if ( empty( $request['jsf'] ) ) {
 				return;
 			}
 
-			$provider_name = ! empty( $_REQUEST['provider'] )
-				? $_REQUEST['provider']
-				: $_REQUEST['jsf'];
+			$provider_name = ! empty( $request['provider'] )
+				? $request['provider']
+				: $request['jsf'];
+
+			if ( ! is_string( $provider_name ) ) {
+				return;
+			}
 
 			jet_smart_filters()->query->set_provider_from_request( $provider_name );
 
@@ -138,11 +148,11 @@ if ( ! class_exists( 'Jet_Smart_Filters_Render' ) ) {
 			}
 
 			foreach ( $this->get_request_query_vars() as $query_var ) {
-				if ( empty( $_REQUEST[ $query_var ] ) ) {
+				if ( empty( $request[ $query_var ] ) ) {
 					continue;
 				}
 
-				jet_smart_filters()->query->set_query_var_to_request( $query_var, $_REQUEST[ $query_var ] );
+				jet_smart_filters()->query->set_query_var_to_request( $query_var, $request[ $query_var ] );
 			}
 
 			jet_smart_filters()->query->get_query_from_request();
@@ -154,7 +164,13 @@ if ( ! class_exists( 'Jet_Smart_Filters_Render' ) ) {
 		 */
 		public function apply_filters_from_permalink( $query ) {
 
-			if ( empty( $query->query_vars['jsf'] ) || isset( $_REQUEST['jsf'] ) ) {
+			$request = jet_smart_filters()->data->get_request();
+
+			if ( empty( $query->query_vars['jsf'] ) || isset( $request['jsf'] ) ) {
+				return;
+			}
+
+			if ( apply_filters( 'jet-smart-filters/render/filters-applied', false, $query ) ) {
 				return;
 			}
 
@@ -163,7 +179,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Render' ) ) {
 			$_REQUEST['jsf'] = strtok( $jsf_query_str, '/' );
 
 			foreach ( $this->get_request_query_vars() as $query_var ) {
-				preg_match_all( "/$query_var\/(.*?)(\/|$)/", $jsf_query_str, $matches );
+				preg_match_all( "/\/$query_var\/([^\/]*)/", $jsf_query_str, $matches );
 
 				if ( empty( $matches[1][0] ) ) {
 					continue;
@@ -185,7 +201,9 @@ if ( ! class_exists( 'Jet_Smart_Filters_Render' ) ) {
 		 */
 		public function apply_filters_from_request_backward_compatibility() {
 
-			if ( empty( $_REQUEST['jet-smart-filters'] ) ) {
+			$jsf_request_val = jet_smart_filters()->data->get_request_var( 'jet-smart-filters' );
+
+			if ( ! $jsf_request_val ) {
 				return;
 			}
 
@@ -206,21 +224,22 @@ if ( ! class_exists( 'Jet_Smart_Filters_Render' ) ) {
 		 * Verify request signature.
 		 * Request signature made on provider settings store.
 		 * It helps to prevent from injecting any 3rd party data into the request.
-		 * 
+		 *
 		 * @return [type] [description]
 		 */
 		public function verify_request_signature() {
 
-			$result = false;
+			$request = jet_smart_filters()->data->get_request();
+			$result  = false;
 
-			if ( ! empty( $_REQUEST['settings']['jsf_signature'] ) ) {
+			if ( ! empty( $request['settings']['jsf_signature'] ) ) {
 
-				$request_signature = $_REQUEST['settings']['jsf_signature'];
-				unset( $_REQUEST['settings']['jsf_signature'] );
-				$check_signature = $this->create_signature( $_REQUEST['settings'] );
+				$request_signature = $request['settings']['jsf_signature'];
+				unset( $request['settings']['jsf_signature'] );
+				$check_signature = $this->create_signature( $request['settings'] );
 				$result = ( $check_signature === $request_signature ) ? true : false;
 
-			} elseif ( empty( $_REQUEST['settings'] ) ) {
+			} elseif ( empty( $request['settings'] ) ) {
 
 				// if settings completely empty - they're cannot be hacked
 				$result = true;
@@ -232,7 +251,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Render' ) ) {
 
 		/**
 		 * Create signature based on input array
-		 * 
+		 *
 		 * @return [type] [description]
 		 */
 		public function create_signature( $data = [] ) {
@@ -247,12 +266,12 @@ if ( ! class_exists( 'Jet_Smart_Filters_Render' ) ) {
 
 		/**
 		 * Prepare data for signature to ensure consistency
-		 * 
+		 *
 		 * @param  array  $data [description]
 		 * @return [type]       [description]
 		 */
 		public function prepare_data_for_sign( $data = [] ) {
-			
+
 			$prepared_data = [];
 
 			foreach ( $data as $key => $value ) {
@@ -260,7 +279,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Render' ) ) {
 				if ( is_array( $value ) && ! empty( $value ) ) {
 					$prepared_data[ $key ] = $this->prepare_data_for_sign( $value );
 				} elseif ( ! is_array( $value ) ) {
-					
+
 					// convert booleans into strings manually
 					if ( false === $value ) {
 						$value = 'false';
@@ -280,9 +299,11 @@ if ( ! class_exists( 'Jet_Smart_Filters_Render' ) ) {
 		 */
 		public function ajax_apply_filters() {
 
+			$request     = jet_smart_filters()->data->get_request();
+
 			$provider_id = $this->request_provider( 'provider' );
 			$query_id    = $this->request_provider( 'query_id' );
-			$apply_type  = ! empty( $_REQUEST['apply_type'] ) ? $_REQUEST['apply_type'] : 'ajax';
+			$apply_type  = ! empty( $request['apply_type'] ) ? $request['apply_type'] : 'ajax';
 			$provider    = jet_smart_filters()->providers->get_providers( $provider_id );
 
 			if ( ! $provider ) {
@@ -294,15 +315,15 @@ if ( ! class_exists( 'Jet_Smart_Filters_Render' ) ) {
 			jet_smart_filters()->query->get_query_from_request();
 
 			// verify ajax request signature
-			if ( $this->use_signature_verification && ! $this->verify_request_signature( $_REQUEST ) ) {
+			if ( $this->use_signature_verification && ! $this->verify_request_signature( $request ) ) {
 				wp_send_json_error( __( 'Request data is incorrect.', 'jet-smart-filters' ) );
 			}
 
-			if ( ! empty( $_REQUEST['props'] ) ) {
+			if ( ! empty( $request['props'] ) ) {
 
 				jet_smart_filters()->query->set_props(
 					$provider_id,
-					$_REQUEST['props'],
+					$request['props'],
 					$query_id
 				);
 			}
@@ -331,7 +352,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Render' ) ) {
 			if ( is_callable( array( $provider, 'ajax_get_content' ) ) ) {
 				$provider->ajax_get_content();
 			} else {
-				_e( 'Incorrect input data', 'jet-smart-filters' );
+				esc_html_e( 'Incorrect input data', 'jet-smart-filters' );
 			}
 
 			return ob_get_clean();

@@ -39,36 +39,40 @@ if (  isset( $item_settings['item_link_url'] ) && ! empty( $item_settings['item_
 }
 
 ?><div <?php echo esc_attr( $slide_id ); ?> class="jet-slider__item sp-slide elementor-repeater-item-<?php echo esc_attr( $item_settings['_id'] );?>"><?php
-		echo $this->_loop_item_image_tag( $image_lazyload );
+		echo $this->_loop_item_image_tag( $image_lazyload ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
 		if ( filter_var( $settings['thumbnails'], FILTER_VALIDATE_BOOLEAN ) ) {
-			echo $this->_loop_item_image_thumb();
+			echo $this->_loop_item_image_thumb(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
-	?><div class="jet-slider__content sp-layer <?php echo esc_attr( $linked_class );?>" data-position="centerCenter" data-width="100%" data-height="100%" data-horizontal="0%" data-show-transition="<?php echo esc_attr( $show_transition ); ?>" data-show-duration="400" data-show-delay="400" <?php echo $this->get_render_attribute_string( 'item_link' ); $this->remove_render_attribute( 'item_link' );?>>
+	?><div class="jet-slider__content sp-layer <?php echo esc_attr( $linked_class );?>" data-position="centerCenter" data-width="100%" data-height="100%" data-horizontal="0%" data-show-transition="<?php echo esc_attr( $show_transition ); ?>" data-show-duration="400" data-show-delay="400" <?php echo $this->get_render_attribute_string( 'item_link' ); $this->remove_render_attribute( 'item_link' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 		<div class="jet-slider__content-item">
 			<div class="jet-slider__content-inner"><?php
 				switch ( $content_type ) {
 					case 'default':
 
-						echo $this->_render_icon( 'item_icon', '<div class="jet-slider__icon"><div class="jet-slider-icon-inner">%s</div></div>', '', false );
+						echo $this->_render_icon( 'item_icon', '<div class="jet-slider__icon"><div class="jet-slider-icon-inner">%s</div></div>', '', false ); // phpcs:ignore
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 						echo $this->_loop_item( array( 'item_title' ), $title_format );
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 						echo $this->_loop_item( array( 'item_subtitle' ), $subtitle_format );
-						echo $this->_loop_item( array( 'item_desc' ), '<div class="jet-slider__desc">%s</div>' );?>
+						echo $this->_loop_item( array( 'item_desc' ), '<div class="jet-slider__desc">%s</div>' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?> 
 
 						<div class="jet-slider__button-wrapper"><?php
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 							echo $this->_loop_button_item( array( 'item_button_primary_url', 'item_button_primary_text' ), '<a class="elementor-button elementor-size-md jet-slider__button jet-slider__button--primary" href="%1$s"' . $target_primary . $rel_primary . '>%2$s</a>' );
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 							echo $this->_loop_button_item( array( 'item_button_secondary_url', 'item_button_secondary_text' ), '<a class="elementor-button elementor-size-md jet-slider__button jet-slider__button--secondary" href="%1$s"' . $target_secondary . $rel_secondary . '>%2$s</a>' ); ?>
 						</div><?php
 
 						break;
 
 					case 'template':
-						echo $this->_loop_item_template_content();
+						echo $this->_loop_item_template_content(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 						break;
 				}
 			?></div>
 		</div>
-		<?php echo $pseudo_link; ?>
+		<?php echo $pseudo_link; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 	</div>
 </div>
 

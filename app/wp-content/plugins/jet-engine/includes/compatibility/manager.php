@@ -34,6 +34,10 @@ if ( ! class_exists( 'Jet_Engine_Compatibility' ) ) {
 		public function load_compat_packages() {
 
 			$whitelist = array(
+				'angie/angie.php' => array(
+					'cb'   => 'defined',
+					'args' => 'ANGIE_VERSION',
+				),
 				'woocommerce/woocommerce.php' => array(
 					'cb'   => 'class_exists',
 					'args' => 'WooCommerce',
@@ -109,6 +113,10 @@ if ( ! class_exists( 'Jet_Engine_Compatibility' ) ) {
 				'generateblocks.php' => array(
 					'cb'   => 'defined',
 					'args' => 'GENERATEBLOCKS_VERSION',
+				),
+				'layout-switcher.php' => array(
+					'cb'   => 'function_exists',
+					'args' => 'jet_engine_layout_switcher',
 				),
 			);
 

@@ -45,6 +45,7 @@ class Jet_Elements_Image_Comparison extends Jet_Elements_Base {
 		return array(
 			'jet-slick',
 			'jet-juxtapose',
+			'jet-image-comparison'
 		);
 	}
 
@@ -216,6 +217,54 @@ class Jet_Elements_Image_Comparison extends Jet_Elements_Base {
 				'default'     => 'fa fa-angle-right',
 				'render_type' => 'template',
 				'options'     => jet_elements_tools()->get_available_next_arrows_list(),
+			)
+		);
+
+		$this->add_control(
+			'handle_custom_arrows',
+			array(
+				'label'        => esc_html__( 'Show Custom Arrows', 'jet-elements' ),
+				'type'         => Controls_Manager::SWITCHER,
+				'label_on'     => esc_html__( 'Yes', 'jet-elements' ),
+				'label_off'    => esc_html__( 'No', 'jet-elements' ),
+				'return_value' => 'true',
+				'default'      => 'false',
+			)
+		);
+
+		$this->_add_advanced_icon_control(
+			'handle_custom_prev_arrow',
+			array(
+				'label'       => esc_html__( 'Prev Arrow Icon', 'jet-elements' ),
+				'type'        => Controls_Manager::ICON,
+				'label_block' => true,
+				'file'        => '',
+				'default'     => 'fa fa-angle-left',
+				'fa5_default' => array(
+					'value'   => 'fas fa-angle-left',
+					'library' => 'fa-solid',
+				),
+				'condition' => array(
+					'handle_custom_arrows' => 'true',
+				),
+			)
+		);
+
+		$this->_add_advanced_icon_control(
+			'handle_custom_next_arrow',
+			array(
+				'label'       => esc_html__( 'Next Arrow Icon', 'jet-elements' ),
+				'type'        => Controls_Manager::ICON,
+				'label_block' => true,
+				'file'        => '',
+				'default'     => 'fa fa-angle-right',
+				'fa5_default' => array(
+					'value'   => 'fas fa-angle-right',
+					'library' => 'fa-solid',
+				),
+				'condition' => array(
+					'handle_custom_arrows' => 'true',
+				),
 			)
 		);
 
@@ -1615,6 +1664,10 @@ class Jet_Elements_Image_Comparison extends Jet_Elements_Base {
 		$settings = $this->get_settings();
 		$widget_id = $this->get_id();
 
+		if ( !is_string( $widget_id ) || !preg_match( '/^[a-zA-Z0-9]{5,50}$/', $widget_id ) ) {
+			throw new InvalidArgumentException( 'Invalid widget ID format.' );
+		}
+
 		$instance_settings = array(
 			'slidesToShow'   => array(
 				'desktop' => absint( $settings['slides_to_show'] )
@@ -1631,14 +1684,18 @@ class Jet_Elements_Image_Comparison extends Jet_Elements_Base {
 			'rtl' => is_rtl(),
 		);
 
-		if ( 'fade' === $settings['effect'] ) {
+		$effect = $this->ensure_allowed_value( $settings['effect'], array( 'slide', 'fade' ) );
+		if ( 'fade' === $effect ) {
 			$instance_settings['fade'] = true;
 		}
 
 		$instance_settings = apply_filters( 'jet-elements/jet-image-comparison/carousel-options', $instance_settings, $settings, $widget_id );
 
-		$instance_settings = json_encode( $instance_settings );
+		$instance_settings = wp_json_encode( $instance_settings );
 
-		return sprintf( 'data-settings=\'%1$s\'', $instance_settings );
+		// Escape the JSON string for safe use in HTML attributes
+		$data_settings_attribute = esc_attr( $instance_settings );
+
+		return sprintf( 'data-settings=\'%1$s\'', $data_settings_attribute );
 	}
 }

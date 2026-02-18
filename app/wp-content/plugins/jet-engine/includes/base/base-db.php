@@ -126,20 +126,31 @@ class Jet_Engine_Base_DB {
 	}
 
 	/**
-	 * Insert booking
+	 * Reset found items cache.
+	 * Should be reseted each time on Jet_Engine_Base_DB::update() call to make sure we always getting actual data.
+	 * https://github.com/Crocoblock/suggestions/issues/7774
 	 *
-	 * @param  array  $booking [description]
-	 * @return [type]          [description]
+	 * @return void
+	 */
+	public function reset_found_items_cache() {
+		$this->_found_items = array();
+	}
+
+	/**
+	 * Insert DB data
+	 *
+	 * @param  array $data Data to insert.
+	 * @return void
 	 */
 	public function insert( $data = array() ) {
 	}
 
 	/**
-	 * Update appointment info
+	 * Update DB data
 	 *
 	 * @param  array  $new_data [description]
 	 * @param  array  $where    [description]
-	 * @return [type]           [description]
+	 * @return void
 	 */
 	public function update( $new_data = array(), $where = array() ) {
 	}
@@ -174,7 +185,13 @@ class Jet_Engine_Base_DB {
 
 		$table = $this->table();
 
-		if ( strtolower( $table ) === strtolower( self::wpdb()->get_var( "SHOW TABLES LIKE '$table'" ) ) ) {
+		if ( ! $table ) {
+			return false;
+		}
+
+		$existing_table = self::wpdb()->get_var( "SHOW TABLES LIKE '$table'" );
+
+		if ( $existing_table && strtolower( $table ) === strtolower( $existing_table ) ) {
 			$this->table_exists = true;
 		} else {
 			$this->table_exists = false;
@@ -248,6 +265,11 @@ class Jet_Engine_Base_DB {
 
 		dbDelta( $sql );
 
+		/**
+		 * Assume table was created correctly and change $table_exists to true
+		 * https://github.com/Crocoblock/suggestions/issues/7797
+		 */
+		$this->table_exists = true;
 	}
 
 	/**
@@ -280,10 +302,12 @@ class Jet_Engine_Base_DB {
 	}
 
 	/**
-	 * Insert new columns into existing bookings table
+	 * Insert new columns into the table
 	 *
-	 * @param  [type] $columns [description]
-	 * @return [type]          [description]
+	 * @param  array $columns Array of new columns, 'column name' => 'column type',
+	 *                        or 'column name' => false (column will be of 'text' type)
+	 *
+	 * @return void
 	 */
 	public function insert_table_columns( $columns = array() ) {
 
@@ -380,6 +404,12 @@ class Jet_Engine_Base_DB {
 
 	}
 
+	public function has_columns_by_schema() {
+		$existing_columns = array_keys( $this->get_columns_list() );
+		$schema_columns   = array_keys( $this->schema );
+		return empty( array_diff( $existing_columns, $schema_columns ) ) && empty( array_diff( $schema_columns, $existing_columns ) );
+	}
+
 	/**
 	 * Check if we can transfer data into new columns before removing
 	 *
@@ -401,10 +431,10 @@ class Jet_Engine_Base_DB {
 	}
 
 	/**
-	 * Delete columns into existing bookings table
+	 * Delete columns from the table
 	 *
-	 * @param  [type] $columns [description]
-	 * @return [type]          [description]
+	 * @param  array $columns Array of column names to delete
+	 * @return void
 	 */
 	public function delete_table_columns( $columns ) {
 
@@ -495,10 +525,6 @@ class Jet_Engine_Base_DB {
 
 		if ( ! empty( $args ) ) {
 
-			if ( $add_where_string ) {
-				$query .= ' WHERE ';
-			}
-
 			$glue = '';
 
 			if ( count( $args ) > 1 ) {
@@ -512,7 +538,10 @@ class Jet_Engine_Base_DB {
 				if ( isset( $arg['relation'] ) ) {
 					$sub_rel = $arg['relation'];
 					unset( $arg['relation'] );
-					$clause = '(' . $this->add_where_args( $arg, $sub_rel, false ) . ')';
+					$inner_clause = $this->add_where_args( $arg, $sub_rel, false );
+					if ( ! empty( $inner_clause ) ) {
+						$clause = '(' . $inner_clause . ')';
+					}
 				} else {
 					if ( is_array( $arg ) && isset( $arg['field'] ) ) {
 						$field    = ! empty( $arg['field'] ) ? $arg['field'] : false;
@@ -537,10 +566,12 @@ class Jet_Engine_Base_DB {
 
 			}
 
+			if ( $add_where_string && $query ) {
+				$query = ' WHERE ' . $query;
+			}
 		}
 
 		return $query;
-
 	}
 
 	/**
@@ -671,20 +702,8 @@ class Jet_Engine_Base_DB {
 		$format          = '`%1$s` %3$s %2$s';
 		$array_operators = array( 'IN', 'NOT IN', 'BETWEEN', 'NOT BETWEEN' );
 
-		switch ( $type ) {
-			case 'integer':
-			case 'float':
-				$format = 'CAST( `%1$s` AS DECIMAL ) %3$s %2$s';
-				break;
-
-			default:
-
-				if ( false !== strpos( $type, 'DECIMAL' ) ) {
-					$format = 'CAST( `%1$s` AS ' . $type . ' ) %3$s %2$s';
-				}
-
-				break;
-
+		if ( false !== strpos( $type, 'DECIMAL' ) ) {
+			$format = 'CAST( `%1$s` AS ' . $type . ' ) %3$s %2$s';
 		}
 
 		if ( 'EXISTS' === $operator ) {
@@ -789,14 +808,6 @@ class Jet_Engine_Base_DB {
 				}
 
 				switch ( $type ) {
-					case 'integer':
-					case 'float':
-					case 'timestamp':
-					case 'NUMERIC':
-					case 'DECIMAL':
-					case 'TIMESTAMP':
-						$orderby = sprintf( 'CAST( %s AS DECIMAL )', $orderby );
-						break;
 					case 'date':
 						$orderby = sprintf( 'CAST( %s AS DATE )', $orderby );
 						break;

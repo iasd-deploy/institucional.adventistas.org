@@ -16,12 +16,14 @@
 			helpLinks: JetEngineQueryConfig.help_links,
 			typesComponents: JetEngineQueryConfig.types_components,
 			hasClipboard: window.navigator.clipboard,
+			permalinksType: JetEngineQueryConfig.permalinks_type,
 			showDeleteDialog: false,
 			saving: false,
 			suggestions: [],
 			updatingPreview: false,
 			previewCount: 0,
 			previewBody: null,
+			previewSqlQueries: null,
 			isCopied: false,
 			queryArgToDelete: -1,
 			errors: {
@@ -217,7 +219,8 @@
 
 				var preview = {},
 					query = {},
-					dynamic_query = {};
+					dynamic_query = {},
+					general_settings = {};
 
 				if ( self.generalSettings.preview_page || self.generalSettings.preview_page_title ) {
 					preview.page = self.generalSettings.preview_page;
@@ -234,6 +237,7 @@
 
 				query         = self.generalSettings[ self.generalSettings.query_type ];
 				dynamic_query = self.generalSettings[ '__dynamic_' + self.generalSettings.query_type ];
+				general_settings = self.generalSettings;
 
 				wp.apiFetch( {
 					method: 'post',
@@ -244,11 +248,13 @@
 						query_type: self.generalSettings.query_type,
 						query: query,
 						dynamic_query: dynamic_query,
+						general_settings: general_settings,
 					}
 				} ).then( function( response ) {
 
 					if ( response.success ) {
 						self.previewCount = response.count;
+						self.previewSqlQueries  = response.sql_preview;
 						self.previewBody  = response.data;
 					}
 
@@ -283,8 +289,12 @@
 					method: 'get',
 					path: JetEngineQueryConfig.api_path_search_preview + '?_s=' + value,
 				} ).then( function( response ) {
+
 					self.suggestions = response.data;
-					self.suggestions.unshift( { id: 0, text: 'Use raw URL string', url: value } );
+
+					if ( 'plain' !== self.permalinksType ) {
+						self.suggestions.unshift( { id: 0, text: 'Use raw URL string', url: value } );
+					}
 				} ).catch( function( response ) {
 					//self.errorNotices.push( response.message );
 
@@ -331,6 +341,24 @@
 			setDynamicQuery: function( prop, value ) {
 				this.$set( this.generalSettings, prop, value );
 				this.updatePreview();
+			},
+			isCacheable: function() {
+				const queryType = this.generalSettings?.query_type;
+
+				if ( ! queryType ) {
+					return true;
+				}
+
+				return ! this.generalSettings[ queryType ]?.avoid_duplicates;
+			},
+			isAvoidDuplicates: function() {
+				const queryType = this.generalSettings?.query_type;
+
+				if ( ! queryType ) {
+					return false;
+				}
+
+				return this.generalSettings[ queryType ]?.avoid_duplicates;
 			},
 			save: function() {
 

@@ -19,7 +19,7 @@ class Manager {
 
 		add_action( 'jet-engine/elementor-views/widgets/register', array( $this, 'register_widgets' ), 20, 2 );
 
-		add_action( 'enqueue_block_editor_assets', array( $this, 'register_blocks_assets' ), 9 );
+		add_action( 'jet-engine/blocks-views/editor-script/after', array( $this, 'register_blocks_assets' ), 9 );
 		add_action( 'init', array( $this, 'register_blocks_types' ), 999 );
 		add_action( 'jet-smart-filters/blocks/localized-data', array( $this, 'modify_filters_localized_data' ) );
 
@@ -35,6 +35,33 @@ class Manager {
 		add_filter( 'jet-smart-filter/utils/merge-query-args/merged-keys', array( $this, 'add_merged_query_key' ) );
 		add_filter( 'jet-smart-filters/filters/valid-url-params', array( $this, 'add_valid_url_params' ) );
 
+		add_filter( 'jet-smart-filters/admin/filter-types', array( $this, 'hide_map_sync_filter' ) );
+
+		add_filter( 'jet-smart-filters/blocks/localized-data', array( $this, 'get_map_sync_providers' ), 1000 );
+
+	}
+
+	public function get_map_sync_providers( $data ) {
+		$allowed = array(
+			'not-selected',
+			'jet-engine-calendar',
+			'jet-engine',
+			'jet-engine-maps',
+			'jet-data-table',
+		);
+
+		foreach ( $allowed as $provider ) {
+			if ( isset( $data['providers'][ $provider ] ) ) {
+				$data['mapSyncProviders'][ $provider ] = $data['providers'][ $provider ];
+			}
+		}
+
+		return $data;
+	}
+
+	public function hide_map_sync_filter( $types ) {
+		unset( $types['map-sync'] );
+		return $types;
 	}
 
 	public function parse_query_var( $value, $var ) {
@@ -71,7 +98,19 @@ class Manager {
 		if ( ! empty( $query['geo_query'] ) && is_string( $query['geo_query'] ) ) {
 
 			// Try to decode json string.
-			$_geo_query = json_decode( wp_unslash( $query['geo_query'] ), true );
+			$t = 0;
+
+			$_geo_query = $query['geo_query'];
+
+			while ( $t++ < 3 ) {
+				if ( preg_match( '/"\s*:\s*"/', $_geo_query ) ) {
+					break;
+				}
+				
+				$_geo_query = stripslashes( $_geo_query );
+			}
+
+			$_geo_query = json_decode( $_geo_query, true );
 
 			if ( ! empty( $_geo_query ) ) {
 				$query['geo_query'] = $_geo_query;
@@ -115,9 +154,11 @@ class Manager {
 
 		require jet_engine()->modules->modules_path( 'maps-listings/inc/filters/blocks/user-geolocation.php' );
 		require jet_engine()->modules->modules_path( 'maps-listings/inc/filters/blocks/location-distance.php' );
+		require jet_engine()->modules->modules_path( 'maps-listings/inc/filters/blocks/map-sync.php' );
 
 		new Blocks\User_Geolocation();
 		new Blocks\Location_Distance();
+		new Blocks\Map_Sync();
 	}
 
 	public function register_blocks_assets() {
@@ -127,7 +168,7 @@ class Manager {
 		wp_enqueue_script(
 			'jet-maps-listings-geolocation-blocks',
 			jet_engine()->plugin_url( 'includes/modules/maps-listings/assets/js/admin/blocks.js' ),
-			array( 'wp-blocks','wp-editor', 'wp-components', 'wp-i18n' ),
+			array( 'jet-engine-blocks-views' ),
 			jet_engine()->get_version(),
 			true
 		);
@@ -142,6 +183,7 @@ class Manager {
 		$element_files = array(
 			jet_engine()->modules->modules_path( 'maps-listings/inc/filters/bricks-views/user-geolocation.php' ),
 			jet_engine()->modules->modules_path( 'maps-listings/inc/filters/bricks-views/location-distance.php' ),
+			jet_engine()->modules->modules_path( 'maps-listings/inc/filters/bricks-views/map-sync.php' ),
 		);
 
 		foreach ( $element_files as $file ) {
@@ -151,6 +193,7 @@ class Manager {
 
 	public function register_query_var( $vars ) {
 		$vars[] = 'geo_query';
+		$vars[] = 'map_sync';
 		return $vars;
 	}
 
@@ -171,6 +214,14 @@ class Manager {
 		wp_register_script(
 			'jet-maps-listings-location-distance',
 			jet_engine()->plugin_url( 'includes/modules/maps-listings/assets/js/public/location-distance.js' ),
+			array( 'jquery' ),
+			jet_engine()->get_version(),
+			true
+		);
+
+		wp_register_script(
+			'jet-maps-listings-map-sync',
+			jet_engine()->plugin_url( 'includes/modules/maps-listings/assets/js/public/map-sync.js' ),
 			array( 'jquery' ),
 			jet_engine()->get_version(),
 			true
@@ -198,6 +249,12 @@ class Manager {
 			__NAMESPACE__ . '\Elementor_Widgets\Location_Distance'
 		);
 
+		$elementor_views->register_widget(
+			$filters_path . 'map-sync.php',
+			$widgets_manager,
+			__NAMESPACE__ . '\Elementor_Widgets\Map_Sync'
+		);
+
 	}
 
 	public function register_filter_types( $types_manager ) {
@@ -212,6 +269,11 @@ class Manager {
 		$types_manager->register_filter_type(
 			'\Jet_Engine\Modules\Maps_Listings\Filters\Types\Location_Distance',
 			$filters_path . 'location-distance.php'
+		);
+
+		$types_manager->register_filter_type(
+			'\Jet_Engine\Modules\Maps_Listings\Filters\Types\Map_Sync',
+			$filters_path . 'map-sync.php'
 		);
 
 	}
@@ -235,11 +297,13 @@ class Manager {
 
 	public function add_merged_query_key( $keys ) {
 		$keys[] = 'geo_query';
+		$keys[] = 'map_sync';
 		return $keys;
 	}
 
 	public function add_valid_url_params( $params ) {
 		$params[] = 'geo_query';
+		$params[] = 'map_sync';
 		return $params;
 	}
 

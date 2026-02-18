@@ -63,6 +63,10 @@ class Edit extends \Jet_Engine_CPT_Page_Base {
 
 		$ui->enqueue_assets();
 
+		wp_enqueue_code_editor([
+			'type' => 'text/x-sql',
+		]);
+
 		wp_enqueue_script(
 			'jet-engine-query-delete-dialog',
 			Manager::instance()->component_url( 'assets/js/admin/delete-dialog.js' ),
@@ -160,6 +164,27 @@ class Edit extends \Jet_Engine_CPT_Page_Base {
 			$redirect     = $this->manager->get_edit_item_link( '%id%' );
 		}
 
+		$permalink_structure = get_option( 'permalink_structure' );
+		$permalink_structure = empty( $permalink_structure ) ? 'plain' : 'custom';
+
+		$use_codemirror    = apply_filters( 'jet-engine/query-builder/query-editor/use_codemirror', true );
+		$codemirror_config = apply_filters(
+			'jet-engine/query-builder/query-editor/code_mirror_config',
+			array(
+				'lineNumbers'    => true,
+				'indentUnit'     => 2,
+				'tabSize'        => 2,
+				'matchBrackets'  => true,
+				'indentWithTabs' => false,
+				'direction'      => 'ltr',
+				'lineWrapping'   => true,
+				'jeReplaceTabs'  => true,
+				//height in lines if set to number (like 20) or in pixels (like '20px')
+				'jeCustomHeight' => false,
+			)
+		);
+		$codemirror_config['type'] = 'text/x-sql';
+
 		wp_localize_script(
 			'jet-engine-query-edit',
 			'JetEngineQueryConfig',
@@ -167,8 +192,10 @@ class Edit extends \Jet_Engine_CPT_Page_Base {
 				'api_path_edit'           => jet_engine()->api->get_route( $this->get_slug() . '-query' ),
 				'api_path_search_preview' => jet_engine()->api->get_route( 'search-query-preview' ),
 				'api_path_update_preview' => jet_engine()->api->get_route( 'update-query-preview' ),
+				'api_path_convert_sql'    => jet_engine()->api->get_route( 'convert-query-advanced' ),
 				'item_id'                 => $id,
 				'edit_button_label'       => $button_label,
+				'permalinks_type'         => $permalink_structure,
 				'redirect'                => $redirect,
 				'rest_url'                => get_rest_url( null, '/' ),
 				'post_types'              => \Jet_Engine_Tools::get_post_types_for_js(),
@@ -185,6 +212,8 @@ class Edit extends \Jet_Engine_CPT_Page_Base {
 						'label' => __( 'Query Builder knowledge base', 'jet-engine' ),
 					),
 				),
+				'use_CodeMirror'          => $use_codemirror,
+				'CodeMirror_config'       => $codemirror_config,
 			) )
 		);
 
@@ -200,6 +229,11 @@ class Edit extends \Jet_Engine_CPT_Page_Base {
 	 * Print add/edit page template
 	 */
 	public function add_page_template() {
+
+		ob_start();
+		include Manager::instance()->component_path( 'templates/admin/meta-field.php' );
+		$content = ob_get_clean();
+		printf( '<script type="text/x-template" id="jet-meta-field">%s</script>', $content );
 
 		ob_start();
 		include Manager::instance()->component_path( 'templates/admin/edit.php' );

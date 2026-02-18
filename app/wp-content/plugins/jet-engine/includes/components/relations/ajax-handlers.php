@@ -1,6 +1,8 @@
 <?php
 namespace Jet_Engine\Relations;
 
+use Jet_Engine\Relations\Storage\Ordering;
+
 /**
  * Relations manager
  */
@@ -23,6 +25,7 @@ class Ajax_Handlers {
 			'save_relation_meta',
 			'get_related_item_meta',
 			'update_relation_items',
+			'reorder_relation_items',
 			'disconnect_relation_items',
 			'create_item_of_type',
 			'reindex'
@@ -36,7 +39,7 @@ class Ajax_Handlers {
 
 	/**
 	 * Change Rel ID column type fro text to varchar(40)
-	 * 
+	 *
 	 * @param  [type] $db_instance [description]
 	 * @return [type]              [description]
 	 */
@@ -70,7 +73,7 @@ class Ajax_Handlers {
 
 	/**
 	 * Reindex relations
-	 * 
+	 *
 	 * @return [type] [description]
 	 */
 	public function reindex() {
@@ -82,6 +85,7 @@ class Ajax_Handlers {
 		}
 
 		$relations   = jet_engine()->relations->get_active_relations();
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$relation_id = ! empty( $_REQUEST['relation'] ) ? absint( $_REQUEST['relation'] ) : false;
 		$checked_default = [];
 
@@ -127,6 +131,10 @@ class Ajax_Handlers {
 
 					if ( $table_data['db_intance'] ) {
 
+						if ( ! $table_data['db_intance']->is_table_exists() ) {
+							$table_data['db_intance']->create_table();
+						}
+
 						$index_sql = [];
 						$drop_sql  = [];
 
@@ -149,7 +157,7 @@ class Ajax_Handlers {
 						}
 
 						$index_sql = apply_filters( 'jet-engine/relations/db/index-sql', $index_sql, $relation, $key );
-						
+
 						foreach ( $table_data['drop'] as $row ) {
 							$drop_sql[] = sprintf( $row, $table_data['db_intance']->table() );
 						}
@@ -161,16 +169,12 @@ class Ajax_Handlers {
 						foreach ( $index_sql as $query ) {
 							$table_data['db_intance']->raw_query( $query );
 						}
-
 					}
 				}
-
 			}
-
 		}
 
 		wp_send_json_success();
-
 	}
 
 	/**
@@ -202,6 +206,7 @@ class Ajax_Handlers {
 		// verify user access
 		$this->check_user_access();
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$related_object_type = ! empty( $_REQUEST['relatedObjectType'] ) ? sanitize_text_field( $_REQUEST['relatedObjectType'] ) : false;
 		$related_object_name = ! empty( $_REQUEST['relatedObjectName'] ) ? sanitize_text_field( $_REQUEST['relatedObjectName'] ) : false;
 		$data                = ! empty( $_REQUEST['item'] ) ? $_REQUEST['item'] : array();
@@ -293,6 +298,7 @@ class Ajax_Handlers {
 		// verify user access
 		$this->check_user_access();
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$related_object_type = ! empty( $_REQUEST['objectType'] ) ? sanitize_text_field( $_REQUEST['objectType'] ) : false;
 		$related_object_name = ! empty( $_REQUEST['object'] ) ? sanitize_text_field( $_REQUEST['object'] ) : false;
 		$current_object      = ! empty( $_REQUEST['currentObjectID'] ) ? sanitize_text_field( $_REQUEST['currentObjectID'] ) : false;
@@ -303,8 +309,9 @@ class Ajax_Handlers {
 
 		$relation = $this->get_relation_from_request();
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		if ( isset( $_REQUEST['isParentProcessed'] ) ) {
-			$is_parent_processed = filter_var( $_REQUEST['isParentProcessed'], FILTER_VALIDATE_BOOLEAN );
+			$is_parent_processed = filter_var( wp_unslash( $_REQUEST['isParentProcessed'] ), FILTER_VALIDATE_BOOLEAN );
 		} else {
 			$is_parent_processed = $relation->is_parent( $related_object_type, $related_object_name );
 		}
@@ -330,7 +337,7 @@ class Ajax_Handlers {
 		// verify user access
 		$this->check_user_access();
 
-		$data = $this->get_data_from_request();
+		$data = $this->get_data_from_request( true );
 
 		$relation            = $data['relation'];
 		$parent_object_id    = $data['parent_object_id'];
@@ -413,14 +420,14 @@ class Ajax_Handlers {
 	 *
 	 * @return [type] [description]
 	 */
-	public function get_data_from_request() {
+	public function get_data_from_request( $allow_empty_related_id = false ) {
 
-		$related_object      = ! empty( $_REQUEST['relatedObjectID'] ) ? sanitize_text_field( $_REQUEST['relatedObjectID'] ) : false;
+		$related_object      = ! empty( $_REQUEST['relatedObjectID'] ) ? sanitize_text_field( $_REQUEST['relatedObjectID'] ) : 0;
 		$related_object_type = ! empty( $_REQUEST['relatedObjectType'] ) ? sanitize_text_field( $_REQUEST['relatedObjectType'] ) : false;
 		$related_object_name = ! empty( $_REQUEST['relatedObjectName'] ) ? sanitize_text_field( $_REQUEST['relatedObjectName'] ) : false;
 		$current_object      = ! empty( $_REQUEST['currentObjectID'] ) ? sanitize_text_field( $_REQUEST['currentObjectID'] ) : false;
 
-		if ( ! $related_object || ! $related_object_type || ! $current_object || ! $related_object_name ) {
+		if ( ( ! $allow_empty_related_id && ! $related_object ) || ! $related_object_type || ! $current_object || ! $related_object_name ) {
 			wp_send_json_error( __( 'Incomplete request', 'jet-engine' ) );
 		}
 
@@ -457,6 +464,41 @@ class Ajax_Handlers {
 			'related_object_type' => $related_object_type,
 			'related_object_name' => $related_object_name,
 			'current_object'      => $current_object,
+		);
+	}
+
+	/**
+	 * Reorder items callback
+	 *
+	 * @return [type] [description]
+	 */
+	public function reorder_relation_items() {
+
+		// verify nonce and abort if not
+		$this->check_nonce();
+
+		// verify user access
+		$this->check_user_access();
+
+		$data = $this->get_data_from_request();
+
+		$relation            = $data['relation'];
+		$parent_object_id    = $data['parent_object_id'];
+		$child_object_id     = $data['child_object_id'];
+		$is_parent_processed = $data['is_parent_processed'];
+		$current_object      = $data['current_object'];
+		$items               = ! empty( $_REQUEST['itemsOrder'] ) ? $_REQUEST['itemsOrder'] : false;
+
+		if ( empty( $items ) ) {
+			wp_send_json_success(
+				$this->get_related_list( $current_object, $relation, $is_parent_processed )
+			);
+		}
+
+		Ordering::instance()->reorder_relation_items( $relation, $items );
+
+		wp_send_json_success(
+			$this->get_related_list( $current_object, $relation, $is_parent_processed )
 		);
 	}
 
@@ -556,10 +598,13 @@ class Ajax_Handlers {
 	/**
 	 * Returns array wiith content of table columns for given item
 	 *
-	 * @param  [type] $columns [description]
-	 * @param  [type] $type    [description]
-	 * @param  [type] $item_id [description]
-	 * @return [type]          [description]
+	 * @param  array $columns     Array of table columns
+	 * @param  string $type       Relation type
+	 * @param  string $item_id    Related item ID
+	 * @param  Relation $relation Relation instance
+	 * @param  string $current_id Current object ID
+	 *
+	 * @return array              Columns content
 	 */
 	public function get_columns_contents( $columns, $type, $item_id, $relation, $current_id ) {
 
@@ -593,7 +638,7 @@ class Ajax_Handlers {
 	/**
 	 * Verify request nonce
 	 *
-	 * @return [type] [description]
+	 * @return void
 	 */
 	public function check_nonce() {
 
@@ -608,7 +653,7 @@ class Ajax_Handlers {
 	/**
 	 * Check user access
 	 *
-	 * @return [type] [description]
+	 * @return void
 	 */
 	public function check_user_access() {
 

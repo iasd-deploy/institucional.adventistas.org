@@ -9,7 +9,8 @@ use Jet_Engine\Bricks_Views\Helpers\Options_Converter;
 use Jet_Engine\Query_Builder\Manager as Query_Manager;
 
 class Query_Loop {
-	public $initial_object = null;
+
+	public $initial_object = [];
 	public $initial_popup_object = null;
 	public $listing_stack = array();
 
@@ -26,8 +27,8 @@ class Query_Loop {
 		add_filter( 'bricks/query/run', array( $this, 'run_query' ), 10, 2 );
 		add_filter( 'bricks/query/result_count', array( $this, 'set_count' ), 10, 2 );
 		add_filter( 'bricks/query/result_max_num_pages', array( $this, 'set_max_num_pages' ), 10, 2 );
+		add_filter( 'bricks/query/init_loop_index', array( $this, 'initialize_loop_index' ), 10, 3 );
 		add_filter( 'bricks/query/loop_object', array( $this, 'set_loop_object' ), 10, 3 );
-		add_action( 'bricks/query/after_loop', array( $this, 'reset_current_object' ), 10 );
 
 		// Initialize current listing for Bricks loop with default object types and Query builder.
 		add_action( 'bricks/query/before_loop', array( $this, 'initialize_current_listing' ), 10 );
@@ -38,6 +39,9 @@ class Query_Loop {
 		add_action( 'bricks/frontend/after_render_data', array( $this, 'restore_object_after_popup_render' ), 10, 2);
 
 		add_filter( 'bricks/element/settings', array( $this, 'manage_stack_for_bricks_loop' ), 10, 2 );
+
+		// JetEngine shortcode inside a Bricks loop item
+		add_filter( 'jet-engine/listings/data/default-object', array( $this, 'maybe_set_bricks_loop_object' ) );
 	}
 
 	/**
@@ -46,13 +50,12 @@ class Query_Loop {
 	 * @param object $query The query object containing details about the query.
 	 */
 	public function initialize_object_before_render( $query ) {
-		if ( ! in_array( $query->object_type, [ 'user', 'term' ] ) ) {
-			return;
+
+		if ( in_array( $query->object_type, [ 'user', 'term' ] ) ) {
+			add_action( 'jet-engine/listing-element/before-render', array( $this, 'set_current_object' ) );
 		}
 
-		$this->initial_object = jet_engine()->listings->data->get_current_object();
-
-		add_action( 'jet-engine/listing-element/before-render', array( $this, 'set_current_object' ) );
+		$this->initial_object[ $query->element_id ] = jet_engine()->listings->data->get_current_object();
 	}
 
 	/**
@@ -61,14 +64,14 @@ class Query_Loop {
 	 * @param object $query The query object containing details about the query.
 	 */
 	public function restore_initial_object_after_render( $query ) {
-		if ( ! in_array( $query->object_type, [ 'user', 'term' ] ) ) {
-			return;
+
+		if ( in_array( $query->object_type, [ 'user', 'term' ] ) ) {
+			remove_action( 'jet-engine/listing-element/before-render', array( $this, 'set_current_object' ) );
 		}
 
-		remove_action( 'jet-engine/listing-element/before-render', array( $this, 'set_current_object' ) );
-
-		if ( ! empty( $this->initial_object ) ) {
-			jet_engine()->listings->data->set_current_object( $this->initial_object );
+		if ( ! empty( $this->initial_object[ $query->element_id ] ) ) {
+			jet_engine()->listings->data->set_current_object( $this->initial_object[ $query->element_id ] );
+			unset( $this->initial_object[ $query->element_id ] );
 		}
 	}
 
@@ -98,7 +101,7 @@ class Query_Loop {
 
 	public function add_control_to_elements() {
 		// Only container, block and div element have query controls
-		$elements = [ 'section', 'container', 'block', 'div' ];
+		$elements = [ 'section', 'container', 'block', 'div', 'slider', 'accordion' ];
 
 		foreach ( $elements as $name ) {
 			add_filter( "bricks/elements/{$name}/controls", [ $this, 'add_jet_engine_controls' ], 40 );
@@ -144,14 +147,9 @@ class Query_Loop {
 			return $results;
 		}
 
-		$query_id = apply_filters( 'jet-engine/bricks-views/query-builder/query-id', $this->get_jet_engine_query_id( $query->settings ) );
+		$query->add_to_history();
 
-		// Return empty results if no query selected or Use Query is not checked
-		if ( $query_id === 0 ) {
-			return $results;
-		}
-
-		$je_query = Query_Manager::instance()->get_query_by_id( $query_id );
+		$je_query = $this->get_jet_engine_query( $query->settings );
 
 		// Return empty results if query not found in JetEngine Query Builder
 		if ( ! $je_query ) {
@@ -203,6 +201,50 @@ class Query_Loop {
 		return $je_query->get_items_pages_count();
 	}
 
+	/**
+	 * Calculates the initial loop index for Jet Engine queries.
+	 *
+	 * @param int $index The default loop index passed through the filter.
+	 * @param string $object_type The type of the query object (e.g., 'posts', 'terms', 'users').
+	 * @param object $query The query object containing the query variables and settings.
+	 * @return int The calculated initial loop index.
+	 */
+	function initialize_loop_index( $index, $object_type, $query ) {
+		if ( ! $this->is_jet_engine_query( $query ) ) {
+			return $index;
+		}
+
+		$je_query = $this->get_jet_engine_query( $query->settings );
+
+		if ( ! $je_query ) {
+			return $index;
+		}
+
+		$query_args     = $je_query->get_query_args();
+		$paged          = ! empty( $query_args['paged'] ) ? $query_args['paged'] : 1;
+		$offset         = isset( $query_args['offset'] ) ? intval( $query_args['offset'] ) : 0;
+		$posts_per_page = $je_query->get_items_per_page();
+
+		switch ( $query_args['_query_type'] ) {
+			// Post loop and User loop
+			case 'posts':
+			case 'users':
+				$initial_index = $offset + ( $posts_per_page > 0 ? ( $paged - 1 ) * $posts_per_page : 0 );
+				break;
+
+			// Term loop and CCT
+			case 'terms':
+			case 'custom-content-type':
+				$initial_index = $offset;
+				break;
+			default:
+				$initial_index = $index;
+				break;
+		}
+
+		return $initial_index;
+	}
+
 	public function set_loop_object( $loop_object, $loop_key, $query ) {
 		if ( ! $this->is_jet_engine_query( $query ) ) {
 			return $loop_object;
@@ -237,21 +279,6 @@ class Query_Loop {
 
 		// We still return the $loop_object so \Bricks\Query::get_loop_object() can use it
 		return $loop_object;
-	}
-
-	public function reset_current_object( $query ) {
-		if ( ! $this->is_jet_engine_query( $query ) ) {
-			return false;
-		}
-
-		$je_query = $this->get_jet_engine_query( $query->settings );
-
-		if ( ! $je_query ) {
-			return false;
-		}
-
-		// Reset current object
-		jet_engine()->listings->data->reset_current_object();
 	}
 
 	/**
@@ -355,7 +382,9 @@ class Query_Loop {
 	 * @return int The query ID as an integer, or 0 if not found or empty.
 	 */
 	public function get_jet_engine_query_id( $settings ) {
-		return ! empty( $settings['jet_engine_query_builder_id'] ) ? absint( $settings['jet_engine_query_builder_id'] ) : 0;
+		$query_id = isset( $settings['jet_engine_query_builder_id'] ) ? absint( $settings['jet_engine_query_builder_id'] ) : 0;
+
+		return apply_filters( 'jet-engine/bricks-views/query-builder/query-id', $query_id );
 	}
 
 	/**
@@ -512,5 +541,43 @@ class Query_Loop {
 
 	public function get_object_type( $settings ) {
 		return ! empty( $settings['query']['objectType'] ) ? $settings['query']['objectType'] : 'post';
+	}
+
+	/**
+	 * Sets the default object in the Bricks loop during an API request.
+	 *
+	 * @param mixed $object The current loop object.
+	 * @return mixed The Bricks loop object or the original object.
+	 */
+	function maybe_set_bricks_loop_object( $object ) {
+		// Check if no object is set, Bricks is looping, and it's an API request
+		if ( ! $object && \Bricks\Query::is_looping() && $this->is_bricks_api_request() ) {
+			$looping_query_id = \Bricks\Query::is_any_looping();
+			$object           = \Bricks\Query::get_loop_object( $looping_query_id );
+		}
+
+		return $object;
+	}
+
+	/**
+	 * Checks if the current request is a Bricks API request.
+	 *
+	 * @return bool True if the request is to Bricks API.
+	 */
+	function is_bricks_api_request() {
+
+		// phpcs:disable
+		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? esc_url( $_SERVER['REQUEST_URI'] ) : '';
+		// phpcs:enable
+
+		if ( empty( $request_uri ) ) {
+			return false;
+		}
+
+		$request_uri         = parse_url( $request_uri, PHP_URL_PATH );
+		$bricks_request_path = 'wp-json/bricks/v1/render_element';
+
+		// Check if the request URI contains the API path at the end
+		return ! empty( $request_uri ) && str_ends_with( rtrim( $request_uri, '/' ), $bricks_request_path );
 	}
 }

@@ -193,7 +193,7 @@ class Jet_Smart_Filters_Bricks_Base extends \Jet_Engine\Bricks_Views\Elements\Ba
 					'tab'      => 'content',
 					'label'    => esc_html__( 'Show apply button', 'jet-smart-filters' ),
 					'type'     => 'checkbox',
-					'default'  => true,
+					'default'  => false,
 					'required' => [ 'apply_on', '=', 'submit' ],
 				]
 			);
@@ -305,6 +305,28 @@ class Jet_Smart_Filters_Bricks_Base extends \Jet_Engine\Bricks_Views\Elements\Ba
 	public function register_filter_label_controls( $css_scheme = null ) {
 
 		$this->start_jet_control_group( 'section_label_style' );
+
+		if ( $this->name === 'jet-smart-filters-select' ) {
+			$this->register_jet_control(
+				'content_position',
+				[
+					'tab'      => 'style',
+					'label'    => esc_html__( 'Position', 'jet-smart-filters' ),
+					'type'     => 'select',
+					'options'  => [
+						'flex'  => esc_html__( 'Line', 'jet-smart-filters' ),
+						'block' => esc_html__( 'Columns', 'jet-smart-filters' ),
+					],
+					'default'  => 'block',
+					'css'      => [
+						[
+							'property' => 'display',
+							'selector' => '.jet-smart-filters-select' . ', .jet-smart-filters-hierarchy' . $css_scheme['filter'] . ' .jet-select',
+						],
+					],
+				]
+			);
+		}
 
 		$this->register_jet_control(
 			'label_typography',
@@ -611,6 +633,7 @@ class Jet_Smart_Filters_Bricks_Base extends \Jet_Engine\Bricks_Views\Elements\Ba
 
 		$settings   = $this->parse_jet_render_attributes( $this->get_jet_settings() );
 		$filter_ids = ! empty( $settings['filter_id'] ) ? $settings['filter_id'] : '';
+		$filter_ids = jet_smart_filters()->utils->select_published_filters( $filter_ids );
 
 		// STEP: Select filter is empty: Show placeholder text
 		if ( empty( $filter_ids ) ) {
@@ -669,7 +692,7 @@ class Jet_Smart_Filters_Bricks_Base extends \Jet_Engine\Bricks_Views\Elements\Ba
 		// scroll
 		$scroll_height    = ! empty( $settings['scroll_enabled'] ) && ! empty( $settings['scroll_height'] ) ? (int)$settings['scroll_height'] : false;
 
-		if ( $apply_indexer ) {
+		if ( jet_smart_filters()->indexer->is_indexer_enabled && $apply_indexer ) {
 			$indexer_class   = 'jet-filter-indexed';
 			$show_counter    = ! empty( $settings['show_counter'] ) ? 'yes' : false;
 			$show_items_rule = ! empty( $settings['show_items_rule'] ) ? $settings['show_items_rule'] : 'show';
@@ -684,7 +707,9 @@ class Jet_Smart_Filters_Bricks_Base extends \Jet_Engine\Bricks_Views\Elements\Ba
 			$settings['apply_button_text'] = '';
 		}
 
-		echo "<div {$this->render_attributes( '_root' )}>";
+		$attrs = $this->render_attributes( '_root' );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<div ' . $attrs . '>';
 
 		if ( $group ) {
 			echo '<div class="jet-filters-group">';
@@ -698,11 +723,11 @@ class Jet_Smart_Filters_Bricks_Base extends \Jet_Engine\Bricks_Views\Elements\Ba
 
 			printf(
 				'<div class="%1$s jet-filter %2$s" data-indexer-rule="%3$s" data-show-counter="%4$s" data-change-counter="%5$s">',
-				apply_filters( 'jet-smart-filters/render_filter_template/base_class', $base_class, $filter_id ),
-				$indexer_class,
-				$show_items_rule,
-				$show_counter,
-				$change_items_rule
+				esc_attr( apply_filters( 'jet-smart-filters/render_filter_template/base_class', $base_class, $filter_id ) ),
+				esc_attr( $indexer_class ),
+				esc_attr( $show_items_rule ),
+				esc_attr( $show_counter ),
+				esc_attr( $change_items_rule )
 			);
 
 			$additional_providers = jet_smart_filters()->utils->get_additional_providers( $settings );

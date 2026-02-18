@@ -46,7 +46,7 @@ class Jet_Elements_Animated_Text extends Jet_Elements_Base {
 	}
 
 	public function get_script_depends() {
-		return array( 'jet-anime-js' );
+		return array( 'jet-anime-js', 'jet-animated-text' );
 	}
 
 	protected function register_controls() {
@@ -241,6 +241,10 @@ class Jet_Elements_Animated_Text extends Jet_Elements_Base {
 					'flex-end' => array(
 						'title' => esc_html__( 'End', 'jet-elements' ),
 						'icon'  => ! is_rtl() ? 'eicon-h-align-right' : 'eicon-h-align-left',
+					),
+					'space-between' => array(
+						'title' => esc_html__( 'Space between', 'jet-elements' ),
+						'icon'  => 'eicon-text-align-justify',
 					),
 				),
 				'selectors'  => array(
@@ -489,8 +493,8 @@ class Jet_Elements_Animated_Text extends Jet_Elements_Base {
 			if ( ' ' === $symbol ) {
 				$symbol = '&nbsp;';
 			}
-
-			$spanned_array[] = sprintf( '<span>%s</span>', $symbol );
+			
+			$spanned_array[] = sprintf( '<span>%s</span>', wp_kses_post( $symbol ) );
 		}
 
 		return implode( $glue, $spanned_array );
@@ -527,13 +531,16 @@ class Jet_Elements_Animated_Text extends Jet_Elements_Base {
 		$module_settings = $this->get_settings_for_display();
 
 		$settings = array(
-			'effect' => $module_settings['animation_effect'],
-			'delay'  => $module_settings['animation_delay'],
+			'effect' => $this->ensure_allowed_value( $module_settings['animation_effect'], array( 'fx1', 'fx2', 'fx3', 'fx4', 'fx5', 'fx6', 'fx7', 'fx8', 'fx9', 'fx10', 'fx11', 'fx12' ) ),
+			'delay'  => absint( $module_settings['animation_delay'] ),
 		);
 
-		$settings = json_encode( $settings );
+		$settings = wp_json_encode( $settings );
 
-		return sprintf( 'data-settings=\'%1$s\'', $settings );
+		// Escape the JSON string for safe use in HTML attributes
+		$data_settings_attribute = esc_attr( $settings );
+
+		return sprintf( 'data-settings=\'%1$s\'', $data_settings_attribute );
 	}
 
 	protected function render() {

@@ -58,8 +58,8 @@ if ( ! class_exists( 'Jet_Engine_Meta_Boxes_Data' ) ) {
 			}
 
 			if ( $redirect ) {
-				wp_redirect( $this->parent->get_page_link() );
-				die();
+				wp_safe_redirect( $this->parent->get_page_link() );
+				exit;
 			} else {
 				return true;
 			}
@@ -171,6 +171,15 @@ if ( ! class_exists( 'Jet_Engine_Meta_Boxes_Data' ) ) {
 			}
 
 			$settings = $meta_box['args'];
+
+			// Ensure default position and priority for legacy meta boxes.
+			if ( ! isset( $settings['position'] ) ) {
+				$settings['position'] = 'normal';
+			}
+
+			if ( ! isset( $settings['priority'] ) ) {
+				$settings['priority'] = 'high';
+			}
 
 			/**
 			 * Start - Legacy code for compatibility previously created meta boxes with new conditions

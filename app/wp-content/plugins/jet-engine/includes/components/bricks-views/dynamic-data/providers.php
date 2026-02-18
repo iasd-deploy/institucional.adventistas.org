@@ -155,13 +155,6 @@ class Providers {
 		$prefixes = implode( '|', $prefixes );
 		$pattern  = '/{(' . $prefixes . ')}/u';
 
-		/**
-		 * Matches the echo tag pattern (#86bwebj6m)
-		 *
-		 * @since 1.9.8
-		 */
-		$echo_pattern = '/echo:([a-zA-Z0-9_]+)/';
-
 		// Get a list of tags to exclude from the Dynamic Data logic
 		$exclude_tags = apply_filters( 'bricks/dynamic_data/exclude_tags', [] );
 
@@ -185,20 +178,11 @@ class Providers {
 
 		$dd_tags_in_content = [];
 		$dd_tags_found      = [];
-		$echo_tags_found    = [];
 
 		// Find all dynamic data tags in the content
 		preg_match_all( $pattern, $content, $dd_tags_in_content );
 
 		$dd_tags_in_content = ! empty( $dd_tags_in_content[1] ) ? $dd_tags_in_content[1] : [];
-
-		// Find all echo tags in the content (@since 1.9.8)
-		preg_match_all( $echo_pattern, $content, $echo_tags_found );
-
-		// Combine the dynamic data tags from the content and the echo tags (@since 1.9.8)
-		if ( ! empty( $echo_tags_found[0] ) ) {
-			$dd_tags_in_content = array_merge( $dd_tags_in_content, $echo_tags_found[0] );
-		}
 
 		if ( ! empty( $dd_tags_in_content ) ) {
 			/**
@@ -235,8 +219,6 @@ class Providers {
 				return $content;
 			}
 
-			$run_again = false;
-
 			foreach ( $matches[1] as $key => $match ) {
 				$tag = $matches[0][ $key ];
 
@@ -251,29 +233,7 @@ class Providers {
 					$value = false;
 				}
 
-				// NOTE: Undocumented (only enable if really needed)
-				$echo_everywhere = apply_filters( 'bricks/code/echo_everywhere', false );
-				if ( $value && strpos( $value, '{echo:' ) !== false ) {
-					if ( $echo_everywhere !== true ) {
-						// Default: Stop the parser if the value contains an echo tag
-						continue;
-					}
-
-					/**
-					 * Certain tags might not be parsed correctly after {echo:}
-					 *
-					 * So we need to run the parser again later
-					 *
-					 * @since 1.9.9
-					 */
-					$run_again = true;
-				}
-
 				$content = str_replace( $tag, $value, $content );
-			}
-
-			if ( $run_again ) {
-				$dd_tag_count++;
 			}
 		}
 

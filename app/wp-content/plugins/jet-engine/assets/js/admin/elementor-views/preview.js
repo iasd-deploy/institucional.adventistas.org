@@ -13,6 +13,17 @@
 
 			window.elementorFrontend.hooks.addAction( 'frontend/element_ready/jet-listing-grid.default', JetEngineElementorPreview.loadHandles );
 
+			window.elementorFrontend.hooks.addAction( 'frontend/element_ready/widget', function( $scope ) {
+				const widgetType = $scope.data( 'widget_type' );
+
+				if ( widgetType && widgetType.includes( 'jet-engine-component' ) ) {
+					$scope.find( '.elementor-invisible' ).each( function() {
+						$( this ).removeClass( 'elementor-invisible' );
+					} );
+				}
+			} );
+
+
 			$( document ).on( 'jet-engine/listing-grid/after-lazy-load', JetEngineElementorPreview.loadHandlesOnLazyLoad );
 
 			window.elementorFrontend.on( 'components:init', function () {
@@ -32,6 +43,26 @@
 					'change:jet-listing-grid',
 					JetEngineElementorPreview.reInitMasonryOnChangeColumns
 				);
+			} );
+
+			/**
+			 * Re-init elements inside JetEngine components on Elementor global widget init
+			 * @see https://github.com/Crocoblock/issues-tracker/issues/13891
+			 */
+			window.elementorFrontend.hooks.addAction( 'frontend/element_ready/global', function( $scope ) {
+				if ( $scope.data( 'widget_type' ) && $scope.data( 'widget_type' ).includes( 'jet-engine-component' ) ) {
+
+					// Prevent double initialization
+					if ( $scope.data( 'is_component_initialized' ) ) {
+						return;
+					}
+
+					$scope.data( 'is_component_initialized', true );
+
+					window.JetEngine.initElementsHandlers(
+						$scope.find( 'div[data-elementor-type="jet-engine-component"]' ).first()
+					);
+				}
 			} );
 		},
 
@@ -111,9 +142,12 @@
 			$handleHtml = '<div class="jet-engine-document-back-handle" role="button" title="' + window.JetEngineElementorPreviewConfig.i18n.back + '"><i class="eicon-arrow-left"></i></div>';
 
 			$documents.prepend( $handleHtml );
+
+			let $widgets = $( '[data-element_type="widget"]:has(.jet-engine-document-edit-item.elementor-edit-mode)' );
+			JetEngineElementorPreview.removeInlineListingStyles( $widgets );
 		},
 
-		documentHandleClick: function() {
+		documentHandleClick: async function() {
 			var $handle = $( this ),
 				$document = $handle.closest( JetEngineElementorPreview.selectors.document );
 
@@ -121,22 +155,51 @@
 				return;
 			}
 
-			JetEngineElementorPreview.switchDocument( $document.data( 'elementorId' ) );
+			let widget = this.closest( '[data-element_type="widget"]' );
+			let widgetId = widget.dataset.id;
+			let listingId = $document.data( 'elementorId' );
+
+			await JetEngineElementorPreview.switchDocument(
+				listingId,
+				`.elementor-element-${widgetId} .elementor-${listingId}`
+			);
+
+			let $handles = $( '.jet-engine-document-handle' ).filter(
+				( i, e ) => {
+					return e !== $handle[0] && +e?.parentNode?.dataset?.elementorId === +listingId;
+
+				}
+			);
+
+			$handles.addClass( 'jet-engine-hidden-handle' );
+
+			JetEngineElementorPreview.removeInlineListingStyles( $( `[data-listing-id="${listingId}"]` ) );
 		},
 
-		documentBackHandleClick: function() {
-			JetEngineElementorPreview.switchDocument( window.elementorFrontendConfig.post.id );
+		removeInlineListingStyles: function( $scope ) {
+			$scope.find( '.jet-listing-grid__item > style' ).remove();
 		},
 
-		switchDocument: function( documentID ) {
+		documentBackHandleClick: async function() {
+			await JetEngineElementorPreview.switchDocument( window.elementorFrontendConfig.post.id );
+			$( '.jet-engine-document-handle' ).removeClass( 'jet-engine-hidden-handle' );
+		},
+
+		switchDocument: async function( documentID, selector = '' ) {
 			if ( ! documentID ) {
 				return;
 			}
 
+			let args = {
+				id: documentID,
+			}
+
+			if ( selector ) {
+				args.selector = selector;
+			}
+
 			window.elementorCommon.api.internal( 'panel/state-loading' );
-			window.elementorCommon.api.run( 'editor/documents/switch', {
-				id: documentID
-			} ).then( function() {
+			await window.elementorCommon.api.run( 'editor/documents/switch', args ).then( function() {
 				return window.elementorCommon.api.internal( 'panel/state-ready' );
 			} );
 		}

@@ -138,7 +138,7 @@ class Screen implements IScreen {
 				'locale'              => Locale::get_site_language(),
 				'localeFull'          => get_locale(),
 				'overlayImages'       => Helper::choices_overlay_images(),
-				'defautOgImage'       => Helper::get_settings( 'titles.open_graph_image', rank_math()->plugin_url() . 'assets/admin/img/social-placeholder.jpg' ),
+				'defaultOgImage'      => Helper::get_settings( 'titles.open_graph_image', rank_math()->plugin_url() . 'assets/admin/img/social-placeholder.jpg' ),
 				'customPermalinks'    => (bool) get_option( 'permalink_structure', false ),
 				'isUserRegistered'    => Helper::is_site_connected(),
 				'autoSuggestKeywords' => Helper::is_site_connected(),
@@ -156,6 +156,7 @@ class Screen implements IScreen {
 					'analytics'  => Helper::has_cap( 'analytics' ),
 					'content_ai' => Helper::has_cap( 'content_ai' ),
 				],
+				'showKeywordIntent'   => Helper::should_determine_search_intent(),
 				'assessor'            => [
 					'serpData'        => $this->get_object_values(),
 					'powerWords'      => $this->power_words(),

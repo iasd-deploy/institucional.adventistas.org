@@ -351,6 +351,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Provider_EPro_Posts' ) ) {
 			$content = ob_get_clean();
 
 			if ( $content ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				echo $content;
 			} else {
 				echo '<div class="elementor-widget-container"></div>';

@@ -49,9 +49,13 @@ class CredentialProvider
     const ENV_PROFILE = 'AWS_PROFILE';
     const ENV_ROLE_SESSION_NAME = 'AWS_ROLE_SESSION_NAME';
     const ENV_SECRET = 'AWS_SECRET_ACCESS_KEY';
+    const ENV_ACCOUNT_ID = 'AWS_ACCOUNT_ID';
     const ENV_SESSION = 'AWS_SESSION_TOKEN';
     const ENV_TOKEN_FILE = 'AWS_WEB_IDENTITY_TOKEN_FILE';
     const ENV_SHARED_CREDENTIALS_FILE = 'AWS_SHARED_CREDENTIALS_FILE';
+    public const ENV_REGION = 'AWS_REGION';
+    public const FALLBACK_REGION = 'us-east-1';
+    public const REFRESH_WINDOW = 60;
     /**
      * Create a default credential provider that
      * first checks for environment variables,
@@ -81,7 +85,7 @@ class CredentialProvider
         if (!isset($config['use_aws_shared_config_files']) || $config['use_aws_shared_config_files'] !== \false) {
             $defaultChain['sso'] = self::sso($profileName, self::getHomeDir() . '/.aws/config', $config);
             $defaultChain['process_credentials'] = self::process();
-            $defaultChain['ini'] = self::ini();
+            $defaultChain['ini'] = self::ini(null, null, $config);
             $defaultChain['process_config'] = self::process('profile ' . $profileName, self::getHomeDir() . '/.aws/config');
             $defaultChain['ini_config'] = self::ini('profile ' . $profileName, self::getHomeDir() . '/.aws/config');
         }
@@ -172,8 +176,10 @@ class CredentialProvider
                     $isConstant = \true;
                     return $creds;
                 }
-                // Refresh expired credentials.
-                if (!$creds->isExpired()) {
+                // Check if credentials are expired or will expire in 1 minute
+                $needsRefresh = $creds->getExpiration() - \time() <= self::REFRESH_WINDOW;
+                // Refresh if expired or expiring soon
+                if (!$needsRefresh && !$creds->isExpired()) {
                     return $creds;
                 }
                 // Refresh the result and forward the promise.
@@ -222,8 +228,10 @@ class CredentialProvider
             // Use credentials from environment variables, if available
             $key = \getenv(self::ENV_KEY);
             $secret = \getenv(self::ENV_SECRET);
+            $accountId = \getenv(self::ENV_ACCOUNT_ID) ?: null;
+            $token = \getenv(self::ENV_SESSION) ?: null;
             if ($key && $secret) {
-                return Promise\Create::promiseFor(new Credentials($key, $secret, \getenv(self::ENV_SESSION) ?: NULL));
+                return Promise\Create::promiseFor(new Credentials($key, $secret, $token, null, $accountId, CredentialSources::ENVIRONMENT));
             }
             return self::reject('Could not find environment variable ' . 'credentials in ' . self::ENV_KEY . '/' . self::ENV_SECRET);
         };
@@ -312,7 +320,7 @@ class CredentialProvider
             $region = isset($config['region']) ? $config['region'] : null;
             if ($tokenFromEnv && $arnFromEnv) {
                 $sessionName = \getenv(self::ENV_ROLE_SESSION_NAME) ? \getenv(self::ENV_ROLE_SESSION_NAME) : null;
-                $provider = new AssumeRoleWithWebIdentityCredentialProvider(['RoleArn' => $arnFromEnv, 'WebIdentityTokenFile' => $tokenFromEnv, 'SessionName' => $sessionName, 'client' => $stsClient, 'region' => $region]);
+                $provider = new AssumeRoleWithWebIdentityCredentialProvider(['RoleArn' => $arnFromEnv, 'WebIdentityTokenFile' => $tokenFromEnv, 'SessionName' => $sessionName, 'client' => $stsClient, 'region' => $region, 'source' => CredentialSources::ENVIRONMENT_STS_WEB_ID_TOKEN]);
                 return $provider();
             }
             $profileName = \getenv(self::ENV_PROFILE) ?: 'default';
@@ -328,7 +336,7 @@ class CredentialProvider
                 }
                 if (isset($profile['web_identity_token_file']) && isset($profile['role_arn'])) {
                     $sessionName = isset($profile['role_session_name']) ? $profile['role_session_name'] : null;
-                    $provider = new AssumeRoleWithWebIdentityCredentialProvider(['RoleArn' => $profile['role_arn'], 'WebIdentityTokenFile' => $profile['web_identity_token_file'], 'SessionName' => $sessionName, 'client' => $stsClient, 'region' => $region]);
+                    $provider = new AssumeRoleWithWebIdentityCredentialProvider(['RoleArn' => $profile['role_arn'], 'WebIdentityTokenFile' => $profile['web_identity_token_file'], 'SessionName' => $sessionName, 'client' => $stsClient, 'region' => $region, 'source' => CredentialSources::PROFILE_STS_WEB_ID_TOKEN]);
                     return $provider();
                 }
             } else {
@@ -397,7 +405,7 @@ class CredentialProvider
             if (empty($data[$profile]['aws_session_token'])) {
                 $data[$profile]['aws_session_token'] = isset($data[$profile]['aws_security_token']) ? $data[$profile]['aws_security_token'] : null;
             }
-            return Promise\Create::promiseFor(new Credentials($data[$profile]['aws_access_key_id'], $data[$profile]['aws_secret_access_key'], $data[$profile]['aws_session_token']));
+            return Promise\Create::promiseFor(new Credentials($data[$profile]['aws_access_key_id'], $data[$profile]['aws_secret_access_key'], $data[$profile]['aws_session_token'], null, $data[$profile]['aws_account_id'] ?? null, CredentialSources::PROFILE));
         };
     }
     /**
@@ -458,7 +466,13 @@ class CredentialProvider
             if (empty($processData['SessionToken'])) {
                 $processData['SessionToken'] = null;
             }
-            return Promise\Create::promiseFor(new Credentials($processData['AccessKeyId'], $processData['SecretAccessKey'], $processData['SessionToken'], $expires));
+            $accountId = null;
+            if (!empty($processData['AccountId'])) {
+                $accountId = $processData['AccountId'];
+            } elseif (!empty($data[$profile]['aws_account_id'])) {
+                $accountId = $data[$profile]['aws_account_id'];
+            }
+            return Promise\Create::promiseFor(new Credentials($processData['AccessKeyId'], $processData['SecretAccessKey'], $processData['SessionToken'], $expires, $accountId, CredentialSources::PROFILE_PROCESS));
         };
     }
     /**
@@ -490,7 +504,6 @@ class CredentialProvider
             }
         }
         if (empty($stsClient)) {
-            $sourceRegion = isset($profiles[$sourceProfileName]['region']) ? $profiles[$sourceProfileName]['region'] : 'us-east-1';
             $config['preferStaticCredentials'] = \true;
             $sourceCredentials = null;
             if (!empty($roleProfile['source_profile'])) {
@@ -498,10 +511,11 @@ class CredentialProvider
             } else {
                 $sourceCredentials = self::getCredentialsFromSource($profileName, $filename);
             }
-            $stsClient = new StsClient(['credentials' => $sourceCredentials, 'region' => $sourceRegion, 'version' => '2011-06-15']);
+            $region = $profiles[$sourceProfileName]['region'] ?? $config['region'] ?? \getEnv(self::ENV_REGION) ?: null;
+            $stsClient = self::createDefaultStsClient($sourceCredentials, $region);
         }
         $result = $stsClient->assumeRole(['RoleArn' => $roleArn, 'RoleSessionName' => $roleSessionName]);
-        $credentials = $stsClient->createCredentials($result);
+        $credentials = $stsClient->createCredentials($result, CredentialSources::STS_ASSUME_ROLE);
         return Promise\Create::promiseFor($credentials);
     }
     /**
@@ -638,8 +652,9 @@ class CredentialProvider
         $tokenPromise = new Aws\Token\SsoTokenProvider($ssoProfileName, $filename, $ssoOidcClient);
         $token = $tokenPromise()->wait();
         $ssoCredentials = CredentialProvider::getCredentialsFromSsoService($ssoProfile, $ssoSession['sso_region'], $token->getToken(), $config);
-        $expiration = $ssoCredentials['expiration'];
-        return Promise\Create::promiseFor(new Credentials($ssoCredentials['accessKeyId'], $ssoCredentials['secretAccessKey'], $ssoCredentials['sessionToken'], $expiration));
+        //Expiration value is returned in epoch milliseconds. Conversion to seconds
+        $expiration = \intdiv($ssoCredentials['expiration'], 1000);
+        return Promise\Create::promiseFor(new Credentials($ssoCredentials['accessKeyId'], $ssoCredentials['secretAccessKey'], $ssoCredentials['sessionToken'], $expiration, $ssoProfile['sso_account_id'], CredentialSources::PROFILE_SSO));
     }
     /**
      * @param $profiles
@@ -672,7 +687,7 @@ class CredentialProvider
             return self::reject("Cached SSO credentials returned expired credentials");
         }
         $ssoCredentials = CredentialProvider::getCredentialsFromSsoService($ssoProfile, $ssoProfile['sso_region'], $tokenData['accessToken'], $config);
-        return Promise\Create::promiseFor(new Credentials($ssoCredentials['accessKeyId'], $ssoCredentials['secretAccessKey'], $ssoCredentials['sessionToken'], $expiration));
+        return Promise\Create::promiseFor(new Credentials($ssoCredentials['accessKeyId'], $ssoCredentials['secretAccessKey'], $ssoCredentials['sessionToken'], $expiration, $ssoProfile['sso_account_id'], CredentialSources::PROFILE_SSO_LEGACY));
     }
     /**
      * @param array $ssoProfile
@@ -691,5 +706,19 @@ class CredentialProvider
         $ssoResponse = $ssoClient->getRoleCredentials(['accessToken' => $accessToken, 'accountId' => $ssoProfile['sso_account_id'], 'roleName' => $ssoProfile['sso_role_name']]);
         $ssoCredentials = $ssoResponse['roleCredentials'];
         return $ssoCredentials;
+    }
+    /**
+     * @param CredentialsInterface $credentials
+     * @param string|null $region
+     *
+     * @return StsClient
+     */
+    private static function createDefaultStsClient(CredentialsInterface|callable $credentials, ?string $region) : StsClient
+    {
+        if (empty($region)) {
+            $region = self::FALLBACK_REGION;
+            \trigger_error('NOTICE: STS client created without explicit `region` configuration.' . \PHP_EOL . "Defaulting to `{$region}`. This fallback behavior may be removed." . \PHP_EOL . 'To avoid potential disruptions, configure a `region` using one of the following methods:' . \PHP_EOL . '(1) Add `region` to your source profile in ~/.aws/credentials,' . \PHP_EOL . '(2) Pass `region` in the `$config` array when calling the provider,' . \PHP_EOL . '(3) Set the `AWS_REGION` environment variable.' . \PHP_EOL . 'See: https://docs.aws.amazon.com/sdk-for-php/v3/developer-guide/guide_credentials_assume_role.html#assume-role-with-profile' . \PHP_EOL, \E_USER_NOTICE);
+        }
+        return new StsClient(['credentials' => $credentials, 'region' => $region]);
     }
 }

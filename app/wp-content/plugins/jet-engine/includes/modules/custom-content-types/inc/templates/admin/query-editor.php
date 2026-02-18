@@ -17,21 +17,21 @@
 			v-model="query.content_type"
 		></cx-vui-select>
 		<cx-vui-input
-				label="<?php _e( 'Number', 'jet-engine' ); ?>"
-				description="<?php _e( 'Number of items to show in the listing grid or per page if JetSmartFilters pagination is used. Query Count dynamic tag will show total number of items matched current Query', 'jet-engine' ); ?>"
-				:wrapper-css="[ 'equalwidth' ]"
-				size="fullwidth"
-				name="query_number"
-				v-model="query.number"
-			></cx-vui-input>
-			<cx-vui-input
-				label="<?php _e( 'Offset', 'jet-engine' ); ?>"
-				description="<?php _e( 'Number of items to skip', 'jet-engine' ); ?>"
-				:wrapper-css="[ 'equalwidth' ]"
-				size="fullwidth"
-				name="query_offset"
-				v-model="query.offset"
-			></cx-vui-input>
+			label="<?php _e( 'Number', 'jet-engine' ); ?>"
+			description="<?php _e( 'Number of items to show in the listing grid or per page if JetSmartFilters pagination is used. Query Count dynamic tag will show total number of items matched current Query', 'jet-engine' ); ?>"
+			:wrapper-css="[ 'equalwidth' ]"
+			size="fullwidth"
+			name="query_number"
+			v-model="query.number"
+		></cx-vui-input>
+		<cx-vui-input
+			label="<?php _e( 'Offset', 'jet-engine' ); ?>"
+			description="<?php _e( 'Number of items to skip', 'jet-engine' ); ?>"
+			:wrapper-css="[ 'equalwidth' ]"
+			size="fullwidth"
+			name="query_offset"
+			v-model="query.offset"
+		></cx-vui-input>
 		<cx-vui-select
 			label="<?php _e( 'Status', 'jet-engine' ); ?>"
 			description="<?php _e( 'Select items only with the certain status', 'jet-engine' ); ?>"
@@ -53,6 +53,14 @@
 			size="fullwidth"
 			v-model="query.status"
 		></cx-vui-select>
+		<cx-vui-input
+			label="<?php _e( 'Search Query', 'jet-engine' ); ?>"
+			description="<?php _e( 'Search string to search across all CCT fields. IF you need to search by a specific field - please use Query settings and Like compare operator.', 'jet-engine' ); ?>"
+			:wrapper-css="[ 'equalwidth', 'has-macros' ]"
+			size="fullwidth"
+			name="search_query"
+			v-model="query.search_query"
+		><jet-query-dynamic-args v-model="dynamicQuery.search_query"></jet-query-dynamic-args></cx-vui-input>
 		<cx-vui-component-wrapper
 			:wrapper-css="[ 'fullwidth-control' ]"
 			v-if="hasFields()"
@@ -128,6 +136,13 @@
 					button-size="mini"
 					v-model="query.args"
 					@add-new-item="addNewField( $event, [], query.args, newDynamicArgs )"
+					:custom-actions="[
+						{
+							buttonLabel: '<?php _e( 'Add new group', 'jet-engine' ); ?>',
+							buttonStyle: 'accent-border',
+							callback: addNewArgsGroup,
+						}
+					]"
 				>
 					<cx-vui-repeater-item
 						v-for="( clause, index ) in query.args"
@@ -137,44 +152,41 @@
 						@delete-item="deleteField( $event, clause._id, query.args, deleteDynamicArgs )"
 						:key="clause._id"
 					>
-						<cx-vui-select
-							label="<?php _e( 'Field', 'jet-engine' ); ?>"
-							description="<?php _e( 'Select current content type field to get data by', 'jet-engine' ); ?>"
-							:wrapper-css="[ 'equalwidth' ]"
-							:options-list="currentFields"
-							size="fullwidth"
-							:value="query.args[ index ].field"
-							@input="setFieldProp( clause._id, 'field', $event, query.args )"
-						></cx-vui-select>
-						<cx-vui-select
-							label="<?php _e( 'Compare', 'jet-engine' ); ?>"
-							description="<?php _e( 'Operator to test', 'jet-engine' ); ?>"
-							:wrapper-css="[ 'equalwidth' ]"
-							:options-list="operators"
-							size="fullwidth"
-							:value="query.args[ index ].operator"
-							@input="setFieldProp( clause._id, 'operator', $event, query.args )"
-						></cx-vui-select>
-						<cx-vui-textarea
-							label="<?php _e( 'Value', 'jet-engine' ); ?>"
-							:wrapper-css="[ 'equalwidth', 'has-macros' ]"
-							size="fullwidth"
-							:value="query.args[ index ].value"
-							@input="setFieldProp( clause._id, 'value', $event, query.args )"
-						><jet-query-dynamic-args v-model="dynamicQuery.args[ clause._id ].value"></jet-query-dynamic-args></cx-vui-textarea>
-						<cx-vui-select
-							label="<?php _e( 'Type', 'jet-engine' ); ?>"
-							description="<?php _e( 'Data type stored in the given field', 'jet-engine' ); ?>"
-							:wrapper-css="[ 'equalwidth' ]"
-							:options-list="dataTypes"
-							size="fullwidth"
-							:value="query.args[ index ].type"
-							@input="setFieldProp( clause._id, 'type', $event, query.args )"
-						></cx-vui-select>
+						<jet-engine-cct-query-field
+							:field="clause"
+							:meta-query="query.args"
+							:dynamic-query="dynamicQuery.args[ clause._id ]"
+							:current-fields="currentFields"
+							@input="setFieldData( clause._id, $event, query.args )"
+							@dynamic-input="setDynamicArgs( clause._id, $event )"
+						></jet-engine-cct-query-field>
 					</cx-vui-repeater-item>
 				</cx-vui-repeater>
 			</div>
 		</cx-vui-component-wrapper>
+		<cx-vui-select
+			v-if="1 < query.args.length && ! query.status"
+			label="<?php _e( 'Relation', 'jet-engine' ); ?>"
+			description="<?php _e( 'The logical relationship between args clauses', 'jet-engine' ); ?>"
+			:wrapper-css="[ 'equalwidth' ]"
+			:options-list="[
+				{
+					value: 'AND',
+					label: '<?php _e( 'And', 'jet-engine' ); ?>',
+				},
+				{
+					value: 'OR',
+					label: '<?php _e( 'Or', 'jet-engine' ); ?>',
+				},
+			]"
+			size="fullwidth"
+			v-model="query.relation"
+		></cx-vui-select>
+		<cx-vui-component-wrapper
+			v-if="1 < query.args.length && query.status"
+			label="<?php _e( 'Please note', 'jet-engine' ); ?>"
+			description="<?php _e( 'You set <b>Status</b> option, so relation will be forced to <b>And</b> to avoid conflicts between status clause and other clauses.', 'jet-engine' ); ?>"
+		></cx-vui-component-wrapper>
 		<?php do_action( 'jet-engine/custom-content-types/query-builder-controls' ); ?>
 		<cx-vui-component-wrapper
 			:wrapper-css="[ 'equalwidth' ]"

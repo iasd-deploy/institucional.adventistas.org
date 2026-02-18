@@ -58,7 +58,7 @@ class Jet_Elements_Posts extends Jet_Elements_Base {
 	}
 
 	public function get_script_depends() {
-		return array( 'jet-slick' );
+		return array( 'jet-slick', 'jet-posts' );
 	}
 
 	protected function register_controls() {
@@ -2529,7 +2529,18 @@ class Jet_Elements_Posts extends Jet_Elements_Base {
 				$attr_val = $this->_get_icon( $attr );
 			} else {
 				$attr_val = isset( $settings[ $attr ] ) ? $settings[ $attr ] : '';
-				$attr_val = ! is_array( $attr_val ) ? $attr_val : implode( ',', $attr_val );
+				
+				if ( is_array( $attr_val ) ) {
+					if ( isset( $attr_val['size'] ) ) {						
+						if ( isset( $attr_val['unit'] ) && ! empty( $attr_val['unit'] ) ) {
+							$attr_val = $attr_val['size'] . $attr_val['unit'];
+						} else {
+							$attr_val = $attr_val['size'];
+						}
+					} else {
+						$attr_val = implode( ',', $attr_val );
+					}
+				}
 			}
 
 			$attributes[ $attr ] = $attr_val;
@@ -2540,7 +2551,7 @@ class Jet_Elements_Posts extends Jet_Elements_Base {
 			$attributes[ $attr ] = isset( $settings[ $attr ] ) ? $settings[ $attr ] : false;
 		}
 
-		echo $this->maybe_apply_carousel_wrappers( $shortcode_obj->do_shortcode( $attributes ), $settings );
+		echo $this->maybe_apply_carousel_wrappers( $shortcode_obj->do_shortcode( $attributes ), $settings ); // phpcs:ignore
 
 		$this->_close_wrap();
 	}

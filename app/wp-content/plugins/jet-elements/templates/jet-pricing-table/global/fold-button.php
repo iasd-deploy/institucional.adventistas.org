@@ -30,6 +30,7 @@ $this->add_render_attribute( 'fold_button', array(
 	'aria-label'                     => ( isset( $settings['button_unfold_text'] ) && '' != $settings['button_unfold_text'] ) ? $settings['button_unfold_text'] : $unfold_text_accessibility
 ) );
 
+// phpcs:disable
 if ( 'right' === $fold_button_icon_position ) {
 	printf( '<div %1$s>%2$s%3$s</div>',
 		$this->get_render_attribute_string( 'fold_button' ),
@@ -43,3 +44,4 @@ if ( 'right' === $fold_button_icon_position ) {
 		$fold_button_text_html
 	);
 }
+// phpcs:enable

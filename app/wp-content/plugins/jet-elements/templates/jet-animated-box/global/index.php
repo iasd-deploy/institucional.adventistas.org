@@ -31,7 +31,7 @@ switch ( $settings['switch_event_type'] ) {
 	break;
 }
 
-?><div id="jet-animated-box-<?php echo esc_attr( $widget_id );  ?>" class="jet-animated-box <?php echo esc_attr( $animation_class ); ?>" <?php echo $this->generate_setting_json(); ?>>
+?><div id="jet-animated-box-<?php echo esc_attr( $widget_id );  ?>" class="jet-animated-box <?php echo esc_attr( $animation_class ); ?>" <?php echo $this->generate_setting_json(); // phpcs:ignore ?>>
 	<div id="jet-animated-box__front-<?php echo esc_attr( $widget_id ); ?>" class="jet-animated-box__front">
 		<div class="jet-animated-box__inner"><?php
 
@@ -43,7 +43,7 @@ switch ( $settings['switch_event_type'] ) {
 					$this->_html( 'front_side_description', '<p class="jet-animated-box__description jet-animated-box__description--front">%s</p>' );
 				?></div><?php
 			} else {
-				echo $this->get_template_content( $settings['front_side_template_id'] );
+				echo $this->get_template_content( $settings['front_side_template_id'] ); // phpcs:ignore
 			}
 		?></div>
 		<div class="jet-animated-box__overlay"></div><?php
@@ -66,7 +66,7 @@ switch ( $settings['switch_event_type'] ) {
 				$this->_glob_inc_if( 'action-button', array( 'back_side_button_link', 'back_side_button_text' ) );
 			?></div><?php
 		} else {
-			echo $this->get_template_content( $settings['back_side_template_id'] );
+			echo $this->get_template_content( $settings['back_side_template_id'] ); // phpcs:ignore
 		}
 
 		?></div>

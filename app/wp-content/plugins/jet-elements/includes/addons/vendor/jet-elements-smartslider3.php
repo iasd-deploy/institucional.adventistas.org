@@ -102,7 +102,7 @@ class Jet_Elements_Smartslider3 extends Jet_Elements_Base {
 			}
 
 			printf(
-				$this->get_slider_format(),
+				$this->get_slider_format(), // phpcs:ignore
 				do_shortcode( '[smartslider3 slider=' . $slider . ']' )
 			);
 
@@ -118,14 +118,14 @@ class Jet_Elements_Smartslider3 extends Jet_Elements_Base {
 		$format       = '<div class="elementor-smartslider">%s</div>';
 
 		if ( ! $slider ) {
-			printf( $format, $placeholder );
+			printf( $format, $placeholder ); // phpcs:ignore
 			return;
 		}
 
 		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $sliderstable WHERE id=%d", $slider ) );
 
 		if ( null === $row ) {
-			printf( $format, $placeholder );
+			printf( $format, $placeholder ); // phpcs:ignore
 			return;
 		}
 
@@ -144,7 +144,7 @@ class Jet_Elements_Smartslider3 extends Jet_Elements_Base {
 		);
 
 		if ( null === $slide ) {
-			printf( $format, $placeholder );
+			printf( $format, $placeholder ); // phpcs:ignore
 			return;
 		}
 
@@ -158,7 +158,7 @@ class Jet_Elements_Smartslider3 extends Jet_Elements_Base {
 			$this->get_placeholder_image( $slide_params )
 		);
 
-		printf( $format, $image );
+		printf( $format, $image ); // phpcs:ignore
 	}
 
 	public function get_placeholder_image( $slide_params ) {
@@ -180,7 +180,7 @@ class Jet_Elements_Smartslider3 extends Jet_Elements_Base {
 		// In plain mode, render without shortcode
 		$slider = $this->get_settings( 'slider' );
 
-		printf( '[smartslider3 slider="%s"]', $slider );
+		printf( '[smartslider3 slider="%s"]', $slider ); // phpcs:ignore
 
 	}
 

@@ -61,7 +61,7 @@ class Sources {
 	 * Get source instance by ID
 	 *
 	 * @param  string $id
-	 * @return object|false
+	 * @return Source\Base|false
 	 */
 	public function get_source( $id ) {
 		return isset( $this->_sources[ $id ] ) ? $this->_sources[ $id ] : false;

@@ -26,19 +26,19 @@ if ( isset( $settings['button_nofollow'] ) && filter_var( $settings['button_nofo
 }
 
 ?>
-<a <?php echo $this->get_render_attribute_string( 'button' ); ?>><?php
+<a <?php echo $this->get_render_attribute_string( 'button' ); // phpcs:ignore ?>><?php
 
 	$position = $settings['button_icon_position'];
 	$icon     = $settings['add_button_icon'];
 
 	if ( $icon && 'left' === $position ) {
-		echo $this->_icon( 'button_icon', '<span class="jet-elements-icon button-icon">%s</span>' );
+		echo $this->_icon( 'button_icon', '<span class="jet-elements-icon button-icon">%s</span>' ); // phpcs:ignore
 	}
 
-	echo $this->_html( 'button_text' );
+	echo $this->_html( 'button_text' ); // phpcs:ignore
 
 	if ( $icon && 'right' === $position ) {
-		echo $this->_icon( 'button_icon', '<span class="jet-elements-icon button-icon">%s</span>' );
+		echo $this->_icon( 'button_icon', '<span class="jet-elements-icon button-icon">%s</span>' ); // phpcs:ignore
 	}
 
 ?></a>

@@ -83,7 +83,7 @@ class Component_Control_Value extends \Jet_Engine_Base_Macros {
 			return $this->get_image_control_value( $value, $args );
 		}
 
-		return wp_kses_post( $value );
+		return do_shortcode( wp_kses_post( $value ) );
 
 	}
 

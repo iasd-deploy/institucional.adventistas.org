@@ -36,8 +36,14 @@ class Manual_Bulk_Options extends Manual_Options {
 
 	}
 
+	/**
+	 * Get options for field settings
+	 *
+	 * @param  array $field Fields settings.
+	 * @return array
+	 */
 	public function parse_options( $field ) {
-		
+
 		$raw = ! empty( $field['bulk_options'] ) ? $field['bulk_options'] : '';
 		$result = [];
 
@@ -48,7 +54,14 @@ class Manual_Bulk_Options extends Manual_Options {
 		}
 
 		foreach ( $raw as $value ) {
+
 			$parsed_value = explode( '::', trim( $value ) );
+
+			// If we have empty value & empty label - is an empty string, skip it.
+			if ( empty( $parsed_value[0] ) && empty( $parsed_value[1] ) ) {
+				continue;
+			}
+
 			$result[] = array(
 				'key'        => $parsed_value[0],
 				'value'      => isset( $parsed_value[1] ) ? $parsed_value[1] : $parsed_value[0],
@@ -57,7 +70,6 @@ class Manual_Bulk_Options extends Manual_Options {
 		}
 
 		return $result;
-
 	}
 
 	/**

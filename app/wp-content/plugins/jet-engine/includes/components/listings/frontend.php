@@ -22,6 +22,7 @@ if ( ! class_exists( 'Jet_Engine_Frontend' ) ) {
 		protected $listing_id = null;
 		protected $processed_listing_id = null;
 		protected $did_scripts = false;
+		private   $listing_assets_loaded = [];
 
 		/**
 		 * Constructor for the class
@@ -32,7 +33,7 @@ if ( ! class_exists( 'Jet_Engine_Frontend' ) ) {
 		}
 
 		public function register_listing_deps() {
-			
+
 			wp_register_script(
 				'jquery-slick',
 				jet_engine()->plugin_url( 'assets/lib/slick/slick.min.js' ),
@@ -80,8 +81,14 @@ if ( ! class_exists( 'Jet_Engine_Frontend' ) ) {
 
 			wp_enqueue_script(
 				'jet-engine-frontend',
-				jet_engine()->plugin_url( 'assets/js/frontend.js' ),
-				array( 'jquery', 'jet-plugins' ),
+				jet_engine()->plugin_url( 'assets/js/frontend/frontend.js' ),
+				array_merge(
+					array( 'jquery', 'jet-plugins' ),
+					apply_filters(
+						'jet-engine/listings/frontend-scripts/dependencies',
+						array()
+					)
+				),
 				jet_engine()->get_version(),
 				true
 			);
@@ -103,6 +110,11 @@ if ( ! class_exists( 'Jet_Engine_Frontend' ) ) {
 				'post_id' => $post_id,
 			) );
 
+			if ( is_object( $root_object ) ) {
+				$localize_data['queried_object_id']    = jet_engine()->listings->data->get_current_object_id( $root_object );
+				$localize_data['queried_object_class'] = get_class( $root_object );
+			}
+
 			wp_localize_script( 'jet-engine-frontend', 'JetEngineSettings', $localize_data );
 
 		}
@@ -118,9 +130,11 @@ if ( ! class_exists( 'Jet_Engine_Frontend' ) ) {
 
 			$query = '';
 
+			// phpcs:disable
 			if ( ! empty( $_SERVER['QUERY_STRING'] ) ) {
 				$query .= '?' . $_SERVER['QUERY_STRING'];
 			}
+			// phpcs:enable
 
 			$query_args = array( 'nocache' => time() );
 
@@ -195,7 +209,7 @@ if ( ! class_exists( 'Jet_Engine_Frontend' ) ) {
 			}
 
 			if ( ! wp_script_is( $lib, 'registered' ) ) {
-				wp_register_script( 
+				wp_register_script(
 					$lib,
 					jet_engine()->plugin_url( $libs[ $lib ] ),
 					array(),
@@ -217,7 +231,7 @@ if ( ! class_exists( 'Jet_Engine_Frontend' ) ) {
 		public function enqueue_masonry_assets() {
 
 			$this->ensure_lib( 'imagesloaded' );
-			
+
 			wp_enqueue_script(
 				'jet-engine-macy',
 				jet_engine()->plugin_url( 'assets/lib/macy/macy.js' ),
@@ -283,6 +297,66 @@ if ( ! class_exists( 'Jet_Engine_Frontend' ) ) {
 
 			return $content;
 
+		}
+
+		/**
+		 * Ensures that listing item assets are loaded by getting listing item content.
+		 * Useful when you don't need to actually render the listing item,
+		 * but to make sure that scripts and styles are loaded.
+		 * 
+		 * @param  int         $listing_id
+		 * @param  object|null $object
+		 */
+		public function ensure_listing_item_assets( $listing_id, $object = null ) {
+			/**
+			 * prevent loading assets multiple times for the same listing
+			 * 
+			 * @see https://github.com/Crocoblock/issues-tracker/issues/18476
+			 */
+			if ( isset( $this->listing_assets_loaded[ $listing_id ] ) ) {
+				return;
+			}
+
+			$this->listing_assets_loaded[ $listing_id ] = true;
+
+			if ( ! ( defined('REST_REQUEST') && REST_REQUEST ) && ! wp_doing_ajax() ) {
+				add_action(
+					'jet-engine/ensure-assets/slider',
+					array( $this, 'ensure_slider_assets' )
+				);
+
+				$initial_listing_id = $this->listing_id;
+				$this->listing_id   = absint( $listing_id );
+
+				if ( ! $this->listing_id ) {
+					$this->listing_id = $initial_listing_id;
+					return;
+				}
+
+				$initial_object = jet_engine()->listings->data->get_current_object();
+
+				global $post;
+				$default_post = $post;
+				$this->get_listing_item( $object );
+				$post = $default_post;
+				setup_postdata( $post );
+
+				$this->listing_id = $initial_listing_id;
+				jet_engine()->listings->data->set_current_object( $initial_object );
+
+				remove_action(
+					'jet-engine/ensure-assets/slider',
+					array( $this, 'ensure_slider_assets' )
+				);
+			}
+		}
+
+		public function ensure_slider_assets() {
+			if ( ! wp_script_is( 'jquery-slick', 'enqueued' ) ) {
+				wp_enqueue_script( 'jquery-slick' );
+			}
+			
+			$this->ensure_lib( 'imagesloaded' );
 		}
 
 		/**

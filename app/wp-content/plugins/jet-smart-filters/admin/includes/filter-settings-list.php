@@ -60,6 +60,47 @@ return array(
 			),
 		),
 
+		'_ih_terms_orderby' => array(
+			'type'    => 'select',
+			'title'   => __( 'Items Order By', 'jet-smart-filters' ),
+			'value'   => 'name',
+			'options' => array(
+				'name'           => __( 'Name', 'jet-smart-filters' ),
+				'slug'           => __( 'Slug', 'jet-smart-filters' ),
+				'id'             => __( 'ID', 'jet-smart-filters' ),
+				'count'          => __( 'Count', 'jet-smart-filters' ),
+				'description'    => __( 'Description', 'jet-smart-filters' ),
+				'meta_value'     => __( 'Meta Key', 'jet-smart-filters' ),
+				'meta_value_num' => __( 'Meta Key Numeric', 'jet-smart-filters' ),
+			),
+			'conditions' => array(
+				'_filter_type'     => 'select',
+				'_is_hierarchical' => true
+			),
+		),
+		'_ih_terms_orderby_meta_value' => array(
+			'type'        => 'text',
+			'title'       => __( 'Meta Key', 'jet-smart-filters' ),
+			'conditions'  => array(
+				'_filter_type'     => 'select',
+				'_is_hierarchical' => true,
+				'_ih_terms_orderby'   => array( 'meta_value', 'meta_value_num' ),
+			),
+		),
+		'_ih_terms_order' => array(
+			'type'    => 'select',
+			'title'   => __( 'Items Order', 'jet-smart-filters' ),
+			'value'   => 'ASC',
+			'options' => array(
+				'ASC'  => __( 'ASC', 'jet-smart-filters' ),
+				'DESC' => __( 'DESC', 'jet-smart-filters' ),
+			),
+			'conditions' => array(
+				'_filter_type'     => 'select',
+				'_is_hierarchical' => true
+			),
+		),
+
 		// Data Source
 		'_data_source' => array(
 			'type'        => 'select',
@@ -102,6 +143,59 @@ return array(
 			'conditions' => array(
 				'_filter_type' => array( 'checkboxes', 'select', 'radio', 'color-image' ),
 				'_data_source' => 'taxonomies',
+			),
+		),
+		'_terms_orderby' => array(
+			'type'    => 'select',
+			'title'   => __( 'Terms Order By', 'jet-smart-filters' ),
+			'value'   => 'name',
+			'options' => array(
+				'name'           => __( 'Name', 'jet-smart-filters' ),
+				'slug'           => __( 'Slug', 'jet-smart-filters' ),
+				'id'             => __( 'ID', 'jet-smart-filters' ),
+				'count'          => __( 'Count', 'jet-smart-filters' ),
+				'description'    => __( 'Description', 'jet-smart-filters' ),
+				'meta_value'     => __( 'Meta Key', 'jet-smart-filters' ),
+				'meta_value_num' => __( 'Meta Key Numeric', 'jet-smart-filters' ),
+			),
+			'conditions' => array(
+				'_filter_type' => array( 'checkboxes', 'select', 'radio' ),
+				'_data_source' => 'taxonomies',
+			),
+		),
+		'_terms_orderby_meta_value' => array(
+			'type'        => 'text',
+			'title'       => __( 'Meta Key', 'jet-smart-filters' ),
+			'conditions'  => array(
+				'_filter_type'   => array( 'checkboxes', 'select', 'radio' ),
+				'_data_source'   => 'taxonomies',
+				'_terms_orderby' => array( 'meta_value', 'meta_value_num' ),
+			),
+		),
+		'_terms_order' => array(
+			'type'    => 'select',
+			'title'   => __( 'Terms Order', 'jet-smart-filters' ),
+			'value'   => 'ASC',
+			'options' => array(
+				'ASC'  => __( 'ASC', 'jet-smart-filters' ),
+				'DESC' => __( 'DESC', 'jet-smart-filters' ),
+			),
+			'conditions' => array(
+				'_filter_type' => array( 'checkboxes', 'select', 'radio' ),
+				'_data_source' => 'taxonomies',
+			),
+		),
+		'_terms_relational_operator' => array(
+			'type'    => 'select',
+			'title'   => __( 'Relational Operator', 'jet-smart-filters' ),
+			'value'   => 'OR',
+			'options' => array(
+				'OR'  => __( 'Union', 'jet-smart-filters' ),
+				'AND' => __( 'Intersection', 'jet-smart-filters' ),
+			),
+			'conditions' => array(
+				'_filter_type' => 'checkboxes',
+				//'_data_source' => 'taxonomies',
 			),
 		),
 
@@ -824,12 +918,19 @@ return array(
 				)
 			),
 		),
-		'_default_filter_value' => array(
+		/* '_default_filter_value' => array(
 			'type'       => 'text',
 			'title'      => __( 'Default Filter Value', 'jet-smart-filters' ),
 			'conditions' => array(
 				'_is_default_filter_value' => true
 			),
+		), */
+		'_default_filter_value' => array(
+			'type'       => 'advanced_input',
+			'title'      => __( 'Default Filter Value', 'jet-smart-filters' ),
+			'conditions' => array(
+				'_is_default_filter_value' => true
+			)
 		),
 		'_default_filter_value_info' => array(
 			'type'       => 'html',

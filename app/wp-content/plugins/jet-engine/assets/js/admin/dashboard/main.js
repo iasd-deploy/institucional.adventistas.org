@@ -18,6 +18,7 @@
 			toUpdate: dashboardConfig.modules_to_update,
 			componentsList: dashboardConfig.components_list,
 			isLicenseActive: dashboardConfig.is_license_active,
+			mcpTools: dashboardConfig.mcp_tools,
 			activeTab: 'modules',
 			shortcode: {
 				component: '',
@@ -41,7 +42,10 @@
 			errorMessage: '',
 			successMessage: '',
 			moduleDetails: false,
-			updateLog: {}
+			updateLog: {},
+			miscSettings: dashboardConfig.misc_settings || {},
+			xhrs: {},
+			reloadAfterSave: false,
 		},
 		created: function() {
 
@@ -299,6 +303,53 @@
 				} );
 
 			},
+			updateMiscSettings: function( value, setting ) {
+				var self = this;
+
+				self.$set( self.miscSettings, setting, value );
+
+				self.xhrs[ 'misc_options' ]?.abort( 'in_progress' );
+
+				self.xhrs[ 'misc_options' ] = jQuery.ajax({
+					url: window.ajaxurl,
+					type: 'POST',
+					dataType: 'json',
+					data: {
+						action: 'jet_engine_update_misc_settings',
+						nonce: dashboardConfig._nonce,
+						settings: self.miscSettings,
+					},
+				}).done( function( response ) {
+					if ( response.success ) {
+						self.$CXNotice.add( {
+							message: response.data.message,
+							type: 'success',
+							duration: 7000,
+						} );
+
+						if ( response.data.reload ) {
+							self.reloadAfterSave = true;
+							setTimeout( () => window.location.reload(), 3000 );
+						}
+					} else {
+						self.$CXNotice.add( {
+							message: response.data.message,
+							type: 'error',
+							duration: 15000,
+						} );
+					}
+				} ).fail( function( jqXHR, textStatus, errorThrown ) {
+					if ( textStatus === 'in_progress' ) {
+						return;
+					}
+
+					self.$CXNotice.add( {
+						message: errorThrown,
+						type: 'error',
+						duration: 15000,
+					} );
+				} );
+			}
 		}
 	} );
 

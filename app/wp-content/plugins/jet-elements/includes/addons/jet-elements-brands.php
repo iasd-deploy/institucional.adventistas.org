@@ -158,6 +158,16 @@ class Jet_Elements_Brands extends Jet_Elements_Base {
 			)
 		);
 
+		$this->add_control(
+			'company_name_html_tag',
+			array(
+				'label'   => esc_html__( 'Company Name HTML Tag', 'jet-elements' ),
+				'type'    => Controls_Manager::SELECT,
+				'options' => jet_elements_tools()->get_available_title_html_tags(),
+				'default' => 'h5',
+			)
+		);
+
 		$this->end_controls_section();
 
 		$css_scheme = apply_filters(
@@ -540,21 +550,21 @@ class Jet_Elements_Brands extends Jet_Elements_Base {
 
 		printf(
 			'<a %s>',
-			$this->get_render_attribute_string( 'link-' . $id )
+			$this->get_render_attribute_string( 'link-' . $id ) // phpcs:ignore
 		);
 
 	}
 
 	public function _open_brand_link_edit( $url_key ) {
 
-		echo '<# if ( item.' . $url_key . '.url ) { #>';
+		echo '<# if ( item.' . $url_key . '.url ) { #>'; // phpcs:ignore
 		printf(
 			'<a href="%1$s" class="brands-list__item-link"%2$s%3$s>',
-			'{{{ item.' . $url_key . '.url }}}',
-			'<# if ( item.' . $url_key . '.is_external ) { #> target="_blank"<# } #>',
-			'<# if ( item.' . $url_key . '.nofollow ) { #> rel="nofollow"<# } #>'
+			'{{{ item.' . $url_key . '.url }}}', // phpcs:ignore
+			'<# if ( item.' . $url_key . '.is_external ) { #> target="_blank"<# } #>', // phpcs:ignore
+			'<# if ( item.' . $url_key . '.nofollow ) { #> rel="nofollow"<# } #>' // phpcs:ignore
 		);
-		echo '<# } #>';
+		echo '<# } #>'; // phpcs:ignore
 
 	}
 
@@ -576,9 +586,9 @@ class Jet_Elements_Brands extends Jet_Elements_Base {
 
 	public function _close_brand_link_edit( $url_key ) {
 
-		echo '<# if ( item.' . $url_key . '.url ) { #>';
+		echo '<# if ( item.' . $url_key . '.url ) { #>'; // phpcs:ignore
 		echo '</a>';
-		echo '<# } #>';
+		echo '<# } #>'; // phpcs:ignore
 
 	}
 
@@ -594,12 +604,12 @@ class Jet_Elements_Brands extends Jet_Elements_Base {
 		}
 
 		printf( '<div class="brands-list__item-img-wrap"><img src="%1$s" alt="%2$s" class="brands-list__item-img" loading="lazy"></div>',
-			$image_item['url'],
+			esc_url( $image_item['url'] ),
 			esc_attr( Control_Media::get_image_alt( $image_item ) )
 		);
 	}
 
 	public function _get_brand_image_edit( $img_key ) {
-		echo $this->_loop_item( array( $img_key, 'url' ), '<div class="brands-list__item-img-wrap"><img src="%s" alt="" class="brands-list__item-img"></div>' );
+		echo $this->_loop_item( array( $img_key, 'url' ), '<div class="brands-list__item-img-wrap"><img src="%s" alt="" class="brands-list__item-img"></div>' ); // phpcs:ignore
 	}
 }

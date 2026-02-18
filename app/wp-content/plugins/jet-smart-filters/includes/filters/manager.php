@@ -71,11 +71,11 @@ if ( ! class_exists( 'Jet_Smart_Filters_Filter_Manager' ) ) {
 				'settings'        => jet_smart_filters()->providers->get_provider_settings(),
 				'misc'            => array(
 					'week_start'       => get_option( 'start_of_week' ),
-					'url_type'         => jet_smart_filters()->settings->get( 'url_structure_type' ),
+					'url_type'         => jet_smart_filters()->settings->url_structure_type,
 					'valid_url_params' => $this->get_valid_url_params(),
 				),
 				'props'           => jet_smart_filters()->query->get_query_props(),
-				'extra_props'     => array(),
+				'extra_props'     => new stdClass(),
 				'templates'       => $this->get_localization_templates(),
 				'plugin_settings' => array(
 					'use_tabindex'       => jet_smart_filters()->settings->get( 'use_tabindex', false ),
@@ -87,14 +87,15 @@ if ( ! class_exists( 'Jet_Smart_Filters_Filter_Manager' ) ) {
 							: '',
 						'fixed_position' => jet_smart_filters()->provider_preloader->fixed_position,
 						'fixed_edge_gap' => jet_smart_filters()->provider_preloader->fixed_edge_gap
-					)
+					),
+					'url_custom_symbols' => $this->get_url_custom_symbols()
 				)
 			) );
 
 			if ( jet_smart_filters()->render->use_signature_verification && ! empty( $localized_data['settings'] ) ) {
 				foreach( $localized_data['settings'] as $provider => $provider_queries ) {
 					foreach( $provider_queries as $query_id => $query_settings ) {
-						
+
 						if ( ! empty( $query_settings['jsf_signature'] ) ) {
 							unset( $query_settings['jsf_signature'] );
 						}
@@ -158,6 +159,35 @@ if ( ! class_exists( 'Jet_Smart_Filters_Filter_Manager' ) ) {
 			) );
 		}
 
+		public function get_url_custom_symbols() {
+
+			if ( ! jet_smart_filters()->settings->use_url_custom_symbols ) {
+				return '';
+			}
+
+			$custom_symbols = array();
+
+			if ( jet_smart_filters()->settings->url_provider_id_delimiter ) {
+				$custom_symbols['provider_id'] = jet_smart_filters()->settings->url_provider_id_delimiter;
+			}
+			if ( jet_smart_filters()->settings->url_items_separator ) {
+				$custom_symbols['items_separator'] = jet_smart_filters()->settings->url_items_separator;
+			}
+			if ( jet_smart_filters()->settings->url_key_value_delimiter ) {
+				$custom_symbols['key_value'] = jet_smart_filters()->settings->url_key_value_delimiter;
+			}
+			if ( jet_smart_filters()->settings->url_value_separator ) {
+				$custom_symbols['value_separator'] = jet_smart_filters()->settings->url_value_separator;
+			}
+			if ( jet_smart_filters()->settings->url_var_suffix_separator ) {
+				$custom_symbols['var_suffix'] = jet_smart_filters()->settings->url_var_suffix_separator;
+			}
+
+			return ! empty( $custom_symbols )
+				? $custom_symbols
+				: '';
+		}
+
 		/**
 		 * Enqueue filter styles
 		 */
@@ -207,6 +237,7 @@ if ( ! class_exists( 'Jet_Smart_Filters_Filter_Manager' ) ) {
 				'Jet_Smart_Filters_Sorting_Filter'     => $base_path . 'sorting.php',
 				'Jet_Smart_Filters_Active_Filters'     => $base_path . 'active-filters.php',
 				'Jet_Smart_Filters_Pagination_Filter'  => $base_path . 'pagination.php',
+				'Jet_Smart_Filters_Hidden_Filter'      => $base_path . 'hidden.php',
 			);
 
 			require $base_path . 'base.php';
@@ -274,15 +305,24 @@ if ( ! class_exists( 'Jet_Smart_Filters_Filter_Manager' ) ) {
 				$is_custom_checkbox = true;
 			}
 
-			if ( in_array( $type, ['search', 'range', 'check-range', 'rating'] ) ) {
+			if ( 'search' === $type ) {
+				if ( strpos( $query_var, '_plain_query::' ) === false ) {
+					$query_var_suffix[] = $type;
+				}
+			}
+
+			if ( in_array( $type, ['range', 'check-range', 'rating'] ) ) {
 				$query_var_suffix[] = $type;
 			}
 
 			if ( in_array( $type, ['date-range', 'date-period'] ) ) {
 				$date_type = get_post_meta( $filter, '_date_type', true );
-				$query_var_suffix[] = $date_type
-					? $date_type
-					: 'date';
+				if ( strpos( $query_var, '_plain_query::' ) === false ) {
+					$query_var_suffix[] = $date_type
+						? $date_type
+						: 'date';
+				}
+				
 			}
 
 			if ( $is_custom_checkbox ) {

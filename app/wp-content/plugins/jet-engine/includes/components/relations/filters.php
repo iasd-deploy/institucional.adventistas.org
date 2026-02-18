@@ -70,10 +70,10 @@ class Filters {
 			return;
 		}
 
-		$relations_list = array(
+		$relations_list = apply_filters( 'jet-engine/relations/dynamic-queries', array(
 			'related_children' => __( 'filters children items list by parents IDs', 'jet-engine' ),
 			'related_parents'  => __( 'filters parents items list by children IDs', 'jet-engine' )
-		);
+		) );
 
 		$relations_options = array();
 		foreach ( $relations as $relation_item ) {
@@ -82,6 +82,11 @@ class Filters {
 
 		foreach ( $relations_list as $relation_key => $relation_label ) {
 			$relation_dynamic_query_item = new class( $relation_key, $relation_label, $relations_options ) {
+
+				public $key;
+				public $label;
+				public $options;
+
 				public function __construct( $key, $label, $options ) {
 					$this->key     = $key;
 					$this->label   = $label;
@@ -217,7 +222,6 @@ class Filters {
 				}
 
 				if ( empty( $data ) ) {
-
 					switch ( $rel_type ) {
 
 						case 'related_children':
@@ -252,6 +256,10 @@ class Filters {
 							if ( $this->is_supported_type( $type, $relation->get_args( 'parent_object' ) ) ) {
 								$rel_ids = $relation->get_parents( $value, 'ids' );
 							}
+							break;
+
+						default:
+							$rel_ids = apply_filters( 'jet-engine/relations/custom-indexer-rel-ids', $rel_ids, $rel_type, $relation, $value, $type );
 							break;
 
 					}
@@ -434,7 +442,18 @@ class Filters {
 	 * @return boolean      [description]
 	 */
 	public function is_relation_filter( $key ) {
-		return ( $this->is_children_filter( $key ) || $this->is_parents_filter( $key ) );
+		$relation_keys = apply_filters( 'jet-engine/relations/relation-filter-keys', [
+			'related_children',
+			'related_parents',
+		] );
+
+		foreach ( $relation_keys as $relation_key ) {
+			if ( false !== strpos( $key, $relation_key ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -458,7 +477,7 @@ class Filters {
 	}
 
 	/**
-	 * Adds realtion query arguments to existing filter query args
+	 * Adds relation query arguments to existing filter query args
 	 *
 	 * @param [type] $args [description]
 	 * @param [type] $data [description]
@@ -493,6 +512,14 @@ class Filters {
 				$object  = $relation->get_args( 'parent_object' );
 				$rel_ids = $relation->get_parents( $data['value'], 'ids' );
 				break;
+			default:
+				$args_data = apply_filters( 'jet-engine/relations/custom-relation-args', [], $type, $relation, $data );
+
+				if ( ! empty( $args_data ) && is_array( $args_data ) ) {
+					$object  = $args_data['object'] ?? false;
+					$rel_ids = $args_data['rel_ids'] ?? false;
+				}
+				break;
 
 		}
 
@@ -506,28 +533,7 @@ class Filters {
 
 		$new_args = jet_engine()->relations->types_helper->filtered_query_args( $object, $rel_ids );
 
-		$props_found = false;
-
-		foreach ( array( 'post__in', 'include' ) as $key ) {
-			if ( ! empty( $args[ $key ] ) && ! empty( $new_args[ $key ] ) && ! $is_inner ) {
-				$props_found = true;
-
-				$args[ $key ] = array_intersect( $args[ $key ], $new_args[ $key ] );
-	
-				// Not found items.
-				if ( empty( $args[ $key ] ) ) {
-					$args[ $key ] = array( PHP_INT_MAX );
-				}
-			}
-		}
-
-		if ( $props_found ) {
-			$result = $args;
-		} else {
-			$result = array_merge_recursive( $args, $new_args );
-		}
-
-		return $result;
+		return jet_engine()->relations->types_helper->merge_filtered_query_args( $args, $object, $new_args );
 
 	}
 

@@ -915,19 +915,19 @@ class Jet_Elements_Price_List extends Jet_Elements_Base {
 
 		printf(
 			'<a %s>',
-			$this->get_render_attribute_string( 'link-' . $id )
-		);
+			$this->get_render_attribute_string( 'link-' . $id ) // phpcs:ignore
+	);
 
 	}
 
 	public function _open_price_item_link_edit( $url_key ) {
 
-		echo '<# if ( item.' . $url_key . '.url ) { #>';
+		echo '<# if ( item.' . $url_key . '.url ) { #>'; // phpcs:ignore
 		printf(
 			'<a href="%1$s" class="price-list__item-link"%2$s%3$s>',
-			'{{{ item.' . $url_key . '.url }}}',
-			'<# if ( item.' . $url_key . '.is_external ) { #> target="_blank"<# } #>',
-			'<# if ( item.' . $url_key . '.nofollow ) { #> rel="nofollow"<# } #>'
+			'{{{ item.' . $url_key . '.url }}}', // phpcs:ignore
+			'<# if ( item.' . $url_key . '.is_external ) { #> target="_blank"<# } #>', // phpcs:ignore
+			'<# if ( item.' . $url_key . '.nofollow ) { #> rel="nofollow"<# } #>' // phpcs:ignore
 		);
 		echo '<# } #>';
 
@@ -951,7 +951,7 @@ class Jet_Elements_Price_List extends Jet_Elements_Base {
 
 	public function _close_price_item_link_edit( $url_key ) {
 
-		echo '<# if ( item.' . $url_key . '.url ) { #>';
+		echo '<# if ( item.' . $url_key . '.url ) { #>'; // phpcs:ignore
 		echo '</a>';
 		echo '<# } #>';
 

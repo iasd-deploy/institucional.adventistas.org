@@ -104,6 +104,14 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Dynamic_Repeater' ) ) {
 					'type'    => 'string',
 					'default' => 'default_object',
 				),
+				'je_query_id' => array(
+					'type'    => 'string',
+					'default' => '',
+				),
+				'dynamic_field_fallback' => array(
+					'type'    => 'string',
+					'default' => '',
+				),
 			) );
 		}
 
@@ -379,6 +387,7 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Dynamic_Repeater' ) ) {
 					'label'        => esc_html__( 'Border Radius', 'jet-engine' ),
 					'type'         => 'dimensions',
 					'units'        => array( 'px', '%' ),
+					'is_legacy'    => true,
 					'separator'    => 'before',
 					'css_selector' => array(
 						$this->css_selector( '__item > *' ) => 'border-radius: {{TOP}} {{RIGHT}} {{BOTTOM}} {{LEFT}};',
@@ -580,6 +589,7 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Dynamic_Repeater' ) ) {
 					'type'         => 'dimensions',
 					'units'        => array( 'px', '%' ),
 					'separator'    => 'before',
+					'is_legacy'    => true,
 					'css_selector' => array(
 						$this->css_selector( '__item') . ' .jet-listing-dynamic-repeater__counter' => 'border-radius: {{TOP}} {{RIGHT}} {{BOTTOM}} {{LEFT}};',
 					),

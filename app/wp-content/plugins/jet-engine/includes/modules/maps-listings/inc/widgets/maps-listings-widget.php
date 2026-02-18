@@ -33,9 +33,9 @@ class Maps_Listings_Widget extends \Elementor\Jet_Listing_Grid_Widget {
 	}
 
 	protected function register_controls() {
-		
+
 		$this->register_general_settings();
-		
+
 		// If legacy disabled, register map settings after general
 		if ( ! jet_engine()->listings->legacy->is_disabled() ) {
 			$this->register_marker_and_popup_settings();
@@ -66,15 +66,18 @@ class Maps_Listings_Widget extends \Elementor\Jet_Listing_Grid_Widget {
 			)
 		);
 
+		$q_args = array(
+			'post_type' => jet_engine()->post_type->slug(),
+		);
+
 		$this->add_control(
 			'lisitng_id',
 			array(
 				'label'   => __( 'Listing', 'jet-engine' ),
 				'type'       => 'jet-query',
 				'query_type' => 'post',
-				'query'      => array(
-					'post_type' => jet_engine()->post_type->slug(),
-				),
+				'query'      => $q_args,
+				'signature'  => \Jet_Elementor_Extension\Ajax_Handlers::create_signature( $q_args ),
 				'edit_button' => array(
 					'active' => true,
 					'label'  => __( 'Edit Listing', 'jet-engine' ),
@@ -515,6 +518,55 @@ class Maps_Listings_Widget extends \Elementor\Jet_Listing_Grid_Widget {
 		);
 
 		$markers_repeater->add_control(
+			'marker_icon_color_apply_to',
+			array(
+				'label'       => __( 'Apply Icon Color to', 'jet-engine' ),
+				'description' => __( 'Depending on the icon, this option may or may not have an effect on the icon color', 'jet-engine' ),
+				'type'        => Controls_Manager::SELECT,
+				'label_block' => true,
+				'default'     => 'keep',
+				'options'     => array(
+					'keep'                    => __( 'Keep SVG colors', 'jet-engine' ),
+					'apply-fill'              => __( 'Fill', 'jet-engine' ),
+					'apply-stroke_unset-fill' => __( 'Stroke', 'jet-engine' ),
+					'apply-fill_apply-stroke' => __( 'Both', 'jet-engine' ),
+				),
+				'condition'   => array(
+					'marker_type' => 'icon',
+				),
+			)
+		);
+
+		$markers_repeater->add_control(
+			'marker_icon_color',
+			array(
+				'label'       => __( 'Icon Color', 'jet-engine' ),
+				'type'        => Controls_Manager::COLOR,
+				'condition'   => array(
+					'marker_type' => 'icon',
+					'marker_icon_color_apply_to!' => 'keep',
+				),
+			)
+		);
+
+		$links = ' <a href="' . admin_url( 'admin.php?page=jet-engine#shortcode_generator' ) . '" target="_blank">' . __( 'shortcodes', 'jet-engine' ) . '</a>' . '/' .
+		         '<a href="' . admin_url( 'admin.php?page=jet-engine#macros_generator' ) . '" target="_blank">' . __( 'macros', 'jet-engine' ) . '</a>. ';
+
+		$markers_repeater->add_control(
+			'marker_icon_color_dynamic',
+			array(
+				'label'       => __( 'Dynamic Icon Color', 'jet-engine' ),
+				'type'        => Controls_Manager::TEXT,
+				'label_block' => true,
+				'description' => __( 'You may use JetEngine', 'jet-engine' ) . $links . __(' If it returns an empty value or the value is not a color in HEX/RGBA/HSLA format - "Icon Color" will be used instead', 'jet-engine' ),
+				'condition'   => array(
+					'marker_type' => 'icon',
+					'marker_icon_color_apply_to!' => 'keep',
+				),
+			)
+		);
+
+		$markers_repeater->add_control(
 			'apply_type',
 			array(
 				'label'       => __( 'Apply this marker if', 'jet-engine' ),
@@ -523,8 +575,9 @@ class Maps_Listings_Widget extends \Elementor\Jet_Listing_Grid_Widget {
 				'separator'   => 'before',
 				'default'     => 'meta_field',
 				'options'     => array(
-					'meta_field' => __( 'Meta field is equal to value', 'jet-engine' ),
-					'post_term'  => __( 'Post has term', 'jet-engine' ),
+					'meta_field'        => __( 'Meta field is equal to value', 'jet-engine' ),
+					'post_term'         => __( 'Post has term', 'jet-engine' ),
+					'has_dynamic_color' => __( 'Dynamic color not empty', 'jet-engine' ),
 				),
 			)
 		);
@@ -563,6 +616,7 @@ class Maps_Listings_Widget extends \Elementor\Jet_Listing_Grid_Widget {
 				'type'        => Controls_Manager::TEXT,
 				'default'     => '',
 				'label_block' => true,
+				'description' => __( 'You may use shortcodes/macros here.', 'jet-engine' ),
 				'condition'   => array(
 					'apply_type' => 'meta_field',
 				),
@@ -620,6 +674,102 @@ class Maps_Listings_Widget extends \Elementor\Jet_Listing_Grid_Widget {
 		);
 
 		$this->add_control(
+			'is_custom_marker_cluster_images',
+			array(
+				'label'        => __( 'Set Custom Cluster Images', 'jet-engine' ),
+				'type'         => Controls_Manager::SWITCHER,
+				'return_value' => 'true',
+				'default'      => 'no',
+				'condition'   => array(
+					'marker_clustering' => 'true',
+				),
+			)
+		);
+
+		$provider_id = Module::instance()->settings->get( 'map_provider' );
+
+		switch ( $provider_id ) {
+			case 'google':
+			case 'leaflet':
+				$marker_cluster_images = new Repeater();
+
+				$marker_cluster_images->add_control(
+					'cluster_image',
+					array(
+						'label'     => esc_html__( 'Cluster Image', 'jet-engine' ),
+						'type'      => Controls_Manager::MEDIA,
+					)
+				);
+
+				$marker_cluster_images->add_control(
+					'cluster_width',
+					array(
+						'label'       => esc_html__( 'Width', 'jet-engine' ),
+						'description' => esc_html__( 'Cluster width', 'jet-engine' ),
+						'type'        => Controls_Manager::NUMBER,
+						'min'         => 0,
+						'max'         => 1000,
+						'default'     => 0,
+					)
+				);
+
+				// $marker_cluster_images->add_group_control(
+				// 	Group_Control_Typography::get_type(),
+				// 	array(
+				// 		'name'     => 'cluster_typography',
+				// 		'selector' => '{{WRAPPER}} {{CURRENT_ITEM}}.cluster span',
+				// 		'exclude'  => array(
+				// 			'line_height',
+				// 			'transform',
+				// 			'letter_spacing',
+				// 			'word_spacing',
+				// 			'text_decoration',
+				// 		)
+				// 	)
+				// );
+
+				// $marker_cluster_images->add_control(
+				// 	'cluster_text_color',
+				// 	array(
+				// 		'label'  => __( 'Cluster Text Color', 'jet-engine' ),
+				// 		'type'   => Controls_Manager::COLOR,
+				// 		'selectors' => array(
+				// 			'{{WRAPPER}} {{CURRENT_ITEM}}.cluster span' => 'color: {{VALUE}}',
+				// 		),
+				// 	)
+				// );
+
+				$this->add_control(
+					'marker_cluster_images',
+					array(
+						'type'    => Controls_Manager::REPEATER,
+						'label'   => esc_html__( 'Custom Cluster Images', 'jet-engine' ),
+						'fields'  => $marker_cluster_images->get_controls(),
+						'default' => array(),
+						'condition'   => array(
+							'marker_clustering' => 'true',
+							'is_custom_marker_cluster_images' => 'true',
+						),
+					)
+				);
+
+				
+				$this->add_control(
+					'marker_cluster_images_description',
+					array(
+						'type'  => Controls_Manager::RAW_HTML,
+						'raw'   => esc_html__( 'The first image is used when a marker cluster contains 0-9 markers, the second for 10-99 markers, and so on. If no image is provided for a given range, the last available image is used instead.', 'jet-engine' ),
+						'condition'   => array(
+							'marker_clustering' => 'true',
+							'is_custom_marker_cluster_images' => 'true',
+						),
+					),
+				);
+
+				break;
+		}
+
+		$this->add_control(
 			'cluster_max_zoom',
 			array(
 				'label'       => esc_html__( 'Cluster Max Zoom', 'jet-engine' ),
@@ -645,6 +795,99 @@ class Maps_Listings_Widget extends \Elementor\Jet_Listing_Grid_Widget {
 				),
 			)
 		);
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_user_location_settings',
+			array(
+				'label' => __( 'User Location', 'jet-engine' ),
+			)
+		);
+
+		$this->add_control(
+			'user_location_enabled',
+			array(
+				'label'        => __( 'Enable User Location Marker', 'jet-engine' ),
+				'type'         => Controls_Manager::SWITCHER,
+				'return_value' => 'yes',
+				'default'      => '',
+			)
+		);
+
+		$this->add_control(
+			'user_location_marker_type',
+			array(
+				'label'   => __( 'Marker Type', 'jet-engine' ),
+				'type'    => Controls_Manager::SELECT,
+				'default' => 'icon',
+				'options' => array(
+					'image' => __( 'Image', 'jet-engine' ),
+					'icon'  => __( 'Icon', 'jet-engine' ),
+					'text'  => __( 'Text', 'jet-engine' ),
+				),
+				'condition' => array(
+					'user_location_enabled' => 'yes',
+				),
+			)
+		);
+
+		$this->add_control(
+			'user_location_marker_image',
+			array(
+				'label'     => esc_html__( 'Image', 'jet-engine' ),
+				'type'      => Controls_Manager::MEDIA,
+				'condition' => array(
+					'user_location_marker_type' => 'image',
+					'user_location_enabled' => 'yes',
+				),
+			)
+		);
+
+		$this->add_control(
+			'user_location_marker_image_size',
+			array(
+				'label'       => __( 'Image Size', 'jet-engine' ),
+				'type'        => Controls_Manager::SELECT,
+				'default'     => 'full',
+				'options'     => \Jet_Engine_Tools::get_image_sizes(),
+				'condition' => array(
+					'user_location_marker_type!' => 'text',
+					'user_location_enabled' => 'yes',
+				),
+			)
+		);
+
+		$this->add_control(
+			'user_location_marker_icon',
+			array(
+				'label'       => __( 'Icon', 'jet-engine' ),
+				'type'        => Controls_Manager::ICONS,
+				'label_block' => true,
+				'default' => array(
+					'value'   => 'fas fa-map-marker-alt',
+					'library' => 'fa-solid',
+				),
+				'condition' => array(
+					'user_location_marker_type' => 'icon',
+					'user_location_enabled' => 'yes',
+				),
+			)
+		);
+
+		$this->add_control(
+			'user_location_marker_label_text',
+			array(
+				'label'       => __( 'Marker Label', 'jet-engine' ),
+				'type'        => Controls_Manager::TEXT,
+				'default'     => '',
+				'label_block' => true,
+				'condition'   => array(
+					'user_location_marker_type' => 'text',
+					'user_location_enabled' => 'yes',
+				),
+			)
+		);		
 
 		$this->end_controls_section();
 
@@ -897,7 +1140,24 @@ class Maps_Listings_Widget extends \Elementor\Jet_Listing_Grid_Widget {
 				'type'   => Controls_Manager::COLOR,
 				'selectors' => array(
 					'{{WRAPPER}} .jet-map-marker' => 'color: {{VALUE}}',
-					'{{WRAPPER}} .jet-map-marker path' => 'fill: {{VALUE}} !important',
+					'{{WRAPPER}} .jet-map-marker:not(.unset-fill):not(.custom-color):not(.keep-color) path' => 'fill: {{VALUE}} !important',
+				),
+			)
+		);
+
+		$this->add_control(
+			'marker_icon_color_apply_to',
+			array(
+				'label'       => __( 'Apply Icon Color to', 'jet-engine' ),
+				'description' => __( 'Depending on the icon, this option may or may not have an effect on the icon color. Reset Icon Color when choosing \'Keep SVG colors\' option', 'jet-engine' ),
+				'type'        => Controls_Manager::SELECT,
+				'label_block' => true,
+				'default'     => 'apply-fill',
+				'options'     => array(
+					'apply-fill'              => __( 'Fill', 'jet-engine' ),
+					'apply-stroke_unset-fill' => __( 'Stroke', 'jet-engine' ),
+					'apply-fill_apply-stroke' => __( 'Both', 'jet-engine' ),
+					'keep'                    => __( 'Keep SVG colors', 'jet-engine' ),
 				),
 			)
 		);
@@ -1027,6 +1287,230 @@ class Maps_Listings_Widget extends \Elementor\Jet_Listing_Grid_Widget {
 			)
 		);
 
+		switch ( $provider_id ) {
+			case 'google':
+			case 'leaflet':
+				$this->add_group_control(
+					Group_Control_Typography::get_type(),
+					array(
+						'name'     => 'marker_cluster_typography',
+						'label'  => __( 'Marker Cluster Typography', 'jet-engine' ),
+						'selector' => '{{WRAPPER}} .cluster span, {{WRAPPER}} .marker-cluster span',
+						'exclude'  => array(
+							'line_height',
+							'text_transform',
+							'letter_spacing',
+							'word_spacing',
+							'text_decoration',
+						),
+						'condition'   => array(
+							'marker_clustering' => 'true',
+						),
+					)
+				);
+		
+				$this->add_control(
+					'marker_cluster_text_color',
+					array(
+						'label'  => __( 'Marker Cluster Text Color', 'jet-engine' ),
+						'type'   => 'color',
+						'selectors' => array(
+							'{{WRAPPER}} .cluster span, {{WRAPPER}} .marker-cluster span' => 'color: {{VALUE}}',
+						),
+						'condition'   => array(
+							'marker_clustering' => 'true',
+						),
+					)
+				);
+				break;
+		}
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_user_location_marker_style',
+			array(
+				'label'      => __( 'User Location Marker', 'jet-engine' ),
+				'tab'        => Controls_Manager::TAB_STYLE,
+				'show_label' => false,
+				'condition'  => array(
+					'user_location_enabled' => 'yes',
+				),
+			)
+		);
+
+		$this->add_control(
+			'user_location_marker_width',
+			array(
+				'label' => __( 'Width', 'jet-engine' ),
+				'type' => Controls_Manager::SLIDER,
+				'range' => array(
+					'px' => array(
+						'min' => 0,
+						'max' => 200,
+					),
+				),
+				'selectors' => array(
+					'{{WRAPPER}} .jet-map-user-location-marker-wrap' => 'width: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .jet-map-user-location-marker-image' => 'width: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_group_control(
+			Group_Control_Typography::get_type(),
+			array(
+				'name'     => 'user_location_marker_typography',
+				'selector' => '{{WRAPPER}} .jet-map-user-location-marker-wrap',
+			)
+		);
+
+		$this->add_control(
+			'user_location_marker_icon_size',
+			array(
+				'label' => esc_html__( 'Icon Size', 'jet-engine' ),
+				'type'  => Controls_Manager::SLIDER,
+				'range' => array(
+					'px' => array(
+						'min' => 10,
+						'max' => 300,
+					),
+				),
+				'selectors' => array(
+					'{{WRAPPER}} .jet-map-user-location-marker' => 'font-size: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'user_location_marker_color',
+			array(
+				'label'  => __( 'Text Color', 'jet-engine' ),
+				'type'   => Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .jet-map-user-location-marker-wrap' => 'color: {{VALUE}}',
+				),
+			)
+		);
+
+		$this->add_control(
+			'user_location_marker_bg_color',
+			array(
+				'label'     => __( 'Background Color', 'jet-engine' ),
+				'type'      => Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .jet-map-user-location-marker-wrap' => 'background-color: {{VALUE}};',
+					'{{WRAPPER}} .jet-map-user-location-marker-wrap:after' => 'border-top-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'user_location_marker_icon_color',
+			array(
+				'label'  => __( 'Icon Color', 'jet-engine' ),
+				'type'   => Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .jet-map-user-location-marker' => 'color: {{VALUE}}',
+					'{{WRAPPER}} .jet-map-user-location-marker:not(.unset-fill):not(.custom-color):not(.keep-color) path' => 'fill: {{VALUE}} !important',
+				),
+			)
+		);
+
+		$this->add_control(
+			'user_location_marker_icon_color_apply_to',
+			array(
+				'label'       => __( 'Apply Icon Color to', 'jet-engine' ),
+				'description' => __( 'Depending on the icon, this option may or may not have an effect on the icon color. Reset Icon Color when choosing \'Keep SVG colors\' option', 'jet-engine' ),
+				'type'        => Controls_Manager::SELECT,
+				'label_block' => true,
+				'default'     => 'apply-fill',
+				'options'     => array(
+					'apply-fill'              => __( 'Fill', 'jet-engine' ),
+					'apply-stroke_unset-fill' => __( 'Stroke', 'jet-engine' ),
+					'apply-fill_apply-stroke' => __( 'Both', 'jet-engine' ),
+					'keep'                    => __( 'Keep SVG colors', 'jet-engine' ),
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'user_location_marker_padding',
+			array(
+				'label'      => __( 'Padding', 'jet-engine' ),
+				'type'       => Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', '%', 'em' ),
+				'separator'  => 'before',
+				'selectors'  => array(
+					'{{WRAPPER}} .jet-map-user-location-marker-wrap' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'user_location_marker_border_radius',
+			array(
+				'label'      => __( 'Border Radius', 'jet-engine' ),
+				'type'       => Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', '%' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .jet-map-user-location-marker-wrap' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_group_control(
+			Group_Control_Box_Shadow::get_type(),
+			array(
+				'name'     => 'user_location_marker_box_shadow',
+				'selector' => '{{WRAPPER}} .jet-map-user-location-marker-wrap',
+			)
+		);
+
+		$this->add_control(
+			'user_location_marker_pin_size',
+			array(
+				'label' => __( 'Pin Size', 'jet-engine' ),
+				'type'  => Controls_Manager::SLIDER,
+				'range' => array(
+					'px' => array(
+						'min' => 4,
+						'max' => 60,
+					),
+				),
+				'selectors' => array(
+					'{{WRAPPER}} .jet-map-user-location-marker-wrap:after' => 'margin: 0 0 0 -{{SIZE}}{{UNIT}}; border-width: {{SIZE}}{{UNIT}} {{SIZE}}{{UNIT}} 0 {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .jet-map-user-location-marker-wrap' => 'margin-bottom: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'user_location_link_alignment',
+			array(
+				'label'   => __( 'Alignment', 'jet-engine' ),
+				'type'    => Controls_Manager::CHOOSE,
+				'default' => 'center',
+				'options' => array(
+					'left'    => array(
+						'title' => __( 'Left', 'jet-engine' ),
+						'icon'  => 'eicon-text-align-left',
+					),
+					'center' => array(
+						'title' => __( 'Center', 'jet-engine' ),
+						'icon'  => 'eicon-text-align-center',
+					),
+					'right' => array(
+						'title' => __( 'Right', 'jet-engine' ),
+						'icon'  => 'eicon-text-align-right',
+					),
+				),
+				'selectors'  => array(
+					'{{WRAPPER}} .jet-map-user-location-marker-wrap' => 'text-align: {{VALUE}};',
+				),
+			)
+		);
+
 		$this->end_controls_section();
 
 	}
@@ -1088,7 +1572,7 @@ class Maps_Listings_Widget extends \Elementor\Jet_Listing_Grid_Widget {
 	}
 
 	public function add_provider_controls( $section = null ) {
-		
+
 		$provider = Module::instance()->providers->get_active_map_provider();
 		$settings = $provider->provider_settings();
 

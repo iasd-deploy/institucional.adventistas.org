@@ -4,7 +4,7 @@
 	"license": "GPL-2.0-or-later",
 	"main": "js/admin-controls.js",
 	"scripts": {
-		"build": "npx webpack build --mode production",
+		"build": "npx webpack build --mode production -w",
 		"dev": "npx webpack build --mode development -w"
 	},
 	"devDependencies": {
@@ -21,6 +21,7 @@
 		"@wordpress/hooks": "^4.3.0",
 		"@wordpress/i18n": "^5.3.0",
 		"@wordpress/icons": "^10.3.0",
-		"@wordpress/url": "^4.3.0"
+		"@wordpress/url": "^4.3.0",
+		"react-beautiful-dnd": "^13.1.1"
 	}
 }

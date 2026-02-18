@@ -20,6 +20,9 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Base' ) ) {
 		protected $namespace = 'jet-engine/';
 
 		public $block_manager    = null;
+		/**
+		 * @var \Crocoblock\Blocks_Style\Proxy
+		 */
 		public $controls_manager = null;
 		public $block_data       = null;
 		public $_root            = [];
@@ -28,21 +31,19 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Base' ) ) {
 
 			$attributes = $this->get_attributes();
 
+			$this->set_style_manager_instance();
+			$this->add_style_manager_options();
+
 			if ( $this->has_style_manager() ) {
 
-				$this->set_style_manager_instance();
-				$this->add_style_manager_options();
 				do_action( 'jet-engine/blocks-views/' . $this->get_name() . '/add-extra-style-options', $this );
 
-				//add_action( 'enqueue_block_editor_assets', array( $this, 'add_style_manager_options' ), -1 );
-				
 				if ( $this->prevent_wrap() ) {
 					add_filter(
 						'jet_style_manager/gutenberg/prevent_block_wrap/' . $this->get_block_name(),
 						'__return_true'
 					);
 				}
-
 			}
 
 			/**
@@ -77,7 +78,6 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Base' ) ) {
 			}
 
 			register_block_type( $block, $args );
-
 		}
 
 		/**
@@ -166,7 +166,9 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Base' ) ) {
 		 * @return boolean [description]
 		 */
 		public function is_edit_mode() {
-			return ( isset( $_GET['context'] ) && 'edit' === $_GET['context'] && isset( $_GET['attributes'] ) && $_GET['_locale'] );
+			// phpcs:disable
+			return ( isset( $_GET['context'] ) && 'edit' === $_GET['context'] && ! empty( $_GET['_locale'] ) );
+			// phpcs:enable
 		}
 
 		/**
@@ -184,12 +186,16 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Base' ) ) {
 		 *
 		 * @return boolean
 		 */
-		public function set_style_manager_instance(){
+		public function set_style_manager_instance() {
 
-			$name = $this->get_block_name();
+			jet_engine()->blocks_views->style_manager->register_block_support(
+				$this->get_block_name()
+			);
 
-			$this->block_manager    = \JET_SM\Gutenberg\Block_Manager::get_instance();
-			$this->controls_manager = new \JET_SM\Gutenberg\Controls_Manager( $name );
+			$proxy = jet_engine()->blocks_views->style_manager->get_proxy( $this->get_block_name() );
+
+			$this->block_manager    = $proxy;
+			$this->controls_manager = $proxy;
 		}
 
 		public function css_selector( $el = '' ) {
@@ -223,7 +229,7 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Base' ) ) {
 		}
 
 		public function get_root_attr_string() {
-			
+
 			$result = [];
 
 			foreach ( $this->_root as $attr => $value ) {
@@ -238,11 +244,13 @@ if ( ! class_exists( 'Jet_Engine_Blocks_Views_Type_Base' ) ) {
 
 		public function render_callback( $attributes = array() ) {
 
+			// phpcs:disable WordPress.Security.NonceVerification
 			$item       = $this->get_name();
-			$listing    = isset( $_REQUEST['listing'] ) ? $_REQUEST['listing'] : false;
+			$listing    = isset( $_REQUEST['listing'] ) ? Jet_Engine_Sanitizer::sanitize_array_recursively( $_REQUEST['listing'] ) : false; // phpcs:ignore
 			$listing_id = isset( $_REQUEST['post_id'] ) ? absint( $_REQUEST['post_id'] ) : false;
 			$object_id  = isset( $_REQUEST['object'] ) ? absint( $_REQUEST['object'] ) : jet_engine()->listings->data->get_current_object();
 			$attributes = $this->prepare_attributes( $attributes );
+			// phpcs:enable WordPress.Security.NonceVerification
 
 			if ( $this->is_edit_mode() ) {
 				do_action( 'jet-engine/blocks-views/render-block-preview', $this, $attributes );

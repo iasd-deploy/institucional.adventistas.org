@@ -178,6 +178,7 @@ class Jet_Engine_Meta_Boxes_Option_Sources {
 	 */
 	public function save_custom_values( $id, $data_handler, $object_type = false, $sub_type = false ) {
 
+		// phpcs:disable WordPress.Security.NonceVerification.Missing
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
 			return;
 		}
@@ -231,69 +232,73 @@ class Jet_Engine_Meta_Boxes_Option_Sources {
 		$fields     = $this->meta_fields[ $data_class ]['fields'][ $object_type ][ $sub_type ];
 		$update     = false;
 
-		foreach ( $this->meta_fields[ $data_class ]['fields'][ $object_type ][ $sub_type ] as $field => $field_args ) {
+		$to_update = array();
 
+		foreach ( $this->meta_fields[ $data_class ]['fields'][ $object_type ][ $sub_type ] as $field => $field_args ) {
 			if ( ! isset( $_POST[ $field ] ) || '' === $_POST[ $field ] ) {
 				continue;
 			}
 
-			do_action( 'jet-engine/meta-boxes/save-custom-value', $field, $field_args );
-
-			$item         = $data_handler->get_item_for_edit( $field_args['item_id'] );
-			$meta_fields  = isset( $item['meta_fields'] ) ? $item['meta_fields'] : ( isset( $item['fields'] ) ? $item['fields'] : [] );
-			$_meta_fields = $this->maybe_add_custom_values_to_options( $meta_fields, $field, $field_args );
-			$is_built_in  = false;
-
-			if ( in_array( $object_type, array( 'post', 'taxonomy' ) ) && isset( $field_args['is_built_in'] ) ) {
-				$is_built_in = $field_args['is_built_in'];
-			}
-
-			if ( $_meta_fields ) {
-
-				// Try to merge all possible options
-				$data_handler->set_request( array_merge(
-					$item,
-					array(
-						'id'          => $field_args['item_id'],
-						'args'        => ( ! empty( $item['general_settings'] ) ) ? $item['general_settings'] : ( ! empty( $item['args'] ) ? $item['args'] : [] ),
-						'meta_fields' => $_meta_fields,
-					),
-					isset( $item['general_settings'] ) ? $item['general_settings'] : [],
-					isset( $item['advanced_settings'] ) ? $item['advanced_settings'] : [],
-					isset( $item['labels'] ) ? $item['labels'] : []
-				) );
-
-				if ( $is_built_in ) {
-					$data_handler->query_args['status'] = 'built-in';
-				}
-
-				$data_handler->update_item_in_db( array_merge(
-					[ 'id' => $field_args['item_id'] ],
-					$data_handler->sanitize_item_from_request( $is_built_in )
-				) );
-
-				// Update `meta_fields` storage.
-				// Solution for correct calculation indexers.
-				if ( in_array( $object_type, [ 'post', 'taxonomy' ] ) ) {
-					$found_new_field = false;
-
-					foreach ( $_meta_fields as $_meta_field ) {
-						if ( ! empty( $_meta_field['name'] ) && $field === $_meta_field['name'] ) {
-							$found_new_field = $_meta_field;
-						}
-					}
-
-					if ( ! empty( $found_new_field ) ) {
-						foreach ( jet_engine()->meta_boxes->meta_fields[ $sub_type ] as $index => $_field ) {
-							if ( ! empty( $_field['name'] ) && $field === $_field['name'] ) {
-								jet_engine()->meta_boxes->meta_fields[ $sub_type ][ $index ] = $found_new_field;
-							}
-						}
-					}
-				}
-
-			}
+			$to_update[ $field_args['item_id'] ] = true;
 		}
+
+		foreach ( array_keys( $to_update ) as $item_id ) {
+			$item         = $data_handler->get_item_for_edit( $item_id );
+			$_meta_fields = isset( $item['meta_fields'] ) ? $item['meta_fields'] : ( isset( $item['fields'] ) ? $item['fields'] : [] );
+
+			$is_built_in = false;
+
+			foreach ( $this->meta_fields[ $data_class ]['fields'][ $object_type ][ $sub_type ] as $field => $field_args ) {
+				$_meta_fields = $this->maybe_add_custom_values_to_options( $_meta_fields, $field, $field_args );
+
+				if ( in_array( $object_type, array( 'post', 'taxonomy' ) ) && isset( $field_args['is_built_in'] ) ) {
+					$is_built_in = $field_args['is_built_in'];
+				}
+			}
+
+			if ( $is_built_in ) {
+				$data_handler->query_args['status'] = 'built-in';
+			}
+
+			$data_handler->set_request( array_merge(
+				$item,
+				array(
+					'id'          => $item_id,
+					'args'        => ( ! empty( $item['general_settings'] ) ) ? $item['general_settings'] : ( ! empty( $item['args'] ) ? $item['args'] : [] ),
+					'meta_fields' => $_meta_fields,
+				),
+				isset( $item['general_settings'] ) ? $item['general_settings'] : [],
+				isset( $item['advanced_settings'] ) ? $item['advanced_settings'] : [],
+				isset( $item['labels'] ) ? $item['labels'] : []
+			) );
+
+			$data_handler->update_item_in_db( array_merge(
+				[ 'id' => $item_id ],
+				$data_handler->sanitize_item_from_request( $is_built_in )
+			) );
+
+			// Update `meta_fields` storage.
+			// Solution for correct calculation indexers.
+			if ( in_array( $object_type, [ 'post', 'taxonomy' ] ) ) {
+				$found_new_field = false;
+
+				foreach ( $_meta_fields as $_meta_field ) {
+					if ( ! empty( $_meta_field['name'] ) && $field === $_meta_field['name'] ) {
+						$found_new_field = $_meta_field;
+					}
+				}
+
+				if ( ! empty( $found_new_field ) ) {
+					foreach ( jet_engine()->meta_boxes->meta_fields[ $sub_type ] as $index => $_field ) {
+						if ( ! empty( $_field['name'] ) && $field === $_field['name'] ) {
+							jet_engine()->meta_boxes->meta_fields[ $sub_type ][ $index ] = $found_new_field;
+						}
+					}
+				}
+			}
+			
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
 
 	}
 
@@ -307,7 +312,8 @@ class Jet_Engine_Meta_Boxes_Option_Sources {
 	 * @return mixed
 	 */
 	public function maybe_add_custom_values_to_options( $meta_fields, $field, $field_args ) {
-		
+
+		// phpcs:disable WordPress.Security.NonceVerification.Missing
 		$update_meta  = false;
 		$meta_index   = array_search( $field, array_column( $meta_fields, 'name' ) );
 		$post_meta    = new \Jet_Engine_CPT_Meta();
@@ -317,24 +323,27 @@ class Jet_Engine_Meta_Boxes_Option_Sources {
 		switch ( $field_args['type'] ) {
 			case 'checkbox':
 
-				if ( ! is_array( $_POST[ $field ] ) ) {
-					return false;
+				if ( ! isset( $_POST[ $field ] ) || ! is_array( $_POST[ $field ] ) ) {
+					return $meta_fields;
 				}
 
-				$custom_values = array_diff( array_keys( $_POST[ $field ] ), $meta_options );
+				$raw_values = wp_unslash( $_POST[ $field ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized  -- sanitized below
+				$custom_values = array_diff( array_keys( $raw_values ), $meta_options );
 
 				if ( ! empty( $custom_values ) ) {
 					foreach ( $custom_values as $custom_value ) {
 
-						$custom_item_value = filter_var( 
-							$_POST[ $field ][ $custom_value ], 
-							FILTER_VALIDATE_BOOLEAN 
-						);
+						if ( isset( $raw_values[ $custom_value ] ) ) {
+							$custom_item_value = filter_var(
+								$raw_values[ $custom_value ],
+								FILTER_VALIDATE_BOOLEAN
+							);
+						}
 
 						if ( $custom_item_value ) {
-							$meta_fields[ $meta_index ] = $this->get_field_with_merged_options( 
+							$meta_fields[ $meta_index ] = $this->get_field_with_merged_options(
 								$meta_fields[ $meta_index ],
-								wp_unslash( $custom_value )
+								sanitize_text_field( $custom_value )
 							);
 
 							$update_meta = true;
@@ -344,13 +353,19 @@ class Jet_Engine_Meta_Boxes_Option_Sources {
 				break;
 
 			case 'radio':
-				$custom_value = ! in_array( $_POST[ $field ], $meta_options ) ? $_POST[ $field ] : false;
+
+				if ( ! isset( $_POST[ $field ] ) ) {
+					return $meta_fields;
+				}
+
+				$raw_value    = wp_unslash( $_POST[ $field ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized  -- sanitized below
+				$custom_value = ! in_array( $raw_value, $meta_options, true ) ? $raw_value : false;
 
 				if ( ! Jet_Engine_Tools::is_empty( $custom_value ) ) {
 
 					$meta_fields[ $meta_index ] = $this->get_field_with_merged_options( 
 						$meta_fields[ $meta_index ],
-						wp_unslash( $custom_value )
+						sanitize_text_field( $custom_value )
 					);
 
 					$update_meta = true;
@@ -360,10 +375,11 @@ class Jet_Engine_Meta_Boxes_Option_Sources {
 		}
 
 		if ( ! $update_meta ) {
-			return false;
+			return $meta_fields;
 		}
 
 		return $meta_fields;
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
 	}
 
 	/**
@@ -417,7 +433,7 @@ class Jet_Engine_Meta_Boxes_Option_Sources {
 	 *
 	 * @since  1.0.0
 	 * @access public
-	 * @return Jet_Engine
+	 * @return static
 	 */
 	public static function instance() {
 		// If the single instance hasn't been set, set it now.

@@ -13,6 +13,9 @@ class Factory {
 
 	public $args    = array();
 	public $fields  = array();
+	/**
+	 * @var DB
+	 */
 	public $db      = null;
 	public $page    = null;
 	public $type_id = null;
@@ -102,13 +105,33 @@ class Factory {
 	}
 
 	/**
+	 * Convert date to SQL format
+	 *
+	 * @param mixed $some_date Date in unknown format.
+	 * @return string
+	 */
+	public function convert_to_sql_date( $some_date ) {
+
+		if ( \Jet_Engine_Tools::is_valid_timestamp( $some_date ) ) {
+			return date( 'Y-m-d H:i:s', $some_date );
+		} else {
+			$some_date = strtotime( $some_date );
+
+			if ( \Jet_Engine_Tools::is_valid_timestamp( $some_date ) ) {
+				return date( 'Y-m-d H:i:s', $some_date );
+			}
+		}
+
+		return $some_date;
+	}
+
+	/**
 	 * Prepare query arguments
 	 *
 	 * @param  [type] $args [description]
 	 * @return [type]       [description]
 	 */
 	public function prepare_query_args( $args ) {
-		$args       = wp_unslash( $args );
 		$prepared   = array();
 		$all_fields = $this->get_formatted_fields();
 
@@ -126,10 +149,36 @@ class Factory {
 				continue;
 			}
 
+			$exclude_empty = ! empty( $arg['exclude_empty'] ) ? $arg['exclude_empty'] : false;
+			$exclude_empty = filter_var( $exclude_empty, FILTER_VALIDATE_BOOLEAN );
+
+			if ( $exclude_empty && \Jet_Engine_Tools::is_empty( $arg, 'value' ) ) {
+				continue;
+			}
+
 			$field_name = ( is_array( $arg ) && ! empty( $arg['field'] ) ) ? $arg['field'] : false;
 
 			if ( ! isset( $all_fields[ $field_name ] ) ) {
 				continue;
+			}
+
+			/**
+			 * Process default cct_created and cct_modified fields as SQL date.
+			 * @see https://github.com/Crocoblock/issues-tracker/issues/15859
+			 */
+			if ( in_array( $field_name, array( 'cct_created', 'cct_modified' ) ) ) {
+
+				if ( ! empty( $arg['value'] ) ) {
+					if ( ! is_array( $arg['value'] ) ) {
+						$arg['value'] = $this->convert_to_sql_date( $arg['value'] );
+					} else {
+						$arg['value'] = array_map( function( $item ) {
+							return $this->convert_to_sql_date( $item );
+						}, $arg['value'] );
+					}
+
+					$arg['type'] = 'sql_datetime';
+				}
 			}
 
 			if ( is_array( $arg ) && ! empty( $arg['field'] ) ) {
@@ -198,7 +247,7 @@ class Factory {
 	 *
 	 * @param  [type] $action_key   [description]
 	 * @param  array  $actions_list [description]
-	 * @return [type]               [description]
+	 * @return Item_Handler         [description]
 	 */
 	public function get_item_handler( $action_key = false, $actions_list = array() ) {
 
@@ -330,14 +379,14 @@ class Factory {
 			case 'date':
 				if ( ! empty( $data['is_timestamp'] ) ) {
 					$format = get_option( 'date_format' );
-					$value  = date_i18n( $format, $value );
+					$value  = jet_engine_date( $format, $value );
 				}
 				break;
 
 			case 'time':
 				if ( ! empty( $data['is_timestamp'] ) ) {
 					$format = get_option( 'time_format' );
-					$value  = date_i18n( $format, $value );
+					$value  = jet_engine_date( $format, $value );
 				}
 				break;
 
@@ -345,7 +394,7 @@ class Factory {
 			case 'datetime-local':
 				if ( ! empty( $data['is_timestamp'] ) ) {
 					$format = get_option( 'date_format' ) . ', ' . get_option( 'time_format' );
-					$value  = date_i18n( $format, $value );
+					$value  = jet_engine_date( $format, $value );
 				}
 				break;
 
@@ -666,14 +715,14 @@ class Factory {
 
 					case 'date':
 						if ( ! empty( $field['is_timestamp'] ) ) {
-							$column['_cb'] = 'date_i18n';
+							$column['_cb'] = 'jet_engine_date';
 							$column['date_format'] = get_option( 'date_format' );
 						}
 						break;
 
 					case 'time':
 						if ( ! empty( $field['is_timestamp'] ) ) {
-							$column['_cb'] = 'date_i18n';
+							$column['_cb'] = 'jet_engine_date';
 							$column['date_format'] = get_option( 'time_format' );
 						}
 						break;
@@ -681,7 +730,7 @@ class Factory {
 					case 'datetime':
 					case 'datetime-local':
 						if ( ! empty( $field['is_timestamp'] ) ) {
-							$column['_cb'] = 'date_i18n';
+							$column['_cb'] = 'jet_engine_date';
 							$column['date_format'] = get_option( 'date_format' ) . ', ' . get_option( 'time_format' );
 						}
 						break;
@@ -803,7 +852,7 @@ class Factory {
 			case 'datetime-local':
 
 				if ( ! empty( $field['is_timestamp'] ) && ! \Jet_Engine_Tools::is_valid_timestamp( $value ) ) {
-					$value = apply_filters( 
+					$value = apply_filters(
 						'jet-engine/custom-content-types/strtotime',
 						strtotime( $value ),
 						$value
@@ -841,14 +890,14 @@ class Factory {
 
 			case 'date':
 				if ( ! empty( $field['is_timestamp'] ) && \Jet_Engine_Tools::is_valid_timestamp( $value ) ) {
-					$value = date( 'Y-m-d', $value );
+					$value = jet_engine_date( 'Y-m-d', $value );
 				}
 				break;
 
 			case 'datetime':
 			case 'datetime-local':
 				if ( ! empty( $field['is_timestamp'] ) && \Jet_Engine_Tools::is_valid_timestamp( $value ) ) {
-					$value = date( 'Y-m-d\TH:i', $value );
+					$value = jet_engine_date( 'Y-m-d\TH:i', $value );
 				}
 				break;
 
@@ -860,7 +909,7 @@ class Factory {
 
 	/**
 	 * Returns date converted from timestamp
-	 * 
+	 *
 	 * @return [type] [description]
 	 */
 	public function get_date( $format, $time ) {

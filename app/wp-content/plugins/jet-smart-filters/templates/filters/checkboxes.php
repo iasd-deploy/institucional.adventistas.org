@@ -8,8 +8,12 @@ $options             = $args['options'];
 $query_var           = $args['query_var'];
 $by_parents          = $args['by_parents'];
 $collapsible         = isset( $args['collapsible'] ) ? $args['collapsible'] : false;
-$scroll_height_style = $args['scroll_height'] ? 'style="max-height:' . $args['scroll_height'] . 'px"' : false;
-$show_decorator      = isset( $args['display_options']['show_decorator'] ) ? filter_var( $args['display_options']['show_decorator'], FILTER_VALIDATE_BOOLEAN ) : false;
+$scroll_height_style = $args['scroll_height']
+	? 'style="max-height:' . intval( $args['scroll_height'] ) . 'px"'
+	: false;
+$show_decorator      = isset( $args['display_options']['show_decorator'] )
+	? filter_var( $args['display_options']['show_decorator'], FILTER_VALIDATE_BOOLEAN )
+	: false;
 $extra_classes       = '';
 $accessibility_label = $args['accessibility_label'];
 
@@ -20,54 +24,76 @@ if ( ! $options ) {
 $current = $this->get_current_filter_value( $args );
 
 ?>
-<div class="jet-checkboxes-list" <?php $this->filter_data_atts( $args ); ?>><?php
-	include jet_smart_filters()->get_template( 'common/filter-items-search.php' );
+<div class="jet-checkboxes-list" <?php $this->filter_data_atts( $args ); ?>>
+	<?php
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		include jet_smart_filters()->get_template( 'common/filter-items-search.php' );
 
-	if ( $scroll_height_style ) {echo '<div class="jet-filter-items-scroll" ' . $scroll_height_style . '><div class="jet-filter-items-scroll-container">'; }
-
-	echo '<fieldset class="jet-checkboxes-list-wrapper">';
-	echo '<legend style="display:none;">' . $accessibility_label . '</legend>';
-	if ( $by_parents ) {
-		if ( ! class_exists( 'Jet_Smart_Filters_Terms_Walker' ) ) {
-			require_once jet_smart_filters()->plugin_path( 'includes/walkers/terms-walker.php' );
+		if ( $scroll_height_style ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo '<div class="jet-filter-items-scroll" ' . $scroll_height_style . '><div class="jet-filter-items-scroll-container">';
 		}
 
-		$walker = new Jet_Smart_Filters_Terms_Walker();
-		$walker->tree_type = $query_var;
+		echo '<fieldset class="jet-checkboxes-list-wrapper">';
+		echo '<legend style="display:none;">' . esc_html( $accessibility_label ) . '</legend>';
 
-		$args['item_template'] = jet_smart_filters()->get_template( 'filters/checkboxes-item.php' );
-		$args['current']       = $current;
-		$args['decorator']     = $show_decorator;
+		if ( $by_parents ) {
 
-		$container_classes = "jet-list-tree";
-
-		if ( $collapsible ) {
-			$container_classes .= " jet-list-collapsible";
-		}
-
-		echo '<div class="' . $container_classes . '">';
-		echo $walker->walk( $options, 0, $args );
-		echo '</div>';
-	} else {
-		foreach ( $options as $value => $label ) {
-			$checked = '';
-
-			if ( $current ) {
-				if ( is_array( $current ) && in_array( $value, $current ) ) {
-					$checked = 'checked';
-				}
-
-				if ( ! is_array( $current ) && $value == $current ) {
-					$checked = 'checked';
-				}
+			if ( ! class_exists( 'Jet_Smart_Filters_Terms_Walker' ) ) {
+				require_once jet_smart_filters()->plugin_path( 'includes/walkers/terms-walker.php' );
 			}
 
-			include jet_smart_filters()->get_template( 'filters/checkboxes-item.php' );
+			$walker            = new Jet_Smart_Filters_Terms_Walker();
+			$walker->tree_type = $query_var;
+
+			$args['item_template'] = jet_smart_filters()->get_template( 'filters/checkboxes-item.php' );
+			$args['current']       = $current;
+			$args['decorator']     = $show_decorator;
+
+			$container_classes = 'jet-list-tree';
+
+			if ( $collapsible ) {
+				$container_classes .= ' jet-list-collapsible';
+			}
+
+			echo '<div class="' . esc_attr( $container_classes ) . '">';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo $walker->walk( $options, 0, $args );
+			echo '</div>';
+
+		} else {
+
+			foreach ( $options as $optionKey => $optionData ) {
+
+				$checked = '';
+
+				extract(
+					jet_smart_filters()->utils->сreate_option_data( $optionKey, $optionData ),
+					EXTR_OVERWRITE
+				);
+
+				if ( $current ) {
+					if ( is_array( $current ) && in_array( $value, $current ) ) {
+						$checked = 'checked';
+					}
+
+					if ( ! is_array( $current ) && $value == $current ) {
+						$checked = 'checked';
+					}
+				}
+
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				include jet_smart_filters()->get_template( 'filters/checkboxes-item.php' );
+			}
 		}
-	}
-	echo '</fieldset>';
 
-	if ( $scroll_height_style ) { echo '</div></div>'; }
+		echo '</fieldset>';
 
-	include jet_smart_filters()->get_template( 'common/filter-items-moreless.php' );
-?></div>
+		if ( $scroll_height_style ) {
+			echo '</div></div>';
+		}
+
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		include jet_smart_filters()->get_template( 'common/filter-items-moreless.php' );
+	?>
+</div>

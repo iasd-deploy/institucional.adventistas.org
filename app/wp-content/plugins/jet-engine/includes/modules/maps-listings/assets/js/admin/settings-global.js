@@ -20,6 +20,7 @@
 				currentPopupSource: '',
 				currentPopupCustomFields: '',
 				currentPopupFields: [],
+				preloadWarnings: mapsSettings.preloadWarnings ?? '',
 			};
 		},
 		methods: {
@@ -45,6 +46,8 @@
 							type: 'success',
 							duration: 7000,
 						} );
+
+						self.preloadWarnings = response.data.additionalData.preloadWarnings ?? '';
 					} else {
 						self.$CXNotice.add( {
 							message: response.data.message,
@@ -61,6 +64,15 @@
 				} );
 			},
 			handlePopupOk: function() {
+				let customSource  = '';
+
+				this.currentPopupFields = this.currentPopupFields.map( ( item ) => {
+					if ( ! customSource && false !== customSource ) {
+						customSource = item.match( /^_custom::(.+)::/ )?.[1] ?? false;
+					}
+					
+					return customSource ? item.replace( /^_custom::.+?::/, '' ) : item;
+				} );
 
 				if ( this.currentPopupFields.length ) {
 
@@ -77,6 +89,10 @@
 				let newFields = this.getPopupValue();
 
 				if ( newFields ) {
+
+					if ( customSource ) {
+						newFields = `_custom::${customSource}::${newFields}`;
+					}
 
 					var preloadMeta = this.settings.preload_meta;
 
@@ -121,6 +137,9 @@
 				this.currentPopupFields = [];
 				this.$refs.current_popup_fields.setValues( [] );
 				this.currentPopupCustomFields = '';
+			},
+			showPreloadWarnings: function() {
+				return this.preloadWarnings?.length > 0;
 			}
 		}
 	} );

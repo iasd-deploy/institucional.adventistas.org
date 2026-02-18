@@ -147,13 +147,13 @@ class Filters_Options_Source {
 					$image = $this->is_valid_value( $item->$image_field ) ? $item->$image_field : false;
 				}
 
-				$new_options[ $item->$value_field ] = array(
-					'label' => $item->$label_field,
+				$new_options[ $value ] = array(
+					'label' => $label,
 					'color' => $color,
 					'image' => $image,
 				);
 			} else {
-				$new_options[ $item->$value_field ] = $item->$label_field;
+				$new_options[ $value ] = $label;
 			}
 
 		}

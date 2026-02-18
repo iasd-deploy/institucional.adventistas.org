@@ -19,6 +19,10 @@ if ( ! class_exists( 'Jet_Engine_Img_Gallery' ) ) {
 	 */
 	class Jet_Engine_Img_Gallery {
 
+		public static function filter_url( $image, $maybe_url ) {
+			return ! is_numeric( $maybe_url ) && is_string( $maybe_url ) ? [ $maybe_url, 100, 100 ] : $image;
+		}
+
 		/**
 		 * Render images gallery as slider
 		 *
@@ -31,6 +35,14 @@ if ( ! class_exists( 'Jet_Engine_Img_Gallery' ) ) {
 			if ( empty( $images ) ) {
 				return '';
 			}
+
+			$images = array_map(
+				function ( $img ) {
+					$img = self::jet_engine_normalize_image_input( $img );
+					return apply_filters( 'jet-engine/compatibility/translate/post', $img );
+				},
+				$images
+			);
 
 			if ( wp_doing_ajax() ) {
 				jet_engine()->frontend->register_listing_deps();
@@ -85,9 +97,8 @@ if ( ! class_exists( 'Jet_Engine_Img_Gallery' ) ) {
 			}
 
 			$slider_atts = apply_filters( 'jet-engine/gallery/slider/atts', $slider_atts );
-			$slider_atts = htmlspecialchars( json_encode( $slider_atts ) );
 
-			echo '<div class="' . implode( ' ', $args['css_classes'] ) . '" data-atts="' . $slider_atts . '">';
+			echo '<div class="' . esc_attr( implode( ' ', $args['css_classes'] ) ) . '" data-atts="' . esc_attr( wp_json_encode( $slider_atts ) ) . '">';
 
 			$gallery_id = self::get_gallery_id();
 
@@ -109,14 +120,43 @@ if ( ! class_exists( 'Jet_Engine_Img_Gallery' ) ) {
 
 					$lightbox_attr = apply_filters( 'jet-engine/gallery/lightbox-attr', $lightbox_attr, $img_data, $gallery_id );
 
-					echo '<a ' . Jet_Engine_Tools::get_attr_string( $lightbox_attr ) . '>';
+					// Escaped by Jet_Engine_Tools::get_attr_string()
+					echo '<a ' . Jet_Engine_Tools::get_attr_string( $lightbox_attr ) . '>'; // phpcs:ignore
+
+					$icon = \Jet_Engine_Tools::render_icon(
+						apply_filters(
+							'jet-engine/gallery/lightbox-trigger-icon',
+							array(
+								'value'   => 'fas fa-plus-circle',
+								'library' => 'fa-solid',
+							), $args
+						), 'jet-engine-lightbox-icon'
+					);
+
+					echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				} else {
 					echo '<span class="jet-engine-gallery-slider__item-wrap jet-engine-gallery-item-wrap">';
 				}
 
 				$alt = get_post_meta( $img_id, '_wp_attachment_image_alt', true );
 
-				echo '<img src="' . $img_url . '" alt="' . $alt . '" class="jet-engine-gallery-slider__item-img">';
+				if ( ! $img_id ) {
+					$img_id = $img_url ? $img_url : $img_full;
+				}
+
+				add_filter( 'wp_get_attachment_image_src', array( __CLASS__, 'filter_url' ), 10, 2 );
+
+				echo wp_get_attachment_image(
+					$img_id,
+					$args['size'] ?? 'full',
+					false,
+					array(
+						'alt' => $alt,
+						'class' => 'jet-engine-gallery-slider__item-img',
+					)
+				);
+
+				remove_filter( 'wp_get_attachment_image_src', array( __CLASS__, 'filter_url' ), 10 );
 
 				if ( $args['lightbox'] ) {
 					echo '</a>';
@@ -164,6 +204,14 @@ if ( ! class_exists( 'Jet_Engine_Img_Gallery' ) ) {
 				return '';
 			}
 
+			$images = array_map(
+				function ( $img ) {
+					$img = self::jet_engine_normalize_image_input( $img );
+					return apply_filters( 'jet-engine/compatibility/translate/post', $img );
+				},
+				$images
+			);
+
 			$args = apply_filters( 'jet-engine/gallery/grid/args', wp_parse_args( $args, array(
 				'size'        => 'full',
 				'lightbox'    => false,
@@ -172,6 +220,7 @@ if ( ! class_exists( 'Jet_Engine_Img_Gallery' ) ) {
 				'cols_mobile' => 1,
 				'css_classes' => [ 'jet-engine-gallery-grid' ],
 				'masonry'     => false,
+				'fit_image'   => 'cover',
 			) ) );
 
 			ob_start();
@@ -187,6 +236,11 @@ if ( ! class_exists( 'Jet_Engine_Img_Gallery' ) ) {
 			$attr = array(
 				'class' => $classes,
 			);
+
+			if ( $args['fit_image'] !== 'none' ) {
+				$attr['class'][] = 'fit-image';
+				$attr['class'][] = sprintf( 'fit-image-%s', $args['fit_image'] );
+			}
 
 			if ( ! empty( $args['masonry'] ) ) {
 
@@ -207,7 +261,8 @@ if ( ! class_exists( 'Jet_Engine_Img_Gallery' ) ) {
 
 			$attr = apply_filters( 'jet-engine/gallery/grid/attr', $attr, $args, $gallery_id );
 
-			echo '<div ' . Jet_Engine_Tools::get_attr_string( $attr ) . '>';
+			// Escaped by Jet_Engine_Tools::get_attr_string()
+			echo '<div ' . Jet_Engine_Tools::get_attr_string( $attr ) . '>'; // phpcs:ignore
 
 			foreach ( $images as $img_data ) {
 
@@ -227,14 +282,43 @@ if ( ! class_exists( 'Jet_Engine_Img_Gallery' ) ) {
 
 					$lightbox_attr = apply_filters( 'jet-engine/gallery/lightbox-attr', $lightbox_attr, $img_data, $gallery_id );
 
-					echo '<a ' . Jet_Engine_Tools::get_attr_string( $lightbox_attr ) . '>';
+					// Escaped by Jet_Engine_Tools::get_attr_string()
+					echo '<a ' . Jet_Engine_Tools::get_attr_string( $lightbox_attr ) . '>';  // phpcs:ignore
+
+					$icon = \Jet_Engine_Tools::render_icon(
+						apply_filters(
+							'jet-engine/grid/lightbox-trigger-icon',
+							array(
+								'value'   => 'fas fa-plus-circle',
+								'library' => 'fa-solid',
+							), $args
+						), 'jet-engine-lightbox-icon'
+					);
+
+					echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				} else {
 					echo '<span class="jet-engine-gallery-grid__item-wrap jet-engine-gallery-item-wrap">';
 				}
 
 				$alt = get_post_meta( $img_id, '_wp_attachment_image_alt', true );
 
-				echo '<img src="' . $img_url . '" alt="' . $alt . '" class="jet-engine-gallery-grid__item-img">';
+				if ( ! $img_id ) {
+					$img_id = $img_url ? $img_url : $img_full;
+				}
+
+				add_filter( 'wp_get_attachment_image_src', array( __CLASS__, 'filter_url' ), 10, 2 );
+
+				echo wp_get_attachment_image(
+					$img_id,
+					$args['size'] ?? 'full',
+					false,
+					array(
+						'alt' => $alt,
+						'class' => 'jet-engine-gallery-grid__item-img',
+					)
+				);
+
+				remove_filter( 'wp_get_attachment_image_src', array( __CLASS__, 'filter_url' ), 10 );
 
 				if ( $args['lightbox'] ) {
 					echo '</a>';
@@ -249,6 +333,43 @@ if ( ! class_exists( 'Jet_Engine_Img_Gallery' ) ) {
 			echo '</div>';
 
 			return ob_get_clean();
+		}
+
+		/**
+		 * Normalize image input for JetEngine gallery.
+		 *
+		 * Accepts a numeric ID, an array with 'id' and/or 'url', or a raw URL.
+		 * Returns the attachment ID if found, otherwise a sanitized URL.
+		 *
+		 * @param mixed $input Image input (int ID, array('id'=>'', 'url'=>''), or string URL).
+		 * @return int|string Attachment ID as integer, or sanitized URL as string.
+		 */
+		public static function jet_engine_normalize_image_input( $input ) {
+			// Case 1: numeric ID
+			if ( is_numeric( $input ) ) {
+				return absint( $input );
+			}
+
+			// Case 2: array { id, url }
+			if ( is_array( $input ) ) {
+
+				// Prefer explicit ID
+				if ( ! empty( $input['id'] ) ) {
+					return absint( $input['id'] );
+				}
+
+				if ( ! empty( $input['url'] ) ) {
+					$maybe_id = attachment_url_to_postid( $input['url'] );
+					return $maybe_id ? $maybe_id : esc_url( $input['url'] );
+				}
+
+				// fallback: dangerous case — sanitize everything
+				return esc_url( $input['url'] ?? '' );
+			}
+
+			// Case 3: string URL
+			$maybe_id = attachment_url_to_postid( $input );
+			return $maybe_id ? $maybe_id : esc_url( $input );
 		}
 
 		public static function get_img_data( $img_data = null, $args = array() ) {

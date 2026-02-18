@@ -7,6 +7,7 @@ namespace Jet_Engine\Bricks_Views\Listing;
 
 use Bricks\Database;
 use Bricks\Elements;
+use Bricks\Helpers;
 use Bricks\Query;
 
 /**
@@ -34,6 +35,7 @@ class Manager {
 		add_action( 'save_post_' . jet_engine()->post_type->slug(), [ $this, 'reset_assets_cache' ] );
 
 		add_filter( 'jet-engine/listing/grid/masonry-options', [ $this, 'set_masonry_gap' ], 10, 3 );
+		add_filter( 'jet-engine/listing/grid/lazy-load/post-id', array( $this, 'resolve_lazy_load_post_id' ), 10, 2 );
 
 		add_action( 'jet-smart-filters/render/ajax/before', [ $this, 'register_bricks_dynamic_data_on_ajax' ] );
 		add_action( 'jet-engine/ajax-handlers/before-do-ajax', [ $this, 'register_bricks_dynamic_data_on_ajax' ] );
@@ -50,7 +52,10 @@ class Manager {
 
 		add_filter( 'jet-engine/compatibility/listing/query-id', [ $this, 'modify_query_id' ], 10, 2 );
 
-		add_action( 'wpml_translation_job_saved', [ $this, 'sync_listing_type_for_translation' ], 10, 3 );
+		add_action( 'wpml_translation_job_saved', [ $this, 'sync_listing_type_wpml' ], 10, 3 );
+		add_filter( 'pll_copy_post_metas', [ $this, 'sync_listing_type_polylang' ], 10, 5 );
+
+		add_filter( 'bricks/get_element_data/maybe_from_post_id', [ $this, 'maybe_set_listing_id' ], 10, 2 );
 
 		/**
 		 * Using a closure to ensure this function is only triggered from the 'wpml_page_builder_string_translated' hook
@@ -93,12 +98,6 @@ class Manager {
 	}
 
 	public function get_ajax_settings( $settings = [], $element_id = null, $post_id = 0 ) {
-		Database::set_active_templates();
-		$active_templates = Database::$active_templates;
-
-		if ( $active_templates['content_type'] === 'archive' ) {
-			$post_id = $active_templates['content'];
-		}
 
 		if ( ! $element_id || ! $post_id ) {
 			return $settings;
@@ -132,6 +131,33 @@ class Manager {
 
 		return $data;
 
+	}
+
+	/**
+	 * Detects the correct template/post ID for JetEngine Listing lazy load inside Bricks.
+	 *
+	 * Handle Bricks Template elements (nested templates inside static pages or other templates)
+	 *
+	 * @param int   $post_id  The current post or template ID.
+	 * @param array $settings The listing settings (must contain _id).
+	 *
+	 * @return int Resolved post/template ID.
+	 */
+	public function resolve_lazy_load_post_id( $post_id, $settings ) {
+		$is_engine_template = jet_engine()->listings->post_type->slug() === get_post_type( $post_id );
+
+		if ( ! bricks_is_frontend() || $is_engine_template || empty( $settings['_id'] ) ) {
+			return $post_id;
+		}
+
+		// STEP: Set post ID to template preview ID if direct edit or single template preview
+		$element_data = Helpers::get_element_data( $post_id, $settings['_id'] );
+
+		if ( ! empty( $element_data ) && ! empty( $element_data['source_id'] ) ) {
+			$post_id = $element_data['source_id'];
+		}
+
+		return $post_id;
 	}
 
 	public function get_bricks_query( $args = [] ) {
@@ -184,6 +210,12 @@ class Manager {
 	}
 
 	public function render_assets( $listing_id, $force = false ) {
+		$allow_render = apply_filters( 'jet-engine/bricks-views/listing/render-assets', true, $listing_id );
+
+		if ( ! $allow_render ) {
+			return;
+		}
+
 		if ( ! class_exists( '\Jet_Engine\Bricks_Views\Listing\Assets' ) ) {
 			require_once jet_engine()->bricks_views->component_path( 'listing/assets.php' );
 			new Assets();
@@ -200,7 +232,7 @@ class Manager {
 		$inline_css = Assets::generate_inline_css( $listing_id, $force );
 		$inline_css = Assets::minify_css( $inline_css );
 
-		printf( '<style>%s</style>', $inline_css );
+		printf( '<style>%s</style>', $inline_css ); // phpcs:ignore
 		Assets::jet_print_editor_fonts();
 	}
 
@@ -326,16 +358,39 @@ class Manager {
 	/**
 	 * Synchronizes the '_listing_type' meta field for translated JetEngine items.
 	 */
-	public function sync_listing_type_for_translation( $post_id, $data, $job ) {
-		if ( get_post_type( $post_id ) === 'jet-engine' ) {
-			// Retrieve the '_listing_type' value from the original post
-			$original_listing_type = get_post_meta( $job->original_doc_id, '_listing_type', true );
+	public function sync_listing_type( $post_id, $original_post_id ) {
+		if ( get_post_type( $post_id ) !== 'jet-engine' ) {
+			return;
+		}
 
-			// If the original '_listing_type' is 'bricks', update the meta field for the translated post
-			if ( $original_listing_type === 'bricks' ) {
-				update_post_meta( $post_id, '_listing_type', 'bricks' );
+		$meta_keys = [
+			'_listing_type',
+			'_listing_data',
+		];
+
+		// Retrieve the post meta from the original post
+		$original_meta = get_post_meta( $original_post_id );
+
+		if ( empty( $original_meta['_listing_type'][0] ) || $original_meta['_listing_type'][0] !== 'bricks' ) {
+			return;
+		}
+
+		foreach ( $meta_keys as $meta_key ) {
+			if ( isset( $original_meta[ $meta_key ][0] ) ) {
+				$original_value = maybe_unserialize( $original_meta[ $meta_key ][0] );
+				update_post_meta( $post_id, $meta_key, $original_value );
 			}
 		}
+	}
+
+	public function sync_listing_type_wpml( $post_id, $data, $job ) {
+		$this->sync_listing_type( $post_id, $job->original_doc_id );
+	}
+
+	public function sync_listing_type_polylang( $keys, $sync, $from, $to, $lang ) {
+		$this->sync_listing_type($to, $from);
+
+		return $keys;
 	}
 
 	/**
@@ -418,5 +473,20 @@ class Manager {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Conditionally sets the listing ID for the given element.
+	 *
+	 * @param int|string $post_id The default post ID passed through the filter.
+	 * @param array $element The element data, which includes the element name and settings.
+	 * @return int|string The listing ID if conditions are met, otherwise the default post ID.
+	 */
+	public function maybe_set_listing_id( $post_id, $element ) {
+		if ( $element['name'] === 'jet-engine-listing-grid' && ! empty( $element['settings']['lisitng_id'] ) ) {
+			return $element['settings']['lisitng_id'];
+		}
+
+		return $post_id;
 	}
 }

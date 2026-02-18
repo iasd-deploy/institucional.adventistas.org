@@ -46,12 +46,14 @@ if ( ! class_exists( 'Jet_Smart_Filters_Provider_Preloader' ) ) {
 
 			add_action( 'wp_ajax_jet_smart_filters_get_provider_preloader_template', function() {
 
-				if ( $_REQUEST['action'] !== 'jet_smart_filters_get_provider_preloader_template' ) {
+				$action_request_val = jet_smart_filters()->data->get_request_var( 'action' );
+				if ( $action_request_val !== 'jet_smart_filters_get_provider_preloader_template' ) {
 					return false;
 				}
 
+				$type_request_val = jet_smart_filters()->data->get_request_var( 'type' );
 				wp_send_json_success( array(
-					'template' => $this->get_template( $_REQUEST['type'] )
+					'template' => $this->get_template( $type_request_val )
 				) );
 			} );
 		}

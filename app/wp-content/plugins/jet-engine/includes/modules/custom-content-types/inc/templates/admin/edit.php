@@ -36,6 +36,10 @@
 					:wrapper-css="[ 'equalwidth' ]"
 				>
 					<div><code>{{ prefix }}{{ generalSettings.slug }}</code></div>
+					<div
+						v-if="!!tableNotice"
+						style="color: red; margin-top: 5px;"
+					>{{ tableNotice }}</div>
 				</cx-vui-component-wrapper>
 				<cx-vui-switcher
 					label="<?php _e( 'Has Single Page', 'jet-engine' ); ?>"
@@ -150,7 +154,7 @@
 				</cx-vui-component-wrapper>
 				<cx-vui-input
 					:label="'<?php _e( 'Access Capability', 'jet-engine' ); ?>'"
-					description="<?php _e( 'Leave empty to make public or set user access capability. More about capabilities <a href=\'https://wordpress.org/support/article/roles-and-capabilities/\' target=\'_blank\'>here</a>.', 'jet-engine' ); ?>"
+					description="<?php _e( 'Leave empty to make public, or set user access capability. More about capabilities <a href=\'https://wordpress.org/support/article/roles-and-capabilities/\' target=\'_blank\'>here</a>.', 'jet-engine' ); ?>"
 					:wrapper-css="[ 'equalwidth' ]"
 					:size="'fullwidth'"
 					v-model="generalSettings.rest_get_access"
@@ -186,7 +190,7 @@
 				</cx-vui-component-wrapper>
 				<cx-vui-input
 					:label="'<?php _e( 'Access Capability', 'jet-engine' ); ?>'"
-					description="<?php _e( 'Leave empty to make public or set user access capability. More about capabilities <a href=\'https://wordpress.org/support/article/roles-and-capabilities/\' target=\'_blank\'>here</a>.', 'jet-engine' ); ?>"
+					description="<?php _e( 'Set as <b>\'public\'</b> to make public or set user access capability. More about capabilities <a href=\'https://wordpress.org/support/article/roles-and-capabilities/\' target=\'_blank\'>here</a>. Default: <b>\'edit_posts\'</b>.', 'jet-engine' ); ?>"
 					:wrapper-css="[ 'equalwidth' ]"
 					:size="'fullwidth'"
 					v-model="generalSettings.rest_put_access"
@@ -197,10 +201,11 @@
 							'value':   true,
 						}
 					]"
+					@on-blur="fixPermission"
 				></cx-vui-input>
 				<cx-vui-component-wrapper
 					label="<?php _e( 'Note!', 'jet-engine' ); ?>"
-					description="<?php _e( 'If you leave this endpoint as public anyone will can to insert new content type items into the your database', 'jet-engine' ); ?>"
+					description="<?php _e( 'If you leave this endpoint as public anyone will be able to insert new content type items into your database', 'jet-engine' ); ?>"
 					:wrapper-css="[ 'fullwidth' ]"
 					:conditions="[
 						{
@@ -211,7 +216,7 @@
 						{
 							'input':   generalSettings.rest_put_access,
 							'compare': 'equal',
-							'value':   '',
+							'value':   'public',
 						}
 					]"
 				></cx-vui-component-wrapper>
@@ -239,7 +244,7 @@
 				</cx-vui-component-wrapper>
 				<cx-vui-input
 					:label="'<?php _e( 'Access Capability', 'jet-engine' ); ?>'"
-					description="<?php _e( 'Leave empty to make public or set user access capability. More about capabilities <a href=\'https://wordpress.org/support/article/roles-and-capabilities/\' target=\'_blank\'>here</a>.', 'jet-engine' ); ?>"
+					description="<?php _e( 'Set as <b>\'public\'</b> to make public or set user access capability. More about capabilities <a href=\'https://wordpress.org/support/article/roles-and-capabilities/\' target=\'_blank\'>here</a>. Default: <b>\'edit_posts\'</b>.', 'jet-engine' ); ?>"
 					:wrapper-css="[ 'equalwidth' ]"
 					:size="'fullwidth'"
 					v-model="generalSettings.rest_post_access"
@@ -250,10 +255,11 @@
 							'value':   true,
 						}
 					]"
+					@on-blur="fixPermission"
 				></cx-vui-input>
 				<cx-vui-component-wrapper
 					label="<?php _e( 'Note!', 'jet-engine' ); ?>"
-					description="<?php _e( 'If you leave this endpoint as public anyone will can to update new content type items in the your database', 'jet-engine' ); ?>"
+					description="<?php _e( 'If you leave this endpoint as public anyone will be able to update new content type items in your database', 'jet-engine' ); ?>"
 					:wrapper-css="[ 'fullwidth' ]"
 					:conditions="[
 						{
@@ -264,7 +270,7 @@
 						{
 							'input':   generalSettings.rest_post_access,
 							'compare': 'equal',
-							'value':   '',
+							'value':   'public',
 						}
 					]"
 				></cx-vui-component-wrapper>
@@ -292,7 +298,7 @@
 				</cx-vui-component-wrapper>
 				<cx-vui-input
 					:label="'<?php _e( 'Access Capability', 'jet-engine' ); ?>'"
-					description="<?php _e( 'Leave empty to make public or set user access capability. More about capabilities <a href=\'https://wordpress.org/support/article/roles-and-capabilities/\' target=\'_blank\'>here</a>.', 'jet-engine' ); ?>"
+					description="<?php _e( 'Set as <b>\'public\'</b> to make public or set user access capability. More about capabilities <a href=\'https://wordpress.org/support/article/roles-and-capabilities/\' target=\'_blank\'>here</a>. Default: <b>\'edit_posts\'</b>.', 'jet-engine' ); ?>"
 					:wrapper-css="[ 'equalwidth' ]"
 					:size="'fullwidth'"
 					v-model="generalSettings.rest_delete_access"
@@ -303,10 +309,11 @@
 							'value':   true,
 						}
 					]"
+					@on-blur="fixPermission"
 				></cx-vui-input>
 				<cx-vui-component-wrapper
 					label="<?php _e( 'Note!', 'jet-engine' ); ?>"
-					description="<?php _e( 'If you leave this endpoint as public anyone will can to delete content type items from the your database', 'jet-engine' ); ?>"
+					description="<?php _e( 'If you leave this endpoint as public anyone will be able to delete content type items from your database', 'jet-engine' ); ?>"
 					:wrapper-css="[ 'fullwidth' ]"
 					:conditions="[
 						{
@@ -317,7 +324,7 @@
 						{
 							'input':   generalSettings.rest_delete_access,
 							'compare': 'equal',
-							'value':   '',
+							'value':   'public',
 						}
 					]"
 				></cx-vui-component-wrapper>
@@ -351,7 +358,7 @@
 				<code style="display:block; width: 100%; font-size:12px;">{{ restBase }}{{ generalSettings.slug }}/?cct_author_id=1&_orderby=_ID&_order=desc&_ordertype=integer</code>
 			</div>
 		</cx-vui-popup>
-		<jet-meta-fields v-model="metaFields" :hide-options="[ 'show_in_rest', 'revision_support', 'repeater_save_separate' ]" slug-delimiter="_"></jet-meta-fields>
+		<jet-meta-fields v-model="metaFields" :hide-options="[ 'show_in_rest', 'revision_support', 'repeater_save_separate' ]" slug-delimiter="_" :field-validation-callback="validateField"></jet-meta-fields>
 		<cx-vui-collapse
 			:collapsed="false"
 		>

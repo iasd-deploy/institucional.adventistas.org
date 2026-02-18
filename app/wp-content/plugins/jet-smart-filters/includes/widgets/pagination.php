@@ -106,6 +106,17 @@ class Jet_Smart_Filters_Pagination_Widget extends Widget_Base {
 			)
 		);
 
+		$this->add_control(
+			'query_id_wc_shortcode_notice',
+			array(
+				'type' => Controls_Manager::RAW_HTML,
+				'raw'  => __( '<b>Query ID</b> for <b>WooCommerce Shortcode</b> must be specified as attribute class: [products class="query_id"]', 'jet-smart-filters' ),
+				'condition' => array(
+					'content_provider' => array( 'woocommerce-shortcode' ),
+				),
+			)
+		);
+
 		$this->end_controls_section();
 
 		$this->start_controls_section(
@@ -583,8 +594,7 @@ class Jet_Smart_Filters_Pagination_Widget extends Widget_Base {
 					),
 				),
 				'selectors'   => array(
-					'{{WRAPPER}} ' . $css_scheme['pagination-item'] => 'margin-right: calc({{SIZE}}{{UNIT}}/2); margin-left: calc({{SIZE}}{{UNIT}}/2);',
-					'{{WRAPPER}} ' . $css_scheme['pagination']      => 'margin-right: calc(-{{SIZE}}{{UNIT}}/2); margin-left: calc(-{{SIZE}}{{UNIT}}/2);',
+					'{{WRAPPER}} ' . $css_scheme['pagination'] => 'column-gap: {{SIZE}}{{UNIT}};',
 				),
 			)
 		);
@@ -607,8 +617,7 @@ class Jet_Smart_Filters_Pagination_Widget extends Widget_Base {
 					),
 				),
 				'selectors'   => array(
-					'{{WRAPPER}} ' . $css_scheme['pagination-item'] => 'margin-top: calc({{SIZE}}{{UNIT}}/2); margin-bottom: calc({{SIZE}}{{UNIT}}/2)',
-					'{{WRAPPER}} ' . $css_scheme['pagination']      => 'margin-top: calc(-{{SIZE}}{{UNIT}}/2); margin-bottom: calc(-{{SIZE}}{{UNIT}}/2)',
+					'{{WRAPPER}} ' . $css_scheme['pagination'] => 'row-gap: {{SIZE}}{{UNIT}};',
 				),
 			)
 		);
@@ -899,11 +908,11 @@ class Jet_Smart_Filters_Pagination_Widget extends Widget_Base {
 				data-controls="%4$s"
 				data-apply-type="%5$s"
 			>',
-			$base_class,
-			$content_provider,
-			$query_id,
-			htmlspecialchars( json_encode( $controls ) ),
-			$apply_type
+			esc_attr( $base_class ),
+			esc_attr( $content_provider ),
+			esc_attr( $query_id ),
+			esc_attr( wp_json_encode( $controls ) ),
+			esc_attr( $apply_type )
 		);
 
 		if ( Plugin::instance()->editor->is_edit_mode() ) {

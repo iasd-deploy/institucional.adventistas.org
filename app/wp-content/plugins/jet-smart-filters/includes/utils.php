@@ -111,6 +111,44 @@ if ( ! class_exists( 'Jet_Smart_Filters_Utils' ) ) {
 		}
 
 		/**
+		 * Creates an associative array with value and label from input data of any type( $data = String / Array )
+		 */
+		public function сreate_option_data( $key, $data ) {
+
+			$option = array(
+				'value' => $key,
+				'label' => $data
+			);
+
+			if ( is_array( $data ) ) {
+				$option['label'] = $key;
+
+				// merge option properties
+				$option = array_merge( $option, $data );
+			}
+
+			return $option;
+		}
+
+		/**
+		 * Generates HTML date attributes from array
+		 */
+		public function generate_data_attrs( $data ) {
+
+			if ( ! is_array( $data ) ) {
+				return '';
+			}
+
+			$data_attrs = '';
+
+			foreach ( $data as $key => $value ) {
+				$data_attrs .= 'data-' . $key . '="' . htmlspecialchars( $value, ENT_QUOTES ) . '" ';
+			}
+
+			return trim( $data_attrs );
+		}
+
+		/**
 		 * Returns image size array in slug => name format
 		 */
 		public function get_image_sizes() {
@@ -320,10 +358,10 @@ if ( ! class_exists( 'Jet_Smart_Filters_Utils' ) ) {
 			/**
 			 * @todo Merge smae keys and process hierarchy
 			 */
-			$url_type = jet_smart_filters()->settings->get( 'url_structure_type' );
+			$url_type = jet_smart_filters()->settings->url_structure_type;
 
 			if ( ! $base_url ) {
-				$base_url = $_SERVER['REQUEST_URI'];
+				$base_url = $_SERVER['REQUEST_URI']; // phpcs:ignore
 			}
 
 			$name_parts = array( $provider );
@@ -474,6 +512,202 @@ if ( ! class_exists( 'Jet_Smart_Filters_Utils' ) ) {
 						stripslashes($value);
 
 			return $value;
+		}
+
+		/**
+		 * Сonvert array with term slugs to ids
+		 */
+		public function convert_term_slugs_to_ids( $array ) {
+
+			global $wpdb;
+		
+			// collect all slugs into one array
+			$slugs         = [];
+			$flatten_array = function( $value ) use ( &$slugs ) {
+				if ( is_string( $value ) ) {
+					$slugs[] = $value;
+				}
+			};
+
+			array_walk_recursive( $array, $flatten_array );
+		
+			// if the array with slugs is empty
+			if ( empty( $slugs ) ) {
+				return $array;
+			}
+
+			// get all term IDs by slugs
+			$placeholders = implode( ',', array_fill( 0, count( $slugs ), '%s' ) );
+			$query        = $wpdb->prepare(
+				"SELECT t.term_id, t.slug FROM {$wpdb->terms} t
+				WHERE t.slug IN ($placeholders)",
+				...$slugs
+			);
+
+			$terms = $wpdb->get_results( $query );
+	
+			// convert the result to the format [slug => term_id]
+			$term_map = [];
+
+			foreach ( $terms as $term ) {
+				$term_map[$term->slug] = $term->term_id;
+			}
+	
+			// recursively replace slugs with term_id in the original array
+			array_walk_recursive( $array, function( &$value ) use ( $term_map ) {
+				if (is_string( $value ) && isset( $term_map[$value] ) ) {
+					$value = $term_map[$value];
+				}
+			});
+		
+			return $array;
+		}
+
+		/**
+		 * Check whether the given WP_Query (or the global query) is a WooCommerce products query.
+		 */
+		public function is_wc_products_query( $q = null ) {
+
+			if ( ! $q ) {
+				global $wp_query;
+				$q = $wp_query;
+			}
+
+			// explicit product post_type
+			if ( $q->get( 'post_type' ) === 'product' ) {
+				return true;
+			}
+
+			// any taxonomy attached to the product post type
+			if ( $q->is_tax() ) {
+				$tax = $q->get( 'taxonomy' );
+
+				if ( $tax ) {
+					$object_types = get_taxonomy( $tax )->object_type;
+
+					if ( in_array( 'product', $object_types, true ) ) {
+						return true;
+					}
+				}
+			}
+
+			// shop page
+			if ( function_exists( 'is_shop' ) && is_shop() ) {
+				return true;
+			}
+
+			return false;
+		}
+
+		/**
+		 * Function to merge arrays by the key of the first array and the value of the second
+		 */
+		function mergeArraysByKeyAndValue( $firstArray, $secondArray, $valueKey = 'value' ) {
+
+			$resultArray = [];
+		
+			foreach ( $firstArray as $key => $item ) {
+				foreach ( $secondArray as $secondItem ) {
+					if ( ! isset( $secondItem[$valueKey] ) || $secondItem[$valueKey] != $key ) {
+						continue;
+					}
+
+					foreach ( $secondItem as $secondKey => $secondValue ) {
+						if ( ! array_key_exists( $secondKey, $item ) || ( ! empty( $secondValue ) && empty( $item[$secondKey] ) ) ) {
+							$item[$secondKey] = $secondValue;
+						}
+					}
+
+					$resultArray[] = $item;
+
+					break;
+				}
+			}
+		
+			return $resultArray;
+		}
+
+		/**
+		 * Recursively strips slashes from strings or arrays.
+		 *
+		 * @param mixed $value Value to process.
+		 * @return mixed Cleaned value.
+		 */
+		public function stripslashes_deep( $value ) {
+			if (is_array( $value ) ) {
+				return array_map( 'stripslashes_deep', $value );
+			} else {
+				return is_string( $value ) ? stripslashes( $value ) : $value;
+			}
+		}
+
+		/**
+		 * Recursively sanitize text fields (string or array)
+		 *
+		 * @param mixed $value
+		 * @return mixed
+		 */
+		public function sanitize_text_field_recursive( $value ) {
+
+			if ( is_array( $value ) ) {
+				return array_map( array( $this, 'sanitize_text_field_recursive' ), $value );
+			}
+
+			return sanitize_text_field( $value );
+		}
+
+		/**
+		* Check whether the given array contains at least one nested array.
+		*
+		* @param array $array The array to inspect.
+		* @return bool Returns true if the array contains at least one element that is itself an array, false otherwise.
+		*/
+		public function hasNestedArray( array $array ): bool {
+
+			foreach ( $array as $value ) {
+				if ( is_array( $value ) ) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		/**
+		 * Sanitize HTML allowing icons (i, span, svg).
+		 */
+		function sanitize_icon_html( $html ) {
+
+			if ( empty( $html ) ) {
+				return '';
+			}
+
+			$allowed_html = array(
+				'i' => array(
+					'class' => true,
+					'aria-hidden' => true,
+				),
+				'span' => array(
+					'class' => true,
+					'aria-hidden' => true,
+				),
+				'svg' => array(
+					'class' => true,
+					'aria-hidden' => true,
+					'role' => true,
+					'viewBox' => true,
+					'xmlns' => true,
+					'width' => true,
+					'height' => true,
+					'fill' => true,
+				),
+				'path' => array(
+					'd' => true,
+					'fill' => true,
+				),
+			);
+
+			return wp_kses( $html, $allowed_html );
 		}
 	}
 }

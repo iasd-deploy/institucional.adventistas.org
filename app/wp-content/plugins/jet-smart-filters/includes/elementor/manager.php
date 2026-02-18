@@ -30,6 +30,7 @@ class Jet_Smart_Filters_Elementor_Manager {
 		$init_action = 'elementor/init';
 
 		// Init a module early on Elementor Data Updater
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( is_admin() && ( isset( $_GET['elementor_updater'] ) || isset( $_GET['elementor_pro_updater'] ) ) ) {
 			$init_action = 'elementor/documents/register';
 		}

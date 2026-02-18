@@ -87,11 +87,12 @@ class Manager {
 	}
 
 	/**
-	 * Returns an DB maneger instance for given config
+	 * Returns a DB manager instance for given config
 	 * 
-	 * @param  [type] $table_name [description]
-	 * @param  array  $schema     [description]
-	 * @return [type]             [description]
+	 * @param  string $object_slug              Object slug
+	 * @param  array  $fields                   Array of fields (columns)
+	 * 
+	 * @return \Jet_Engine\CPT\Custom_Tables\DB DB instance
 	 */
 	public function get_db_instance( $object_slug, $fields = [] ) {
 
@@ -146,9 +147,24 @@ class Manager {
 			$clauses['fields'] .= ', ' . $custom_table_query['table'] . '.*';
 
 			if ( ! empty( $custom_table_query['order'] ) ) {
-				foreach( $custom_table_query['order'] as $order_by => $order ) {
-					$clauses['orderby'] .= sprintf( ', %1$s.%2$s %3$s', $custom_table_query['table'], $order_by, $order );
-					$clauses['orderby'] = ltrim( $clauses['orderby'], ',' );
+				$order_list = $custom_table_query['order'];
+
+				foreach ( $order_list as $clause ) {
+					if ( ! empty( $clause['custom_key'] ) && ! empty( $clause['replacement'] ) ) {
+						$r = $clause['replacement'];
+						$o = strtoupper( trim( $clause['order'] ) );
+						
+						$clauses['orderby'] = str_replace(
+							"$r $o",
+							sprintf(
+								'%1$s.%2$s %3$s',
+								$custom_table_query['table'],
+								$clause['custom_key'],
+								$clause['order']
+							),
+							$clauses['orderby']
+						);
+					}
 				}
 			}
 
@@ -167,11 +183,14 @@ class Manager {
 	 */
 	public function register_storage( $object_type = 'post', $object_slug = '', $fields = [] ) {
 
-		$this->storages[] = [
+		$fields_data = $this->prepare_fields( $fields, $object_slug );
+
+		$this->storages[] = apply_filters( 'jet-engine/custom-meta-tables/storage-data', [
 			'object_type' => $object_type,
 			'object_slug' => $object_slug,
-			'fields'      => $this->prepare_fields( $fields ),
-		];
+			'fields'      => $fields_data['as_columns'],
+			'raw_fields'  => $fields_data['raw'],
+		], $this );
 
 	}
 
@@ -179,26 +198,40 @@ class Manager {
 	 * Ensure fields will be registered in correct format
 	 * 
 	 * @param  array  $fields [description]
-	 * @return [type]         [description]
+	 * @return array  $prepared_fields        [description]
 	 */
-	public function prepare_fields( $fields = [] ) {
+	public function prepare_fields( $fields = [], $object_slug = '' ) {
 
-		$prepared_fields = [];
+		$prepared_fields = [
+			'as_columns' => [],
+			'raw'        => [],
+		];
 
 		if ( ! empty( $fields ) ) {
 			foreach( $fields as $field ) {
 				if ( is_string( $field ) ) {
-					$prepared_fields[] = $this->sanitize_field_name( $field );
+					$prepared_fields['as_columns'][] = $this->sanitize_field_name( $field );
+					$prepared_fields['raw'][] = [
+						'field_name' => $field,
+						'type'       => 'text',
+					];
 				} elseif ( is_array( $field ) && isset( $field['name'] ) ) {
 					if ( ! isset( $field['object_type'] ) || 'field' === $field['object_type'] ) {
-						$prepared_fields[] = $this->sanitize_field_name( $field['name'] );
+						$prepared_fields['as_columns'][] = $this->sanitize_field_name( $field['name'] );
+						$prepared_fields['raw'][] = [
+							'name' => $field['name'],
+							'type' => $field['type'],
+						];
 					}
-					
 				}
 			}
 		}
 
-		return array_filter( $prepared_fields );
+		$prepared_fields = apply_filters( 'jet-engine/custom-meta-tables/prepared_fields', $prepared_fields, $object_slug );
+
+		$prepared_fields['as_columns'] = array_unique( $prepared_fields['as_columns'], SORT_STRING );
+
+		return $prepared_fields;
 	}
 
 	/**
@@ -239,7 +272,7 @@ class Manager {
 	 *
 	 * @since  1.0.0
 	 * @access public
-	 * @return object
+	 * @return \Jet_Engine\CPT\Custom_Tables\Manager
 	 */
 	public static function instance() {
 

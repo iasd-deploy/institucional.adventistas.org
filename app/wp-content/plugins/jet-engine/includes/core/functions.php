@@ -182,7 +182,7 @@ function jet_engine_render_checkbox_values( $value = null, $delimiter = ', ' ) {
 	}
 
 	if ( ! $value || ! is_array( $value ) ) {
-		return $value;
+		return wp_kses_post( $value );
 	}
 
 	$result = jet_engine_get_prepared_check_values( $value );
@@ -356,7 +356,7 @@ function jet_get_pretty_post_link( $value ) {
 		$result  = sprintf( '<a href="%1$s">%2$s</a>', get_permalink( $post_id ), get_the_title( $post_id ) );
 	}
 
-	return $result;
+	return wp_kses_post( $result );
 
 }
 
@@ -410,53 +410,52 @@ function jet_get_term_name( $value ) {
 }
 
 /**
- * Returns link to term by ID
+ * Returns link(s) to term(s) by ID(s)
  *
- * @return [type] [description]
+ * Supports:
+ * - integer term ID
+ * - string term ID
+ * - array of term IDs
+ *
+ * @param mixed $value Term ID(s)
+ * @return string HTML with term link(s)
  */
 function jet_get_pretty_term_link( $value ) {
 
 	if ( empty( $value ) ) {
-		return;
+		return '';
 	}
 
 	$result = '';
+	$term_ids = [];
 
+	// Normalize input to array of integers
 	if ( is_array( $value ) ) {
+		$term_ids = array_map( 'intval', $value );
+	} elseif ( is_numeric( $value ) ) {
+		$term_ids = [ (int) $value ];
+	} elseif ( is_string( $value ) ) {
+		$term_ids = [ (int) $value ]; // для SQL або строкових ID
+	}
 
-		$delimiter = '';
+	// Build links for valid term IDs
+	$delimiter = '';
 
-		foreach ( $value as $term_id ) {
+	foreach ( $term_ids as $term_id ) {
+		$term = get_term( $term_id );
 
-			$term = get_term( $term_id );
-
-			if ( $term ) {
-				$result .= sprintf(
-					'%3$s<a href="%1$s">%2$s</a>',
-					get_term_link( $term_id ),
-					$term->name,
-					$delimiter
-				);
-
-				$delimiter = ', ';
-
-			}
-
+		if ( $term && ! is_wp_error( $term ) ) {
+			$result .= sprintf(
+				'%3$s<a href="%1$s">%2$s</a>',
+				get_term_link( $term ),
+				esc_html( $term->name ),
+				$delimiter
+			);
+			$delimiter = ', ';
 		}
-
-	} else {
-
-		$term_id = $value;
-		$term    = get_term( $term_id );
-
-		if ( $term ) {
-			$result = sprintf( '<a href="%1$s">%2$s</a>', get_term_link( $term_id ), $term->name );
-		}
-
 	}
 
 	return $result;
-
 }
 
 /**
@@ -688,10 +687,49 @@ function jet_engine_custom_cb_date( $post_id = 0, $field = '', $format = '' ) {
 	$value = get_post_meta( $post_id, $field, true );
 
 	if ( $value ) {
-		return date_i18n( $format, $value );
+		return jet_engine_date( $format, $value );
 	} else {
 		return null;
 	}
+
+}
+
+/**
+ * Returns formatted number from post meta by post ID, field name and formatting options
+ *
+ * @param  integer $post_id              Post ID.
+ * @param  string  $field                Meta field key.
+ * @param  integer $decimal_places       Number of decimal places.
+ * @param  string  $decimals_separator   Decimal separator.
+ * @param  string  $thousands_separator  Thousands separator.
+ * @return string|null                   Formatted number or null if empty.
+ */
+function jet_engine_custom_cb_number( $post_id = 0, $field = '', $decimal_places = 2, $decimals_separator = '.', $thousands_separator = '' ) {
+
+	if ( ! $post_id || ! $field ) {
+		return null;
+	}
+
+	$value = get_post_meta( $post_id, $field, true );
+
+	if ( $value === '' || $value === null ) {
+		return null;
+	}
+
+	// Sanitize and normalize inputs
+	$decimal_places      = absint( $decimal_places );
+	$decimals_separator  = sanitize_text_field( $decimals_separator );
+	$thousands_separator = sanitize_text_field( $thousands_separator );
+
+	// Cast value to float
+	$value = floatval( $value );
+
+	return number_format(
+		$value,
+		$decimal_places,
+		$decimals_separator,
+		$thousands_separator
+	);
 
 }
 
@@ -1045,7 +1083,7 @@ function jet_engine_get_field_options_labels( $value = null, $obj_type = 'post',
 
 	foreach ( $value as $single_value ) {
 		if ( isset( $prepared_options[ $single_value ] ) ) {
-			$result[] = is_array( $prepared_options[ $single_value ] ) 
+			$result[] = is_array( $prepared_options[ $single_value ] )
 						? $prepared_options[ $single_value ]['label']
 						: $prepared_options[ $single_value ];
 		}
@@ -1222,7 +1260,7 @@ function jet_engine_datetime() {
 
 /**
  * Returns formatted date according timezone settings
- * 
+ *
  * @param  [type] $format    [description]
  * @param  [type] $timestamp [description]
  * @return [type]            [description]
@@ -1233,11 +1271,54 @@ function jet_engine_date( $format, $timestamp ) {
 
 /**
  * Retruns given user property by given user ID
- * 
+ *
  * @param  [type] $user_id [description]
  * @param  [type] $prop    [description]
  * @return [type]          [description]
  */
 function jet_engine_get_user_data_by_id( $user_id = 0, $prop = 'display_name' ) {
 	return jet_engine()->listings->data->get_prop( $prop, get_user_by( 'ID', $user_id ) );
+}
+
+/**
+ * Maybe unserialize value; used in callbacks to ensure proper function
+ *
+ * @param  string  $value   Input value
+ * @param  string  $context Callback name given for context; or any other value so that filter may be applied selectively
+ * @return mixed            Output value, serialized if allowed and needed
+ */
+function jet_engine_maybe_unserialize( $value = '', $context = '' ) {
+	if ( ! is_string( $value ) || true !== apply_filters( 'jet-engine/maybe-unserialize-allowed', true, $context ) ) {
+		return $value;
+	}
+
+    $unserialized = maybe_unserialize( $value );
+
+	if ( $unserialized !== false ) {
+		return $unserialized;
+	}
+
+	return $value;
+}
+
+/**
+ * Maybe unserialize object properties
+ *
+ * @param  object  $object  Object for which properties should be unserialized
+ * @return object           Object in which serialized properties have been unserialized
+ */
+function jet_engine_maybe_unserialize_object_props( $object ) {
+	if ( ! is_object( $object ) ) {
+		return $object;
+	}
+
+    foreach ( get_object_vars( $object ) as $var => $value ) {
+		$unserialized = maybe_unserialize( $value );
+
+		if ( $unserialized !== false ) {
+			$object->$var = $unserialized;
+		}
+	}
+
+	return $object;
 }

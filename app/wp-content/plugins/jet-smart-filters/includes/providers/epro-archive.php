@@ -10,10 +10,14 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 if ( ! class_exists( 'Jet_Smart_Filters_Provider_EPro_Archive' ) ) {
+
 	/**
 	 * Define Jet_Smart_Filters_Provider_EPro_Archive class
 	 */
 	class Jet_Smart_Filters_Provider_EPro_Archive extends Jet_Smart_Filters_Provider_Base {
+
+		protected $has_container_wrapper = null;
+
 		/**
 		 * Watch for default query
 		 */
@@ -234,9 +238,11 @@ if ( ! class_exists( 'Jet_Smart_Filters_Provider_EPro_Archive' ) ) {
 			$content = ob_get_clean();
 
 			if ( $content ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				echo $content;
 			} else {
-				echo '<div class="elementor-widget-container"></div>';
+				$container_class = $this->has_container_wrapper() ? 'elementor-widget-container' : 'elementor-posts';
+				echo '<div class="' . esc_attr( $container_class ) . '"></div>';
 			}
 		}
 
@@ -244,8 +250,23 @@ if ( ! class_exists( 'Jet_Smart_Filters_Provider_EPro_Archive' ) ) {
 		 * Get provider wrapper selector
 		 */
 		public function get_wrapper_selector() {
+			if ( $this->has_container_wrapper() ) {
+				return '.elementor-widget-archive-posts .elementor-widget-container';
+			} else {
+				return '.elementor-widget-archive-posts .elementor-posts';
+			}
+		}
 
-			return '.elementor-widget-archive-posts .elementor-widget-container';
+		/**
+		 * Check if provider has .elementor-widget-container wrapper
+		 */
+		public function has_container_wrapper() {
+
+			if ( null === $this->has_container_wrapper ) {
+				$this->has_container_wrapper = ! Elementor\Plugin::$instance->experiments->is_feature_active( 'e_optimized_markup' );
+			}
+
+			return $this->has_container_wrapper;
 		}
 
 		/**

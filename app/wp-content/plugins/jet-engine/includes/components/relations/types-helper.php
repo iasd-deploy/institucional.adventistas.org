@@ -9,6 +9,9 @@ if ( ! defined( 'WPINC' ) ) {
 class Types_Helper {
 
 	public $types = null;
+	/**
+	 * @var Jet_Engine\Relations\Types\Base[]
+	 */
 	public $types_instances = array();
 
 	/**
@@ -98,8 +101,9 @@ class Types_Helper {
 	/**
 	 * Returns types instances list
 	 *
-	 * @param  [type] $slug [description]
-	 * @return [type]       [description]
+	 * @param  string $slug Type slug
+	 * 
+	 * @return Types\Base|Types\Base[]|false If $slug passed - type instance or false, array of types instances if no $slug provided
 	 */
 	public function get_instances( $slug = null ) {
 
@@ -258,11 +262,15 @@ class Types_Helper {
 	/**
 	 * Returns item title by object type data and item ID
 	 *
-	 * @param  [type] $type    [description]
-	 * @param  [type] $item_id [description]
-	 * @return [type]          [description]
+	 * @param  string $type    Relation type
+	 * @param  string $item_id Item ID
+	 * @return string          Item title
 	 */
 	public function get_type_item_title( $type, $item_id, $relation ) {
+
+		if ( empty( $item_id ) ) {
+			return esc_html__( 'Error: Empty object ID', 'jet-engine' );
+		}
 
 		$type_data     = $this->type_parts_by_name( $type );
 		$type_instance = $this->get_instances( $type_data[0] );
@@ -271,7 +279,9 @@ class Types_Helper {
 			return '#' . $item_id;
 		}
 
-		return $type_instance->get_type_item_title( $item_id, $type_data[1], $relation );
+		$title = $type_instance->get_type_item_title( $item_id, $type_data[1], $relation );
+	
+		return apply_filters( 'jet-engine/relations/type-item-title', $title, $item_id, $type, $type_instance, $relation );
 
 	}
 
@@ -448,6 +458,19 @@ class Types_Helper {
 			return array();
 		} else {
 			return $type_instance->filtered_query_args( $ids, $type_data[1] );
+		}
+
+	}
+
+	public function merge_filtered_query_args( $args = array(), $type = '', $new_args = array() ) {
+
+		$type_data     = $this->type_parts_by_name( $type );
+		$type_instance = $this->get_instances( $type_data[0] );
+
+		if ( ! $type_instance ) {
+			return $args;
+		} else {
+			return $type_instance->merge_filtered_query_args( $args, $new_args, $type_data[1] );
 		}
 
 	}

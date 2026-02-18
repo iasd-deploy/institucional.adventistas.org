@@ -3,7 +3,7 @@
 namespace Elementor;
 
 use Elementor\Group_Control_Border;
-use Elementor\Core\Schemes\Typography as Scheme_Typography;
+use Elementor\Core\Kits\Documents\Tabs\Global_Typography as Global_Typography;
 
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
@@ -30,7 +30,7 @@ class Jet_Smart_Filters_Apply_Button_Widget extends Widget_Base {
 	public function get_help_url() {
 
 		return jet_smart_filters()->widgets->prepare_help_url(
-			'https://crocoblock.com/knowledge-base/articles/jetsmartfilters-how-to-specify-the-widget-for-which-to-apply-the-jetsmartfilter-widgets-filter/',
+			'https://crocoblock.com/knowledge-base/jetsmartfilters/jetsmartfilters-how-to-set-up-a-redirect-path-to-filter-results-page/',
 			$this->get_name()
 		);
 	}
@@ -130,6 +130,7 @@ class Jet_Smart_Filters_Apply_Button_Widget extends Widget_Base {
 				'label'       => esc_html__( 'Redirect Path', 'jet-smart-filters' ),
 				'type'        => Controls_Manager::TEXT,
 				'label_block' => true,
+				'description' => __( 'If you choose <b>Apply type -> AJAX</b>, the URL will remain clean without visible details.<br>If you choose <b>Apply type -> Page reload</b> the parameters will be added to the URL during redirection.', 'jet-smart-filters' ),
 				'condition'   => array(
 					'apply_redirect' => 'yes',
 				),
@@ -162,6 +163,17 @@ class Jet_Smart_Filters_Apply_Button_Widget extends Widget_Base {
 			)
 		);
 
+		$this->add_control(
+			'query_id_wc_shortcode_notice',
+			array(
+				'type' => Controls_Manager::RAW_HTML,
+				'raw'  => __( '<b>Query ID</b> for <b>WooCommerce Shortcode</b> must be specified as attribute class: [products class="query_id"]', 'jet-smart-filters' ),
+				'condition' => array(
+					'content_provider' => array( 'woocommerce-shortcode' ),
+				),
+			)
+		);
+
 		// Include Additional Providers Settings
 		include jet_smart_filters()->plugin_path( 'includes/widgets/common-controls/additional-providers.php' );
 
@@ -189,7 +201,9 @@ class Jet_Smart_Filters_Apply_Button_Widget extends Widget_Base {
 			Group_Control_Typography::get_type(),
 			array(
 				'name'     => 'filter_apply_button_typography',
-				'scheme'   => Scheme_Typography::TYPOGRAPHY_1,
+				'global'   => array(
+					'default' => Global_Typography::TYPOGRAPHY_PRIMARY,
+				),
 				'selector' => '{{WRAPPER}} ' . $css_scheme['apply-filters-button'],
 			)
 		);
@@ -486,7 +500,7 @@ class Jet_Smart_Filters_Apply_Button_Widget extends Widget_Base {
 			unset( $settings['if_inactive'] );
 		}
 
-		echo '<div class="' . $base_class . ' jet-filter">';
+		echo '<div class="' . esc_attr( $base_class ) . ' jet-filter">';
 		include jet_smart_filters()->get_template( 'common/apply-filters.php' );
 		echo '</div>';
 	}

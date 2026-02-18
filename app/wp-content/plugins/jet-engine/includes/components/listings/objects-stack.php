@@ -134,12 +134,18 @@ class Jet_Engine_Objects_Stack {
 			if ( $reset ) {
 				unset( $this->stack[ $i ] );
 			}
-
 		}
 
-		$this->stack = array_merge( array(), $this->stack );
+		/**
+		 * Since 3.6.0 wrapped into array_values() to reset array indexes,
+		 * without this in some cases for the nested elements starting from 2nd
+		 * stack was decreased icorrectly.
+		 */
+		$this->stack = array_values( array_merge( array(), $this->stack ) );
 
-		$this->in_stack = false;
+		if ( empty( $this->stack ) ) {
+			$this->in_stack = false;
+		}
 	}
 
 	/**

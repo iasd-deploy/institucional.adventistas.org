@@ -46,6 +46,10 @@ trait Jet_Engine_Get_Data_Sources_Trait {
 						'label' => __( 'Permalink', 'jet-engine' ),
 					),
 					array(
+						'value' => '_file',
+						'label' => __( 'Media File', 'jet-engine' ),
+					),
+					array(
 						'value' => 'delete_post_link',
 						'label' => __( 'Delete current post link', 'jet-engine' ),
 					),

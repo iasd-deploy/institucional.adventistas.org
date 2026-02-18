@@ -38,7 +38,7 @@ class Manager {
 	 * @return int The determined loop object ID.
 	 */
 	public function set_loop_object_id( $object_id, $object ) {
-		if ( isset( $object->cct_slug ) || isset( $object->_ID ) ) {
+		if ( $object instanceof \stdClass && isset( $object->cct_slug ) && isset( $object->_ID ) ) {
 			return $object->_ID;
 		}
 

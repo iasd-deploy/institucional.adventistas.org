@@ -35,7 +35,8 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Image' ) ) {
 				'link_url_prefix'             => '',
 				'open_in_new'                 => false,
 				'hide_if_empty'               => false,
-				'object_context'              => 'default_object'
+				'object_context'              => 'default_object',
+				'custom_image_styles'         => array(),
 			);
 		}
 
@@ -45,6 +46,7 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Image' ) ) {
 		 * @return [type] [description]
 		 */
 		public function render_image( $settings ) {
+
 			$source = isset( $settings['dynamic_image_source'] ) ? $settings['dynamic_image_source'] : 'post_thumbnail';
 			$custom = isset( $settings['dynamic_image_source_custom'] ) ? $settings['dynamic_image_source_custom'] : false;
 
@@ -99,11 +101,11 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Image' ) ) {
 
 				if ( $user && 'WP_User' === get_class( $user ) ) {
 					$this->full_image_src = get_avatar_url( $user->ID, array( 'size' => $size * 2 ) );
-					echo str_replace( 'avatar ', 'jet-avatar ', get_avatar( $user->ID, $size, '', $alt, $args ) );
+					echo str_replace( 'avatar ', 'jet-avatar ', get_avatar( $user->ID, $size, '', $alt, $args ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				} elseif ( $user && 'WP_User' !== get_class( $user ) && is_user_logged_in() ) {
 					$user = wp_get_current_user();
 					$this->full_image_src = get_avatar_url( $user->ID, array( 'size' => $size * 2 ) );
-					echo str_replace( 'avatar ', 'jet-avatar ', get_avatar( $user->ID, $size, '', $alt, $args ) );
+					echo str_replace( 'avatar ', 'jet-avatar ', get_avatar( $user->ID, $size, '', $alt, $args ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				} else {
 					return $this->process_fallback_image( $settings );
 				}
@@ -129,6 +131,25 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Image' ) ) {
 
 		}
 
+		public function get_caption( $settings ) {
+
+			$caption = $settings['image_caption'] ?? '';
+
+			if ( ! $caption ) {
+				return '';
+			}
+
+			$attr = array(
+				'class' => $this->get_image_caption_css_class(),
+			);
+
+			return sprintf(
+				'<figcaption %1$s>%2$s</figcaption>',
+				\Jet_Engine_Tools::get_attr_string( $attr ),
+				wp_kses_post( $caption )
+			);
+		}
+
 		/**
 		 * Process image fallback if set or hide widget
 		 *
@@ -150,9 +171,7 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Image' ) ) {
 				}
 
 				echo wp_get_attachment_image( $attachment_id, $size, false, array( 'alt' => $this->get_image_alt( $attachment_id, $settings ) ) );
-
 			}
-
 		}
 
 		public function render_image_by_meta_field( $field = null, $size = 'full', $settings = array() ) {
@@ -174,7 +193,8 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Image' ) ) {
 			}
 
 			if ( $custom_output ) {
-				echo $custom_output;
+				// Escaped by callbacks
+				echo $custom_output; // phpcs:ignore
 				return;
 			}
 
@@ -242,30 +262,24 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Image' ) ) {
 				return;
 			}
 
-			$attr = array(
+			$attr = $this->modify_image_attrs( array(
 				'src'      => $src,
 				'class'    => $this->get_image_css_class(),
 				'alt'      => $alt,
 				'decoding' => 'async',
-			);
+			) );
 
 			$this->full_image_src = $src;
 
-			$custom_alt = $this->get_image_alt( null, $this->get_settings() );
-
-			if ( ! empty( $custom_alt ) ) {
-				$attr['alt'] = $custom_alt;
-			}
-
-			if ( isset( $settings['lazy_load_image'] ) && filter_var( $settings['lazy_load_image'], FILTER_VALIDATE_BOOLEAN ) ) {
-				$attr['loading'] = 'lazy';
-			}
-
-			printf( '<img %s>', Jet_Engine_Tools::get_attr_string( $attr ) );
+			printf( '<img %s>', Jet_Engine_Tools::get_attr_string( $attr ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
 
 		public function get_image_css_class() {
 			return apply_filters( 'jet-engine/listings/dynamic-image/css-class', 'jet-listing-dynamic-image__img' );
+		}
+
+		public function get_image_caption_css_class() {
+			return apply_filters( 'jet-engine/listings/dynamic-image/caption-css-class', 'jet-listing-dynamic-image__caption' );
 		}
 
 		public function get_image_size( $settings = array() ) {
@@ -366,7 +380,16 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Image' ) ) {
 
 			$image_html = $this->get_image_html( $settings );
 
-			printf( '<div class="%1$s">', implode( ' ', $classes ) );
+			if ( ! $this->show_field ) {
+				return;
+			}
+
+			$custom_image_styles = ! empty( $settings['custom_image_styles'] ) ? $settings['custom_image_styles'] : array();
+			$custom_styles = $this->get_parsed_custom_styles( $custom_image_styles, true );
+
+			$custom_styles_attr = ! empty( $custom_styles['width'] ) ? 'style="' . esc_attr( $custom_styles['width'] ) . '"' : '';
+
+			printf( '<div class="%1$s" %2$s>', esc_attr( implode( ' ', $classes ) ), $custom_styles_attr ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
 				do_action( 'jet-engine/listing/dynamic-image/before-image', $this );
 
@@ -392,10 +415,11 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Image' ) ) {
 
 					$link_attr = apply_filters( 'jet-engine/listings/dynamic-image/link-attr', $link_attr, $settings );
 
-					printf( '<a %s>', Jet_Engine_Tools::get_attr_string( $link_attr ) );
+					printf( '<a %s>', Jet_Engine_Tools::get_attr_string( $link_attr ) ); // phpcs:ignore
 				}
 
-				echo $image_html;
+				// Escaped while generatin $image_html
+				echo $image_html; // phpcs:ignore
 
 				if ( $image_url ) {
 					echo '</a>';
@@ -404,7 +428,6 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Image' ) ) {
 				do_action( 'jet-engine/listing/dynamic-image/after-image', $this );
 
 			echo '</div>';
-
 		}
 
 		public function get_image_html( $settings ) {
@@ -415,9 +438,38 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Image' ) ) {
 
 			$this->render_image( $settings );
 
+			$rendered_image = ob_get_clean();
+
 			$this->remove_image_hooks();
 
-			return ob_get_clean();
+			if ( empty( $rendered_image ) ) {
+				return $rendered_image;
+			}
+
+			$add_caption = $settings['add_image_caption'] ?? false;
+			$add_caption = filter_var( $add_caption, FILTER_VALIDATE_BOOLEAN ) && ! empty( $settings['image_caption'] );
+
+			if ( ! $add_caption ) {
+				return $rendered_image;
+			}
+
+			$caption = $this->get_caption( $settings );
+
+			if ( empty( $caption ) ) {
+				return $rendered_image;
+			}
+
+			$figure = '';
+
+			$caption_position = $settings['image_caption_position'] ?? 'after';
+
+			if ( $caption_position === 'before' ) {
+				$figure = sprintf( '<figure class="jet-listing-dynamic-image__figure">%s%s</figure>', $caption, $rendered_image );
+			} else {
+				$figure = sprintf( '<figure class="jet-listing-dynamic-image__figure">%s%s</figure>', $rendered_image, $caption );
+			}
+
+			return $figure;
 		}
 
 		public function add_image_hooks() {
@@ -430,15 +482,69 @@ if ( ! class_exists( 'Jet_Engine_Render_Dynamic_Image' ) ) {
 			remove_filter( 'wp_get_attachment_image',            array( $this, 'store_full_image_src' ), 10 );
 		}
 
+		/**
+		 * Parse custom styles array to string.
+		 *
+		 * @param  array $styles Custom styles array.
+		 * @return string
+		 */
+		public function get_parsed_custom_styles( $styles = array(), $as_array = false ) {
+
+			$parsed_styles = array();
+			$aspect_ratio = false;
+
+			if ( ! empty( $styles['aspect_ratio'] ) ) {
+
+				$scale = ! empty( $styles['custom_scale'] ) && in_array(
+					$styles['custom_scale'], array( 'cover', 'contain' )
+				) ? $styles['custom_scale'] : 'cover';
+				$aspect_ratio = str_replace( ':', ' / ', $styles['aspect_ratio'] );
+
+				$parsed_styles['object-fit'] = 'object-fit: ' . esc_attr( $scale );
+				$parsed_styles['aspect-ratio'] = 'aspect-ratio: ' . esc_attr( $aspect_ratio );
+			}
+
+			if ( ! empty( $styles['width'] ) || false !== $aspect_ratio ) {
+				$width = ! empty( $styles['width'] ) ? $styles['width'] : '100%';
+				$parsed_styles['width'] = 'width: ' . esc_attr( $width );
+			}
+
+			if ( ! empty( $styles['height'] ) || false !== $aspect_ratio ) {
+				$height = ! empty( $styles['height'] ) ? $styles['height'] : 'auto';
+				$parsed_styles['height'] = 'height: ' . esc_attr( $height );
+			}
+
+			if ( $as_array ) {
+				return $parsed_styles;
+			} else {
+				return implode( '; ', $parsed_styles );
+			}
+		}
+
+		/**
+		 * Modify image attributes for core WP function and inner render function.
+		 *
+		 * @param  array $attr Attrributes array.
+		 * @return array
+		 */
 		public function modify_image_attrs( $attr ) {
+
 			$settings = $this->get_settings();
 
 			// Add CSS Class
-			$attr['class'] = $this->get_image_css_class() . ' ' . $attr['class'];
+			$attr['class'] = $this->get_image_css_class() . ' ' . esc_attr( $attr['class'] );
 
 			// Add Custom Alt
 			if ( ! empty( $settings['custom_image_alt'] ) ) {
-				$attr['alt'] = $settings['custom_image_alt'];
+				$attr['alt'] = esc_attr( $settings['custom_image_alt'] );
+			}
+
+			// Add Custom Styles
+			if (
+				! empty( $settings['custom_image_styles'] )
+				&& is_array( $settings['custom_image_styles'] )
+			) {
+				$attr['style'] = $this->get_parsed_custom_styles( $settings['custom_image_styles'] );
 			}
 
 			// Modify the `loading` attr

@@ -86,6 +86,8 @@ class Data extends \Jet_Engine_Base_Data {
 			'is_legacy',
 			'rest_get_enabled',
 			'rest_post_enabled',
+			'parents_required',
+			'children_required',
 		);
 
 		$regular_args = array(

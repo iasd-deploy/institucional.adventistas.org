@@ -21,6 +21,9 @@ class Module {
 	private static $instance = null;
 
 	public $slug = 'custom-content-types';
+	/**
+	 * @var Manager
+	 */
 	public $manager = null;
 	public $rest_controller = null;
 	public $listings = null;
@@ -140,7 +143,7 @@ class Module {
 	 *
 	 * @since  1.0.0
 	 * @access public
-	 * @return object
+	 * @return static
 	 */
 	public static function instance() {
 

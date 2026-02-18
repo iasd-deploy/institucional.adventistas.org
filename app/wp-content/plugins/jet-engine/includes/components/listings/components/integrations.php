@@ -10,6 +10,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Register components integrations into a different parts of JetEngine
  */
 class Integrations {
+
 	public function __construct() {
 
 		add_action( 'jet-engine/register-macros', [ $this, 'register_components_macros' ] );
@@ -94,10 +95,20 @@ class Integrations {
 			&& ! empty( $settings['dynamic_field_post_meta_custom'] )
 		) {
 			$result = jet_engine()->listings->components->state->get( $settings['dynamic_field_post_meta_custom'] );
+		} else {
+			return $result;
 		}
 
-		return $result;
-		
+		// Return raw result for non-string or non-numeric values
+		if ( is_array( $result )
+			|| is_object( $result )
+			|| is_bool( $result )
+			|| is_null( $result )
+		) {
+			return $result;
+		}
+
+		return do_shortcode( wp_kses_post( $result ) );
 	}
 
 	/**
