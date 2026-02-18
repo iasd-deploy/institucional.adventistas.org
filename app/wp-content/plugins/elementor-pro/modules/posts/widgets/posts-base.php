@@ -256,20 +256,25 @@ abstract class Posts_Base extends Base_Widget {
 				'label' => esc_html__( 'Alignment', 'elementor-pro' ),
 				'type' => Controls_Manager::CHOOSE,
 				'options' => [
-					'left' => [
-						'title' => esc_html__( 'Left', 'elementor-pro' ),
+					'start' => [
+						'title' => esc_html__( 'Start', 'elementor-pro' ),
 						'icon' => 'eicon-text-align-left',
 					],
 					'center' => [
 						'title' => esc_html__( 'Center', 'elementor-pro' ),
 						'icon' => 'eicon-text-align-center',
 					],
-					'right' => [
-						'title' => esc_html__( 'Right', 'elementor-pro' ),
+					'end' => [
+						'title' => esc_html__( 'End', 'elementor-pro' ),
 						'icon' => 'eicon-text-align-right',
 					],
 				],
 				'default' => 'center',
+				'classes' => 'elementor-control-start-end',
+				'selectors_dictionary' => [
+					'left' => is_rtl() ? 'end' : 'start',
+					'right' => is_rtl() ? 'start' : 'end',
+				],
 				'selectors' => [
 					'{{WRAPPER}} .elementor-pagination' => 'text-align: {{VALUE}};',
 				],
@@ -731,7 +736,7 @@ abstract class Posts_Base extends Base_Widget {
 			$url = $this->get_wp_link_page_url_for_normal_page_load( $url );
 		}
 
-		return esc_url( $url );
+		return esc_url( apply_filters( 'elementor/posts/wp_link_page', $url ) );
 	}
 
 	public function is_allow_to_use_custom_page_option() {

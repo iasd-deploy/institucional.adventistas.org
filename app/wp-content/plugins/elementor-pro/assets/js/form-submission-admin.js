@@ -1,4 +1,4 @@
-/*! elementor-pro - v3.25.0 - 20-11-2024 */
+/*! elementor-pro - v3.35.0 - 11-02-2026 */
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
@@ -2652,21 +2652,25 @@ const {
 function Acceptance(props) {
   const [localValue, setLocalValue] = useState(props.value),
     id = props.field.id + '-' + props.value;
-  return /*#__PURE__*/_react.default.createElement("label", {
-    className: "e-form-submissions-value-label",
-    htmlFor: id
-  }, /*#__PURE__*/_react.default.createElement("input", {
-    id: id,
-    type: "checkbox",
-    value: "on",
-    checked: props.isEditMode ? 'on' === localValue : 'on' === props.value,
-    onChange: e => {
-      const value = e.target.checked ? 'on' : '';
-      setLocalValue(value);
-      props.onChange(value);
-    },
-    disabled: !props.isEditMode
-  }));
+  return (
+    /*#__PURE__*/
+    // eslint-disable-next-line jsx-a11y/label-has-associated-control
+    _react.default.createElement("label", {
+      className: "e-form-submissions-value-label",
+      htmlFor: id
+    }, /*#__PURE__*/_react.default.createElement("input", {
+      id: id,
+      type: "checkbox",
+      value: "on",
+      checked: props.isEditMode ? 'on' === localValue : 'on' === props.value,
+      onChange: e => {
+        const value = e.target.checked ? 'on' : '';
+        setLocalValue(value);
+        props.onChange(value);
+      },
+      disabled: !props.isEditMode
+    }))
+  );
 }
 Acceptance.propTypes = {
   ..._index.basePropTypes
@@ -6776,18 +6780,13 @@ module.exports = wp.i18n;
 /***/ ((module) => {
 
 function _extends() {
-  module.exports = _extends = Object.assign ? Object.assign.bind() : function (target) {
-    for (var i = 1; i < arguments.length; i++) {
-      var source = arguments[i];
-      for (var key in source) {
-        if (Object.prototype.hasOwnProperty.call(source, key)) {
-          target[key] = source[key];
-        }
-      }
+  return module.exports = _extends = Object.assign ? Object.assign.bind() : function (n) {
+    for (var e = 1; e < arguments.length; e++) {
+      var t = arguments[e];
+      for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]);
     }
-    return target;
-  }, module.exports.__esModule = true, module.exports["default"] = module.exports;
-  return _extends.apply(this, arguments);
+    return n;
+  }, module.exports.__esModule = true, module.exports["default"] = module.exports, _extends.apply(null, arguments);
 }
 module.exports = _extends, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
@@ -6799,9 +6798,9 @@ module.exports = _extends, module.exports.__esModule = true, module.exports["def
   \***********************************************************************/
 /***/ ((module) => {
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {
-    "default": obj
+function _interopRequireDefault(e) {
+  return e && e.__esModule ? e : {
+    "default": e
   };
 }
 module.exports = _interopRequireDefault, module.exports.__esModule = true, module.exports["default"] = module.exports;

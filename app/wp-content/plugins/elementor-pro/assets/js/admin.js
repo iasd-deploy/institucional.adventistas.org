@@ -1,4 +1,4 @@
-/*! elementor-pro - v3.25.0 - 20-11-2024 */
+/*! elementor-pro - v3.35.0 - 11-02-2026 */
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
@@ -25,6 +25,7 @@ class Module extends elementorModules.Module {
   }];
   onInit() {
     this.assignMenuItemActions();
+    this.assignProLicenseActivateEvent();
   }
   assignMenuItemActions() {
     window.addEventListener('DOMContentLoaded', () => {
@@ -38,6 +39,28 @@ class Module extends elementorModules.Module {
           window.open(item.external_url, '_blank');
         });
       });
+    });
+  }
+  assignProLicenseActivateEvent() {
+    window.addEventListener('DOMContentLoaded', () => {
+      const activateButton = document.querySelector('.button-primary[href*="elementor-connect"]');
+      if (activateButton) {
+        activateButton.addEventListener('click', () => {
+          if (!window.elementorCommon?.config?.experimentalFeatures?.editor_events) {
+            return;
+          }
+          const eventsManager = window.elementorCommon?.eventsManager || {};
+          const dispatchEvent = eventsManager.dispatchEvent?.bind(eventsManager);
+          const eventName = 'pro_license_activate';
+          const eventData = {
+            app_type: 'editor',
+            location: 'Elementor WP-admin pages',
+            secondaryLocation: 'license page',
+            trigger: 'click'
+          };
+          dispatchEvent?.(eventName, eventData);
+        });
+      }
     });
   }
 }
@@ -1230,10 +1253,12 @@ module.exports = function () {
   this.mailChimp = new ApiValidations('mailchimp_api_key');
   this.mailerLite = new ApiValidations('mailerlite_api_key');
   this.activeCcampaign = new ApiValidations('activecampaign_api_key', 'activecampaign_api_url');
-  jQuery('.e-notice--cta.e-notice--dismissible[data-notice_id="site_mailer_forms_submissions_notice"] a.e-button--cta').on('click', function () {
+  document.querySelector('.e-notice--cta.e-notice--dismissible[data-notice_id="site_mailer_forms_submissions_notice"] a.e-button--cta')?.addEventListener('click', function () {
+    const $notice = $(this).closest('.e-notice');
+    const source = $notice.data('source') || 'sm-submission-install';
     elementorCommon.ajax.addRequest('elementor_site_mailer_campaign', {
       data: {
-        source: 'sm-submission-install'
+        source
       }
     });
   });
@@ -1327,7 +1352,9 @@ module.exports = function (key, fieldID) {
 
 module.exports = function () {
   var EditButton = __webpack_require__(/*! ./admin/edit-button */ "../modules/library/assets/js/admin/edit-button.js");
+  var ShortcodeTextarea = __webpack_require__(/*! ./admin/shortcode-textarea */ "../modules/library/assets/js/admin/shortcode-textarea.js");
   this.editButton = new EditButton();
+  this.shortcodeTextarea = new ShortcodeTextarea();
 };
 
 /***/ }),
@@ -1359,6 +1386,39 @@ module.exports = function () {
     });
   };
   self.init();
+};
+
+/***/ }),
+
+/***/ "../modules/library/assets/js/admin/shortcode-textarea.js":
+/*!****************************************************************!*\
+  !*** ../modules/library/assets/js/admin/shortcode-textarea.js ***!
+  \****************************************************************/
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = function () {
+  const resizeAllTextareas = () => {
+    const textareas = document.querySelectorAll('.elementor-shortcode-textarea');
+    textareas.forEach(textarea => {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 5 + 'px';
+    });
+  };
+  const init = () => {
+    resizeAllTextareas();
+    window.addEventListener('resize', () => {
+      resizeAllTextareas();
+    });
+    document.addEventListener('click', event => {
+      if (event.target.matches('button.toggle-row')) {
+        resizeAllTextareas();
+      }
+    });
+  };
+  init();
 };
 
 /***/ }),
@@ -1628,9 +1688,9 @@ module.exports = wp.i18n;
   \***********************************************************************/
 /***/ ((module) => {
 
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {
-    "default": obj
+function _interopRequireDefault(e) {
+  return e && e.__esModule ? e : {
+    "default": e
   };
 }
 module.exports = _interopRequireDefault, module.exports.__esModule = true, module.exports["default"] = module.exports;

@@ -32,11 +32,15 @@ final class Modules_Manager {
 			'admin-top-bar',
 			'notes',
 			'announcements',
-			'display-conditions',
 			'element-manager',
 			'checklist',
 
 			// Modules with Widgets.
+			'attributes',
+			'atomic-widgets',
+			'atomic-form',
+			'display-conditions',
+			'transitions',
 			'theme-builder',
 			'loop-builder',
 			'off-canvas',
@@ -76,6 +80,10 @@ final class Modules_Manager {
 			'link-in-bio',
 			'floating-buttons',
 			'search',
+			'cloud-library',
+			'variables',
+			'editor-one',
+			'interactions',
 		];
 
 		foreach ( $modules as $module_name ) {

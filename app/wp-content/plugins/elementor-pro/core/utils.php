@@ -77,7 +77,7 @@ class Utils {
 	}
 
 	public static function get_current_post_id() {
-		if ( isset( Plugin::elementor()->documents ) ) {
+		if ( isset( Plugin::elementor()->documents ) && Plugin::elementor()->documents->get_current() ) {
 			return Plugin::elementor()->documents->get_current()->get_main_id();
 		}
 
@@ -446,5 +446,9 @@ class Utils {
 			&& ! current_user_can( 'edit_post', $post->ID );
 
 		return $is_private || $not_allowed || $password_required;
+	}
+
+	public static function is_sale_time(): bool {
+		return \Elementor\Utils::is_sale_time();
 	}
 }

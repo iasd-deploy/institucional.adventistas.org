@@ -5,7 +5,7 @@
   display: none;
 }
 
-.elementor-popup-modal {
+.elementor-popup-modal.dialog-type-lightbox {
   display: flex;
   pointer-events: none;
   background-color: transparent;
@@ -29,7 +29,7 @@
   width: 1em;
 }
 .elementor-popup-modal .dialog-widget-content {
-  background-color: #FFFFFF;
+  background-color: #fff;
   width: initial;
   overflow: visible;
   max-width: 100%;
